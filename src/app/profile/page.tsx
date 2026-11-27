@@ -1,0 +1,60 @@
+import { redirect } from "next/navigation";
+import { createServerSupabase } from "@/lib/supabase/server";
+import { Navbar } from "@/components/Navbar";
+import { ProfileClient } from "@/components/ProfileClient";
+
+export default async function ProfilePage() {
+  const supabase = await createServerSupabase();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) redirect("/login");
+
+  const [{ data: profile }, { data: sessions }] = await Promise.all([
+    supabase.from("profiles").select("*").eq("id", user.id).single(),
+    supabase
+      .from("candidate_sessions")
+      .select("tokens_used, tokens_saved, scorecard:scorecards(total_score)")
+      .eq("user_id", user.id),
+  ]);
+
+  const rows = sessions ?? [];
+  const scores = rows
+    .map((r) => {
+      const sc = Array.isArray(r.scorecard) ? r.scorecard[0] : r.scorecard;
+      return sc ? Number(sc.total_score) : null;
+    })
+    .filter((v): v is number => v !== null);
+
+  const stats = {
+    totalSessions: rows.length,
+    avgScore:
+      scores.length > 0
+        ? scores.reduce((a, b) => a + b, 0) / scores.length
+        : 0,
+    totalTokensUsed: rows.reduce((s, r) => s + (r.tokens_used || 0), 0),
+    totalTokensSaved: rows.reduce((s, r) => s + (r.tokens_saved || 0), 0),
+  };
+
+  const safeProfile = {
+    id: profile?.id || user.id,
+    email: profile?.email || user.email || "",
+    full_name: profile?.full_name || user.email?.split("@")[0] || "User",
+    role: (profile?.role === "admin" ? "admin" : "candidate") as
+      | "admin"
+      | "candidate",
+    created_at: profile?.created_at || user.created_at || new Date().toISOString(),
+  };
+
+  return (
+    <div className="min-h-screen bg-[var(--bg-canvas)] text-[var(--text-primary)]">
+      <Navbar
+        userName={safeProfile.full_name}
+        userEmail={safeProfile.email}
+        role={safeProfile.role}
+      />
+      <ProfileClient profile={safeProfile} stats={stats} />
+    </div>
+  );
+}

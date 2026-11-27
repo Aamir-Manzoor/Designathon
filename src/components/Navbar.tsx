@@ -60,30 +60,32 @@ export function Navbar({ userName, userEmail, role }: NavbarProps) {
         <div className="flex items-center gap-3">
           <ThemeSwitcher />
 
-          <div className="hidden items-center gap-2.5 border-l border-[var(--border-subtle)] pl-3 text-right md:flex">
-            <div>
-              <div className="text-xs font-semibold text-[var(--text-primary)]">
-                {userName}
-              </div>
-              <div className="text-[11px] text-[var(--text-muted)]">
-                {userEmail}
-              </div>
-            </div>
+          <Link
+            href="/profile"
+            className="btn-tactile hidden items-center gap-2.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-1)] px-3 py-1.5 hover:border-[var(--accent-border)] md:flex"
+            title="Open Profile & Account Settings"
+          >
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--accent-soft)] font-mono text-[11px] font-bold uppercase text-[var(--accent)]">
+              {(userName || "U").slice(0, 2)}
+            </span>
+            <span className="max-w-[140px] truncate text-xs font-semibold text-[var(--text-primary)]">
+              {userName}
+            </span>
             <span
-              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-medium ring-1 ${
+              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1 ${
                 role === "admin"
                   ? "bg-[var(--accent-soft)] text-[var(--accent)] ring-[var(--accent-border)]"
                   : "bg-emerald-500/15 text-emerald-500 ring-emerald-500/30"
               }`}
             >
               {role === "admin" ? (
-                <Shield className="h-3 w-3" />
+                <Shield className="h-2.5 w-2.5" />
               ) : (
-                <User className="h-3 w-3" />
+                <User className="h-2.5 w-2.5" />
               )}
               {role === "admin" ? "Admin" : "Candidate"}
             </span>
-          </div>
+          </Link>
 
           <button
             onClick={handleLogout}
