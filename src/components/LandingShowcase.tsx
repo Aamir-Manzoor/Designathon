@@ -145,10 +145,10 @@ export function LandingShowcase({
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute left-1/2 top-[-140px] h-[420px] w-[760px] -translate-x-1/2 rounded-full blur-[120px]"
+        className="pointer-events-none absolute left-1/2 top-[-120px] h-[460px] w-[860px] -translate-x-1/2 rounded-full"
         style={{
           background:
-            "radial-gradient(circle, var(--glow-a) 0%, var(--glow-b) 50%, transparent 75%)",
+            "radial-gradient(ellipse at center, var(--glow-a) 0%, var(--glow-b) 35%, transparent 70%)",
         }}
       />
 
@@ -246,28 +246,28 @@ export function LandingShowcase({
           </div>
 
           {/* Key Metric Strip */}
-          <div className="hero-stagger mx-auto mt-10 grid max-w-2xl grid-cols-1 divide-y divide-[var(--border-subtle)] rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-1)]/80 py-3.5 backdrop-blur sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-            <div className="px-4">
-              <div className="tabular-nums font-mono text-lg font-bold text-[var(--text-primary)] sm:text-xl">
+          <div className="hero-stagger mx-auto mt-10 grid max-w-4xl grid-cols-1 divide-y divide-[var(--border-subtle)] rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-1)]/85 py-4 backdrop-blur sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+            <div className="px-6 py-1">
+              <div className="tabular-nums whitespace-nowrap font-mono text-lg font-bold text-[var(--text-primary)] sm:text-xl">
                 40 / 10 / 30 / 20
               </div>
-              <div className="text-[11px] text-[var(--text-muted)]">
+              <div className="mt-0.5 text-xs text-[var(--text-muted)]">
                 Explainable 100-Pt Rubric
               </div>
             </div>
-            <div className="px-4">
-              <div className="tabular-nums font-mono text-lg font-bold text-emerald-400 sm:text-xl">
+            <div className="px-6 py-1">
+              <div className="tabular-nums whitespace-nowrap font-mono text-lg font-bold text-emerald-400 sm:text-xl">
                 -45% Tokens
               </div>
-              <div className="text-[11px] text-[var(--text-muted)]">
+              <div className="mt-0.5 text-xs text-[var(--text-muted)]">
                 Adaptive Context Savings
               </div>
             </div>
-            <div className="px-4">
-              <div className="tabular-nums font-mono text-lg font-bold text-cyan-400 sm:text-xl">
+            <div className="px-6 py-1">
+              <div className="tabular-nums whitespace-nowrap font-mono text-lg font-bold text-cyan-400 sm:text-xl">
                 3-Sheet .XLSX
               </div>
-              <div className="text-[11px] text-[var(--text-muted)]">
+              <div className="mt-0.5 text-xs text-[var(--text-muted)]">
                 Audit-Ready Scorecards
               </div>
             </div>

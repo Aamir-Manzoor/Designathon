@@ -20,11 +20,11 @@ export function HeroThreeCanvas() {
     camera.position.z = 22;
 
     const renderer = new THREE.WebGLRenderer({
-      antialias: true,
+      antialias: false,
       alpha: true,
       powerPreference: "high-performance",
     });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.25));
     renderer.setSize(width, height);
     container.innerHTML = "";
     container.appendChild(renderer.domElement);
@@ -37,8 +37,8 @@ export function HeroThreeCanvas() {
         : 0x10b981;
     const secondaryHex = theme === "light" ? 0x059669 : 0x22d3ee;
 
-    // 1. Vivid Floating 3D Token Nodes (Points)
-    const nodeCount = 110;
+    // 1. Lightweight Floating 3D Token Nodes (45 nodes = 6x faster O(N^2))
+    const nodeCount = 45;
     const positions = new Float32Array(nodeCount * 3);
     const colors = new Float32Array(nodeCount * 3);
     const velocities: Array<{ x: number; y: number; z: number }> = [];
@@ -137,10 +137,19 @@ export function HeroThreeCanvas() {
     window.addEventListener("resize", onResize, { passive: true });
 
     let animId = 0;
+    let isInView = true;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        isInView = entry.isIntersecting;
+      },
+      { threshold: 0.05 }
+    );
+    observer.observe(container);
 
     function animate() {
       animId = requestAnimationFrame(animate);
-      if (document.hidden) return;
+      if (document.hidden || !isInView) return;
 
       const posAttr = pointGeo.getAttribute("position") as THREE.BufferAttribute;
       const arr = posAttr.array as Float32Array;
@@ -199,6 +208,7 @@ export function HeroThreeCanvas() {
 
     return () => {
       cancelAnimationFrame(animId);
+      observer.disconnect();
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("resize", onResize);
       pointGeo.dispose();

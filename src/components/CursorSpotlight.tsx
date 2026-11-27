@@ -73,24 +73,25 @@ export function CursorSpotlight() {
 
   return (
     <>
+      {/* Zero-blur pure radial gradient spotlight (compositor-only, 0ms paint lag) */}
       <div
         ref={glowRef}
         aria-hidden
-        className="pointer-events-none fixed left-0 top-0 z-30 hidden h-[420px] w-[420px] rounded-full blur-[65px] will-change-transform md:block"
+        className="pointer-events-none fixed left-0 top-0 z-30 hidden h-[320px] w-[320px] rounded-full will-change-transform md:block"
         style={{
           background:
-            "radial-gradient(circle, var(--glow-a) 0%, var(--glow-b) 35%, transparent 72%)",
+            "radial-gradient(circle, var(--glow-a) 0%, transparent 68%)",
         }}
       />
       <div
         ref={ringRef}
         aria-hidden
-        className="pointer-events-none fixed left-0 top-0 z-50 hidden h-9 w-9 rounded-full border-2 border-[var(--accent)]/80 shadow-[0_0_16px_var(--glow-a)] will-change-transform md:block"
+        className="pointer-events-none fixed left-0 top-0 z-50 hidden h-8 w-8 rounded-full border border-[var(--accent)]/80 will-change-transform md:block"
       />
       <div
         ref={dotRef}
         aria-hidden
-        className="pointer-events-none fixed left-0 top-0 z-50 hidden h-2 w-2 rounded-full bg-[var(--accent)] will-change-transform md:block"
+        className="pointer-events-none fixed left-0 top-0 z-50 hidden h-1.5 w-1.5 rounded-full bg-[var(--accent)] will-change-transform md:block"
       />
     </>
   );
