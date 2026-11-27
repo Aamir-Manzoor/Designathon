@@ -1,0 +1,824 @@
+"use client";
+
+import { useState, useEffect, useRef, useMemo } from "react";
+import Link from "next/link";
+import dynamic from "next/dynamic";
+import {
+  Play,
+  Send,
+  Bug,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  Save,
+  History,
+  Sparkles,
+  ArrowLeft,
+  Loader2,
+  CopyCheck,
+  ShieldAlert,
+  SendHorizonal,
+} from "lucide-react";
+import { TokenBudgetMeter } from "./TokenBudgetMeter";
+import { ScorecardView } from "./ScorecardView";
+import { analyzePromptEfficiency } from "@/lib/engines/token-optimizer";
+import { formatDuration } from "@/lib/utils";
+import type {
+  CandidateSession,
+  Challenge,
+  CodeRevision,
+  ExecutionRun,
+  PromptTurn,
+  Scorecard,
+  SingleTestResult,
+  TestCase,
+} from "@/types/assessment";
+
+const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-full items-center justify-center bg-[#0d1117] text-xs text-slate-400">
+      Loading Code Editor...
+    </div>
+  ),
+});
+
+interface WorkspaceProps {
+  initialSession: CandidateSession;
+  challenge: Challenge;
+  publicTests: TestCase[];
+  initialTurns: PromptTurn[];
+  initialRevisions: CodeRevision[];
+  initialRuns: ExecutionRun[];
+  initialScorecard: Scorecard | null;
+}
+
+export function AssessmentWorkspace({
+  initialSession,
+  challenge,
+  publicTests,
+  initialTurns,
+  initialRevisions,
+  initialRuns,
+  initialScorecard,
+}: WorkspaceProps) {
+  const [session, setSession] = useState<CandidateSession>(initialSession);
+  const [code, setCode] = useState<string>(initialSession.current_code);
+  const [turns, setTurns] = useState<PromptTurn[]>(initialTurns);
+  const [revisions, setRevisions] = useState<CodeRevision[]>(initialRevisions);
+  const [latestResults, setLatestResults] = useState<SingleTestResult[]>(
+    initialRuns[0]?.results ?? []
+  );
+  const [executorEngine, setExecutorEngine] = useState<string>(
+    initialRuns[0]?.executor_engine ?? "judge0"
+  );
+  const [scorecard, setScorecard] = useState<Scorecard | null>(
+    initialScorecard
+  );
+
+  const [promptInput, setPromptInput] = useState("");
+  const [sendingAI, setSendingAI] = useState(false);
+  const [runningTests, setRunningTests] = useState(false);
+  const [injectingBug, setInjectingBug] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [readyForBugInjection, setReadyForBugInjection] = useState(false);
+
+  const [saveStatus, setSaveStatus] = useState<"saved" | "saving">("saved");
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [leftTab, setLeftTab] = useState<"problem" | "revisions">("problem");
+  const [secondsLeft, setSecondsLeft] = useState<number>(() =>
+    Math.max(
+      0,
+      Math.floor((new Date(initialSession.expires_at).getTime() - Date.now()) / 1000)
+    )
+  );
+
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // Live pre-send efficiency hints calculated client-side as the candidate types
+  const liveHints = useMemo(() => {
+    if (!promptInput.trim()) return [];
+    return analyzePromptEfficiency({
+      userPrompt: promptInput,
+      currentCode: code,
+      challengeDescription: challenge.description,
+      tokensUsed: session.tokens_used,
+      tokenBudget: session.token_budget,
+      previousTurns: turns,
+    });
+  }, [
+    promptInput,
+    code,
+    challenge.description,
+    session.tokens_used,
+    session.token_budget,
+    turns,
+  ]);
+
+  // Countdown timer
+  useEffect(() => {
+    if (session.phase === "submitted") return;
+    const interval = setInterval(() => {
+      setSecondsLeft((prev) => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [session.phase]);
+
+  // Debounced autosave
+  useEffect(() => {
+    if (session.phase === "submitted") return;
+    if (code === session.current_code) return;
+    setSaveStatus("saving");
+    const timer = setTimeout(async () => {
+      await fetch(`/api/sessions/${session.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ current_code: code }),
+      });
+      setSession((prev) => ({ ...prev, current_code: code }));
+      setSaveStatus("saved");
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [code, session.id, session.phase, session.current_code]);
+
+  // Integrity listener: log tab blur events
+  useEffect(() => {
+    if (session.phase === "submitted") return;
+    function onVisibilityChange() {
+      if (document.hidden) {
+        fetch(`/api/sessions/${session.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            integrity_event: {
+              event_type: "tab_blur",
+              metadata: { at: new Date().toISOString() },
+            },
+          }),
+        }).catch(() => {});
+      }
+    }
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () =>
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, [session.id, session.phase]);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [turns]);
+
+  async function handleSendPrompt(e: React.FormEvent) {
+    e.preventDefault();
+    if (!promptInput.trim() || sendingAI) return;
+    setErrorMsg(null);
+    setSendingAI(true);
+
+    const failedTests = latestResults.filter((r) => !r.passed);
+    const latestFeedback =
+      failedTests.length > 0
+        ? failedTests
+            .map(
+              (f) =>
+                `FAILED ${f.name}: expected=${f.expected_output}, actual=${f.actual_output}${
+                  f.stderr ? `, stderr=${f.stderr}` : ""
+                }`
+            )
+            .join("\n")
+        : undefined;
+
+    try {
+      const res = await fetch("/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          session_id: session.id,
+          prompt: promptInput.trim(),
+          current_code: code,
+          latest_test_feedback: latestFeedback,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setErrorMsg(data.error || "AI request failed");
+        setSendingAI(false);
+        return;
+      }
+
+      setTurns((prev) => [...prev, data.turn]);
+      setSession((prev) => ({
+        ...prev,
+        tokens_used: data.tokens_used,
+        tokens_saved: data.tokens_saved,
+      }));
+      setPromptInput("");
+    } catch {
+      setErrorMsg("Network error sending prompt to AI assistant.");
+    } finally {
+      setSendingAI(false);
+    }
+  }
+
+  async function applyAiCode(newCode: string, turnNumber: number) {
+    setCode(newCode);
+    setSaveStatus("saving");
+    await fetch(`/api/sessions/${session.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        current_code: newCode,
+        revision_source: "ai_apply",
+        revision_note: `Applied AI code from Turn #${turnNumber}`,
+        integrity_event: {
+          event_type: "ai_code_applied",
+          metadata: { turn_number: turnNumber, chars: newCode.length },
+        },
+      }),
+    });
+    setRevisions((prev) => [
+      ...prev,
+      {
+        id: `local-${Date.now()}`,
+        session_id: session.id,
+        revision_number: prev.length + 1,
+        source: "ai_apply",
+        code: newCode,
+        note: `Applied AI code from Turn #${turnNumber}`,
+        created_at: new Date().toISOString(),
+      },
+    ]);
+    setSaveStatus("saved");
+  }
+
+  async function handleRunTests() {
+    setErrorMsg(null);
+    setRunningTests(true);
+    try {
+      const res = await fetch("/api/execute", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_id: session.id, code }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setErrorMsg(data.error || "Execution failed");
+        setRunningTests(false);
+        return;
+      }
+      setLatestResults(data.results || []);
+      setExecutorEngine(data.engine || "judge0");
+      setReadyForBugInjection(Boolean(data.ready_for_bug_injection));
+    } catch {
+      setErrorMsg("Network error executing tests.");
+    } finally {
+      setRunningTests(false);
+    }
+  }
+
+  async function handleInjectBug() {
+    setErrorMsg(null);
+    setInjectingBug(true);
+    try {
+      const res = await fetch(`/api/sessions/${session.id}/inject-bug`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setErrorMsg(data.error || "Bug injection failed");
+        setInjectingBug(false);
+        return;
+      }
+      setCode(data.mutated_code);
+      setSession((prev) => ({
+        ...prev,
+        phase: "debugging",
+        current_code: data.mutated_code,
+        injected_bug_code: data.mutated_code,
+        injected_bug_description: `${data.bug_title}: ${data.bug_hint}`,
+      }));
+      setLatestResults(data.initial_debug_run?.results || []);
+      setReadyForBugInjection(false);
+      setRevisions((prev) => [
+        ...prev,
+        {
+          id: `bug-${Date.now()}`,
+          session_id: session.id,
+          revision_number: prev.length + 1,
+          source: "bug_injection",
+          code: data.mutated_code,
+          note: `Controlled bug injected: ${data.bug_title}`,
+          created_at: new Date().toISOString(),
+        },
+      ]);
+    } catch {
+      setErrorMsg("Network error injecting bug.");
+    } finally {
+      setInjectingBug(false);
+    }
+  }
+
+  async function handleSubmitFinal() {
+    setErrorMsg(null);
+    setSubmitting(true);
+    try {
+      const res = await fetch(`/api/sessions/${session.id}/evaluate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setErrorMsg(data.error || "Evaluation failed");
+        setSubmitting(false);
+        return;
+      }
+      setScorecard(data.scorecard);
+      setSession((prev) => ({ ...prev, phase: "submitted" }));
+    } catch {
+      setErrorMsg("Network error submitting assessment.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  // If submitted, display the Explainable Scorecard view
+  if (session.phase === "submitted" && scorecard) {
+    return (
+      <div className="min-h-screen bg-[#090d16] px-6 py-8">
+        <div className="mx-auto max-w-5xl">
+          <div className="mb-6 flex items-center justify-between">
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-400 hover:text-white"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Challenges
+            </Link>
+            <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-medium text-emerald-300 ring-1 ring-emerald-500/30">
+              Assessment Submitted &amp; Evaluated
+            </span>
+          </div>
+          <ScorecardView
+            scorecard={scorecard}
+            candidateName={`${session.candidate_name} — ${challenge.title}`}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  const passedCount = latestResults.filter((r) => r.passed).length;
+
+  return (
+    <div className="flex h-screen flex-col overflow-hidden bg-[#090d16] text-slate-100">
+      {/* Top IDE Bar */}
+      <header className="flex shrink-0 items-center justify-between border-b border-slate-800 bg-[#0b1120] px-4 py-2.5">
+        <div className="flex items-center gap-3">
+          <Link
+            href="/dashboard"
+            className="rounded-md p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white"
+            title="Back to Dashboard"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Link>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-sm font-bold text-white">
+                {challenge.title}
+              </h1>
+              <span className="rounded bg-slate-800 px-1.5 py-0.5 font-mono text-[11px] uppercase text-indigo-300">
+                {session.language}
+              </span>
+            </div>
+            {/* Phase Stepper */}
+            <div className="mt-0.5 flex items-center gap-2 text-[11px]">
+              <span
+                className={
+                  session.phase === "coding"
+                    ? "font-semibold text-indigo-400"
+                    : "text-emerald-400"
+                }
+              >
+                1. Build &amp; Pass Tests
+              </span>
+              <span className="text-slate-600">→</span>
+              <span
+                className={
+                  session.phase === "debugging"
+                    ? "font-semibold text-amber-400"
+                    : "text-slate-500"
+                }
+              >
+                2. Debug Injected Bug
+              </span>
+              <span className="text-slate-600">→</span>
+              <span className="text-slate-500">3. Explainable Score</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <span className="hidden items-center gap-1 text-xs text-slate-400 md:flex">
+            <Save className="h-3.5 w-3.5 text-emerald-400" />
+            {saveStatus === "saving" ? "Autosaving..." : "Autosaved"}
+          </span>
+
+          <div
+            className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1 font-mono text-xs font-semibold ${
+              secondsLeft < 300
+                ? "border-red-500/40 bg-red-500/10 text-red-300"
+                : "border-slate-700 bg-slate-900 text-slate-200"
+            }`}
+          >
+            <Clock className="h-3.5 w-3.5 text-indigo-400" />
+            {formatDuration(secondsLeft)}
+          </div>
+
+          {session.phase === "coding" && (
+            <button
+              onClick={handleInjectBug}
+              disabled={injectingBug}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                readyForBugInjection
+                  ? "animate-pulse bg-amber-500 text-slate-950 hover:bg-amber-400"
+                  : "border border-amber-500/40 bg-amber-500/15 text-amber-300 hover:bg-amber-500/25"
+              }`}
+              title="Proceed to Phase 2: inject a controlled bug into your working code"
+            >
+              {injectingBug ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Bug className="h-3.5 w-3.5" />
+              )}
+              Inject Bug (Phase 2)
+            </button>
+          )}
+
+          <button
+            onClick={handleSubmitFinal}
+            disabled={submitting}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-500 disabled:opacity-60"
+          >
+            {submitting ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Send className="h-3.5 w-3.5" />
+            )}
+            Submit &amp; Score
+          </button>
+        </div>
+      </header>
+
+      {/* Bug Injection Alert Banner */}
+      {session.phase === "debugging" && (
+        <div className="flex shrink-0 items-center justify-between border-b border-amber-500/30 bg-amber-500/10 px-4 py-2 text-xs text-amber-200">
+          <div className="flex items-center gap-2">
+            <ShieldAlert className="h-4 w-4 shrink-0 text-amber-400" />
+            <span>
+              <strong>Phase 2 — Controlled Bug Injected:</strong> A reproducible
+              bug has been introduced into your editor code. Inspect the failing
+              debug test below, fix the bug efficiently with your remaining
+              token budget, and submit!
+            </span>
+          </div>
+        </div>
+      )}
+
+      {errorMsg && (
+        <div className="shrink-0 border-b border-red-500/30 bg-red-500/10 px-4 py-2 text-xs text-red-300">
+          {errorMsg}
+        </div>
+      )}
+
+      {/* Main 3-Pane IDE */}
+      <div className="grid min-h-0 flex-1 grid-cols-12">
+        {/* LEFT PANE: Problem Spec & Revision History */}
+        <aside className="col-span-3 flex min-h-0 flex-col border-r border-slate-800 bg-[#0d1424]">
+          <div className="flex border-b border-slate-800 text-xs font-medium">
+            <button
+              onClick={() => setLeftTab("problem")}
+              className={`flex-1 py-2.5 text-center transition ${
+                leftTab === "problem"
+                  ? "border-b-2 border-indigo-500 text-white"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              Problem &amp; Tests
+            </button>
+            <button
+              onClick={() => setLeftTab("revisions")}
+              className={`flex flex-1 items-center justify-center gap-1 py-2.5 text-center transition ${
+                leftTab === "revisions"
+                  ? "border-b-2 border-indigo-500 text-white"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              <History className="h-3.5 w-3.5" />
+              Revisions ({revisions.length})
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-4">
+            {leftTab === "problem" ? (
+              <div className="space-y-5">
+                <div className="whitespace-pre-wrap text-xs leading-relaxed text-slate-300">
+                  {challenge.description}
+                </div>
+
+                <div>
+                  <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                    Public Test Cases ({publicTests.length})
+                  </h3>
+                  <div className="space-y-2.5">
+                    {publicTests.map((tc) => (
+                      <div
+                        key={tc.id}
+                        className="rounded-lg border border-slate-800 bg-[#090d16] p-2.5 font-mono text-[11px]"
+                      >
+                        <div className="font-sans font-semibold text-slate-200">
+                          {tc.name}
+                        </div>
+                        <div className="mt-1 text-slate-400">
+                          <span className="text-slate-500">in:</span> {tc.input}
+                        </div>
+                        <div className="mt-0.5 text-emerald-300">
+                          <span className="text-slate-500">out:</span>{" "}
+                          {tc.expected_output}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                {revisions.map((rev) => (
+                  <div
+                    key={rev.id}
+                    className="rounded-lg border border-slate-800 bg-[#090d16] p-3"
+                  >
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-semibold text-white">
+                        Rev #{rev.revision_number}
+                      </span>
+                      <span
+                        className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${
+                          rev.source === "bug_injection"
+                            ? "bg-amber-500/20 text-amber-300"
+                            : rev.source === "ai_apply"
+                            ? "bg-indigo-500/20 text-indigo-300"
+                            : "bg-slate-800 text-slate-300"
+                        }`}
+                      >
+                        {rev.source}
+                      </span>
+                    </div>
+                    {rev.note && (
+                      <p className="mt-1 text-[11px] text-slate-400">
+                        {rev.note}
+                      </p>
+                    )}
+                    <button
+                      onClick={() => setCode(rev.code)}
+                      className="mt-2 text-[11px] font-medium text-indigo-400 hover:text-indigo-300"
+                    >
+                      Restore to editor
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </aside>
+
+        {/* CENTER PANE: Monaco Editor + Test Execution Console */}
+        <section className="col-span-5 flex min-h-0 flex-col border-r border-slate-800">
+          <div className="flex items-center justify-between border-b border-slate-800 bg-[#0d1117] px-3 py-2">
+            <span className="font-mono text-xs text-slate-400">
+              solution.{session.language === "python" ? "py" : "js"}
+            </span>
+            <button
+              onClick={handleRunTests}
+              disabled={runningTests}
+              className="inline-flex items-center gap-1.5 rounded-md bg-indigo-600 px-3 py-1 text-xs font-semibold text-white transition hover:bg-indigo-500 disabled:opacity-60"
+            >
+              {runningTests ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Play className="h-3.5 w-3.5" />
+              )}
+              Run Tests
+            </button>
+          </div>
+
+          <div className="min-h-0 flex-1">
+            <MonacoEditor
+              height="100%"
+              language={session.language}
+              theme="vs-dark"
+              value={code}
+              onChange={(val) => setCode(val ?? "")}
+              options={{
+                fontSize: 13,
+                minimap: { enabled: false },
+                scrollBeyondLastLine: false,
+                padding: { top: 12 },
+                automaticLayout: true,
+              }}
+            />
+          </div>
+
+          {/* Bottom Execution Console */}
+          <div className="h-56 shrink-0 overflow-y-auto border-t border-slate-800 bg-[#0b1120] p-3">
+            <div className="mb-2 flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs font-semibold text-slate-200">
+                Test Execution Results
+                {latestResults.length > 0 && (
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-[11px] ${
+                      passedCount === latestResults.length
+                        ? "bg-emerald-500/15 text-emerald-300"
+                        : "bg-amber-500/15 text-amber-300"
+                    }`}
+                  >
+                    {passedCount} / {latestResults.length} Passed
+                  </span>
+                )}
+              </div>
+              <span className="font-mono text-[10px] text-slate-500">
+                Engine: {executorEngine}
+              </span>
+            </div>
+
+            {latestResults.length === 0 ? (
+              <p className="text-xs text-slate-500">
+                Click &ldquo;Run Tests&rdquo; to execute your code in an
+                isolated sandbox.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {latestResults.map((r) => (
+                  <div
+                    key={r.test_case_id}
+                    className={`rounded-lg border p-2.5 text-xs ${
+                      r.passed
+                        ? "border-emerald-500/25 bg-emerald-500/5"
+                        : "border-red-500/30 bg-red-500/10"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 font-medium text-slate-100">
+                        {r.passed ? (
+                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                        ) : (
+                          <XCircle className="h-3.5 w-3.5 text-red-400" />
+                        )}
+                        {r.name}
+                        {r.visibility === "debug" && (
+                          <span className="rounded bg-amber-500/20 px-1.5 py-0.5 text-[10px] text-amber-300">
+                            DEBUG TEST
+                          </span>
+                        )}
+                      </div>
+                      <span className="font-mono text-[10px] text-slate-400">
+                        {r.status} · {r.runtime_ms}ms
+                      </span>
+                    </div>
+                    {!r.passed && (
+                      <div className="mt-1.5 space-y-0.5 font-mono text-[11px]">
+                        <div className="text-emerald-300">
+                          Expected: {r.expected_output}
+                        </div>
+                        <div className="text-red-300">
+                          Actual: {r.actual_output || "(empty)"}
+                        </div>
+                        {r.stderr && (
+                          <div className="text-amber-300">
+                            Stderr: {r.stderr}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* RIGHT PANE: Live Token Meter + AI Assistant Chat */}
+        <aside className="col-span-4 flex min-h-0 flex-col bg-[#0b1120]">
+          <TokenBudgetMeter
+            tokensUsed={session.tokens_used}
+            tokenBudget={session.token_budget}
+            tokensSaved={session.tokens_saved}
+            turns={turns}
+            liveHints={liveHints}
+          />
+
+          {/* Chat Transcript */}
+          <div className="flex-1 space-y-3 overflow-y-auto p-3.5">
+            {turns.length === 0 && (
+              <div className="rounded-xl border border-dashed border-slate-700 bg-[#090d16] p-4 text-center text-xs text-slate-400">
+                <Sparkles className="mx-auto mb-2 h-5 w-5 text-indigo-400" />
+                <p className="font-medium text-slate-200">
+                  AI Coding Assistant Ready
+                </p>
+                <p className="mt-1 leading-relaxed">
+                  Prompt concisely with clear algorithm &amp; edge-case
+                  constraints. Your editor code and problem spec are synced
+                  automatically to save tokens.
+                </p>
+              </div>
+            )}
+
+            {turns.map((turn) => (
+              <div key={turn.id} className="space-y-2">
+                {/* User Message */}
+                <div className="ml-6 rounded-xl border border-indigo-500/30 bg-indigo-600/15 p-3 text-xs text-slate-100">
+                  <div className="mb-1 flex items-center justify-between text-[10px] text-indigo-300">
+                    <span>Turn #{turn.turn_number} · You</span>
+                    <span className="font-mono">
+                      {turn.prompt_tokens + turn.completion_tokens} tok
+                      {turn.tokens_saved > 0
+                        ? ` · saved ${turn.tokens_saved}`
+                        : ""}
+                    </span>
+                  </div>
+                  <p className="whitespace-pre-wrap leading-relaxed">
+                    {turn.user_prompt}
+                  </p>
+                </div>
+
+                {/* AI Message */}
+                <div className="mr-4 rounded-xl border border-slate-800 bg-[#111827] p-3 text-xs text-slate-200">
+                  <div className="mb-1.5 flex items-center justify-between text-[10px] text-slate-400">
+                    <span className="font-semibold text-emerald-400">
+                      Gemini Assistant
+                    </span>
+                    <span className="font-mono">
+                      in:{turn.prompt_tokens} / out:{turn.completion_tokens}
+                    </span>
+                  </div>
+                  <div className="whitespace-pre-wrap leading-relaxed">
+                    {turn.ai_response}
+                  </div>
+                  {turn.extracted_code && (
+                    <button
+                      onClick={() =>
+                        applyAiCode(turn.extracted_code!, turn.turn_number)
+                      }
+                      className="mt-2.5 inline-flex items-center gap-1.5 rounded-md bg-emerald-600/20 px-2.5 py-1 text-[11px] font-semibold text-emerald-300 ring-1 ring-emerald-500/40 transition hover:bg-emerald-600/30"
+                    >
+                      <CopyCheck className="h-3.5 w-3.5" />
+                      Apply Code to Editor
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+            <div ref={chatEndRef} />
+          </div>
+
+          {/* Prompt Composer */}
+          <form
+            onSubmit={handleSendPrompt}
+            className="shrink-0 border-t border-slate-800 bg-[#0d1424] p-3"
+          >
+            <div className="flex gap-2">
+              <textarea
+                rows={2}
+                value={promptInput}
+                onChange={(e) => setPromptInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendPrompt(e);
+                  }
+                }}
+                placeholder={
+                  session.phase === "debugging"
+                    ? "Describe the failing debug test and ask for a targeted fix..."
+                    : "Write a clear, token-conscious prompt (Enter to send)..."
+                }
+                className="flex-1 resize-none rounded-lg border border-slate-700 bg-[#090d16] p-2.5 text-xs text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
+              />
+              <button
+                type="submit"
+                disabled={sendingAI || !promptInput.trim()}
+                className="flex items-center justify-center rounded-lg bg-indigo-600 px-3.5 text-white transition hover:bg-indigo-500 disabled:opacity-50"
+              >
+                {sendingAI ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <SendHorizonal className="h-4 w-4" />
+                )}
+              </button>
+            </div>
+          </form>
+        </aside>
+      </div>
+    </div>
+  );
+}
