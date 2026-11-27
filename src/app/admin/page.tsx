@@ -39,7 +39,7 @@ export default async function AdminPage() {
   ]);
 
   return (
-    <div className="min-h-screen bg-[#090d16]">
+    <div className="min-h-screen bg-[var(--bg-canvas)] text-[var(--text-primary)]">
       <Navbar
         userName={profile?.full_name || "Admin"}
         userEmail={profile?.email || user.email || ""}

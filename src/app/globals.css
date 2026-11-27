@@ -1,13 +1,74 @@
 @import "tailwindcss";
 
-:root {
-  --background: #090d16;
-  --foreground: #f1f5f9;
-  --surface: #111827;
-  --surface-elevated: #172033;
-  --border: #1e293b;
-  --accent: #6366f1;
-  --accent-emerald: #10b981;
+/* ==========================================================================
+   PromptBench Multi-Theme Design System
+   1. emerald  (Default): Vercel x Supabase Carbon & Emerald
+   2. obsidian: Linear x Cursor Obsidian Precision
+   3. light:    Stripe x HirePro Enterprise Light
+   ========================================================================== */
+
+:root,
+[data-theme="emerald"] {
+  --bg-canvas: #090a0c;
+  --surface-1: #111317;
+  --surface-2: #171a20;
+  --surface-elevated: #1c2028;
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #8b95a5;
+  --accent: #10b981;
+  --accent-hover: #34d399;
+  --accent-fg: #03150e;
+  --accent-soft: rgba(16, 185, 129, 0.14);
+  --accent-border: rgba(16, 185, 129, 0.35);
+  --glow-a: rgba(16, 185, 129, 0.16);
+  --glow-b: rgba(6, 182, 212, 0.12);
+  --grid-dot: rgba(255, 255, 255, 0.06);
+  --card-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.04) inset, 0 12px 32px -12px rgba(0, 0, 0, 0.65);
+}
+
+[data-theme="obsidian"] {
+  --bg-canvas: #07080a;
+  --surface-1: #0f1116;
+  --surface-2: #151822;
+  --surface-elevated: #1b202e;
+  --border-subtle: rgba(255, 255, 255, 0.075);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #8c96ab;
+  --accent: #6e7bff;
+  --accent-hover: #838eff;
+  --accent-fg: #ffffff;
+  --accent-soft: rgba(110, 123, 255, 0.15);
+  --accent-border: rgba(110, 123, 255, 0.36);
+  --glow-a: rgba(110, 123, 255, 0.2);
+  --glow-b: rgba(16, 185, 129, 0.12);
+  --grid-dot: rgba(255, 255, 255, 0.055);
+  --card-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.05) inset, 0 14px 36px -12px rgba(0, 0, 0, 0.72);
+}
+
+[data-theme="light"] {
+  --bg-canvas: #f7f8fb;
+  --surface-1: #ffffff;
+  --surface-2: #f1f4f9;
+  --surface-elevated: #ffffff;
+  --border-subtle: rgba(15, 23, 42, 0.09);
+  --border-strong: rgba(15, 23, 42, 0.18);
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-fg: #ffffff;
+  --accent-soft: rgba(37, 99, 235, 0.1);
+  --accent-border: rgba(37, 99, 235, 0.28);
+  --glow-a: rgba(37, 99, 235, 0.1);
+  --glow-b: rgba(16, 185, 129, 0.09);
+  --grid-dot: rgba(15, 23, 42, 0.07);
+  --card-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 10px 28px -10px rgba(15, 23, 42, 0.08);
 }
 
 * {
@@ -16,14 +77,56 @@
 
 html,
 body {
-  background-color: var(--background);
-  color: var(--foreground);
-  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    sans-serif;
+  background-color: var(--bg-canvas);
+  color: var(--text-primary);
+  font-family: var(--font-sans), Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition-property: background-color, color;
+  transition-duration: 180ms;
+  transition-timing-function: ease-out;
 }
 
-/* Custom sleek scrollbars for IDE panes */
+code,
+pre,
+.font-mono {
+  font-family: var(--font-mono), "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+.text-pretty {
+  text-wrap: pretty;
+}
+
+.bg-dot-grid {
+  background-image: radial-gradient(var(--grid-dot) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.surface-card {
+  background-color: var(--surface-1);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--card-shadow);
+}
+
+.btn-tactile {
+  transition-property: transform, background-color, border-color, box-shadow, color;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
+}
+
+.btn-tactile:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+/* Custom sleek scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -34,10 +137,6 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: var(--border-strong);
   border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #475569;
 }

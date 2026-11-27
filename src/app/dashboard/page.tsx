@@ -34,7 +34,7 @@ export default async function DashboardPage() {
     ]);
 
   return (
-    <div className="min-h-screen bg-[#090d16]">
+    <div className="min-h-screen bg-[var(--bg-canvas)] text-[var(--text-primary)]">
       <Navbar
         userName={profile?.full_name || user.email?.split("@")[0] || "User"}
         userEmail={profile?.email || user.email || ""}

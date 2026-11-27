@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { ThemeSwitcher } from "@/components/ThemeProvider";
 import {
   Cpu,
   Lock,
@@ -58,26 +59,33 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#090d16] px-4 py-12">
-      <div className="w-full max-w-md">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[var(--bg-canvas)] px-4 py-12 text-[var(--text-primary)]">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-dot-grid [mask-image:radial-gradient(ellipse_60%_60%_at_50%_30%,#000_35%,transparent_100%)]"
+      />
+      <div className="absolute right-6 top-6 z-20">
+        <ThemeSwitcher />
+      </div>
+      <div className="relative z-10 w-full max-w-md">
         <div className="mb-8 text-center">
           <Link href="/" className="inline-flex items-center gap-2.5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600/20 ring-1 ring-indigo-500/40">
-              <Cpu className="h-5 w-5 text-indigo-400" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--accent-border)] bg-[var(--accent-soft)]">
+              <Cpu className="h-5 w-5 text-[var(--accent)]" />
             </div>
-            <span className="text-xl font-bold tracking-tight text-white">
+            <span className="text-xl font-bold tracking-tight text-[var(--text-primary)]">
               PromptBench
             </span>
           </Link>
-          <h1 className="mt-6 text-2xl font-bold text-white">
+          <h1 className="mt-6 text-2xl font-bold text-[var(--text-primary)]">
             Sign in to your account
           </h1>
-          <p className="mt-2 text-sm text-slate-400">
+          <p className="mt-2 text-sm text-[var(--text-muted)]">
             Authenticated JWT session via Supabase Auth
           </p>
         </div>
 
-        <div className="rounded-2xl border border-slate-800 bg-[#111827] p-8 shadow-xl">
+        <div className="surface-card rounded-2xl p-8">
           <form onSubmit={handleLogin} className="space-y-5">
             {error && (
               <div className="flex items-start gap-2.5 rounded-lg border border-red-500/30 bg-red-500/10 p-3.5 text-sm text-red-300">
