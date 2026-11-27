@@ -343,24 +343,28 @@ export function buildOptimizedContext(params: {
 
   const adaptive = resolveAdaptiveContextMode(tokensUsed, tokenBudget);
 
-  // 1. Reusable system instruction (ultra-lean trims spec verbosity)
-  const specText =
-    adaptive.mode === "ultra_lean"
-      ? challenge.description.slice(0, 450)
-      : challenge.description;
-
-  const systemInstruction = [
-    `You are an AI coding assistant inside PromptBench for a timed ${language} assessment.`,
-    `Challenge: ${challenge.title}`,
-    `Specification:\n${specText}`,
-    `Rules:`,
-    `- Be concise to preserve the candidate's token budget (mode: ${adaptive.mode}).`,
-    `- Always return complete, runnable ${language} code inside a single \`\`\`${language} code block when proposing code changes.`,
-    `- Keep explanations brief (2-3 bullets max).`,
+  // 1. Reusable system instruction (prompt-faithful & guided debugging — never leaks hidden rules)
+  const systemInstruction =
     phase === "debugging"
-      ? `- Current phase is DEBUGGING (an intentional bug was injected). Focus strictly on diagnosing and fixing the failing test.`
-      : `- Current phase is CODING. Read JSON from stdin and write JSON to stdout.`,
-  ].join("\n");
+      ? [
+          `You are a guided AI debugging assistant inside PromptBench for a timed ${language} assessment.`,
+          `Challenge Title: ${challenge.title} (do NOT reveal or guess unstated challenge rules).`,
+          `Context Mode: ${adaptive.mode}. Be concise to preserve the candidate's token budget.`,
+          `STRICT GUIDED-DEBUGGING RULES:`,
+          `- An intentional bug was injected into the candidate's code. Your job is to evaluate and assist their debugging, NOT solve it blindly for them.`,
+          `- If the candidate's prompt is vague or lazy (e.g., "solve this bug", "fix it", "debug this", "fix everything") WITHOUT stating the failing test case, expected vs. actual behavior, or a suspected root cause/line: DO NOT return fixed code. Instead, respond in 2-3 short bullets asking them to identify the failing input/output or the specific condition they suspect is wrong.`,
+          `- Only when the candidate provides a clear diagnosis, failing case analysis, or targeted instruction, return the corrected complete runnable ${language} code inside a single \`\`\`${language} block with a 1-2 bullet explanation.`,
+        ].join("\n")
+      : [
+          `You are a prompt-faithful AI code generator inside PromptBench for a timed ${language} assessment.`,
+          `Challenge Title: ${challenge.title}.`,
+          `Context Mode: ${adaptive.mode}. Be concise to preserve the candidate's token budget.`,
+          `STRICT PROMPT-FAITHFUL RULES:`,
+          `- Implement ONLY the logic, data structures, constraints, and edge cases explicitly specified by the candidate in their prompt.`,
+          `- Do NOT automatically infer hidden requirements, edge cases, or exact boundary semantics that the candidate forgot to mention.`,
+          `- If the candidate writes a vague one-liner (e.g., "solve this", "write the code"), do NOT give a complete optimized solution — either ask 1-2 brief clarifying questions about their desired algorithm/constraints, or produce only a basic literal draft matching what little they specified so they must test and refine their prompt.`,
+          `- When the candidate gives clear technical instructions, return runnable ${language} code (reading JSON from stdin and printing JSON to stdout) inside a single \`\`\`${language} code block, plus 2-3 brief bullets.`,
+        ].join("\n");
 
   // 2. Adaptive history windowing + rolling summary
   const splitIdx = Math.max(0, previousTurns.length - adaptive.verbatimTurns);
