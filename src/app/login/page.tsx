@@ -4,7 +4,16 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Cpu, Lock, Mail, ArrowRight, AlertCircle, Loader2 } from "lucide-react";
+import {
+  Cpu,
+  Lock,
+  Mail,
+  ArrowRight,
+  AlertCircle,
+  Loader2,
+  Shield,
+  User,
+} from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -127,7 +136,49 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="mt-6 border-t border-slate-800 pt-5 text-center text-sm text-slate-400">
+          <div className="mt-6 rounded-xl border border-slate-800 bg-[#0b1120] p-4">
+            <div className="mb-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+              Demo Credentials (Full JWT Auth)
+            </div>
+            <div className="grid grid-cols-2 gap-2.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail("admin@promptbench.ai");
+                  setPassword("Admin@12345");
+                  setError(null);
+                }}
+                className="flex flex-col items-start rounded-lg border border-indigo-500/30 bg-indigo-500/10 p-2.5 text-left transition hover:bg-indigo-500/20"
+              >
+                <span className="flex items-center gap-1.5 text-xs font-semibold text-indigo-300">
+                  <Shield className="h-3.5 w-3.5" />
+                  Admin / Evaluator
+                </span>
+                <span className="mt-0.5 truncate text-[10px] text-slate-400">
+                  admin@promptbench.ai
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail("candidate@promptbench.ai");
+                  setPassword("Candidate@12345");
+                  setError(null);
+                }}
+                className="flex flex-col items-start rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-2.5 text-left transition hover:bg-emerald-500/20"
+              >
+                <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-300">
+                  <User className="h-3.5 w-3.5" />
+                  Candidate
+                </span>
+                <span className="mt-0.5 truncate text-[10px] text-slate-400">
+                  candidate@promptbench.ai
+                </span>
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-5 border-t border-slate-800 pt-5 text-center text-sm text-slate-400">
             Don&apos;t have an account?{" "}
             <Link
               href="/register"
