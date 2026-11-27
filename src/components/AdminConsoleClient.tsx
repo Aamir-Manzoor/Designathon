@@ -30,12 +30,15 @@ import {
   Activity,
   Save,
   ArrowLeft,
+  UserCheck,
+  ShieldAlert,
 } from "lucide-react";
 import { estimateSessionCostUsd } from "@/lib/engines/ai-provider";
 import { formatNumber } from "@/lib/utils";
 
 interface AdminSessionRow {
   id: string;
+  assigned_evaluator_id?: string | null;
   candidate_name: string;
   candidate_email: string;
   is_synthetic: boolean;
@@ -118,16 +121,27 @@ interface ConcurrencyReport {
 }
 
 export function AdminConsoleClient({
+  viewerRole = "admin",
   sessions,
   challenges,
+  evaluators = [],
 }: {
+  viewerRole?: "admin" | "evaluator";
   sessions: AdminSessionRow[];
   challenges: AdminChallengeRow[];
+  evaluators?: Array<{ id: string; full_name: string; email: string }>;
 }) {
+  const isAdmin = viewerRole === "admin";
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<
     "scorecards" | "challenges" | "ops"
   >("scorecards");
+  const [selectedSessionIds, setSelectedSessionIds] = useState<string[]>([]);
+  const [targetEvaluatorId, setTargetEvaluatorId] = useState<string>(
+    evaluators[0]?.id || ""
+  );
+  const [assigning, setAssigning] = useState(false);
+  const [assignMsg, setAssignMsg] = useState<string | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
@@ -259,6 +273,40 @@ export function AdminConsoleClient({
     }
   }
 
+  async function handleBatchAssign(unassign = false) {
+    if (selectedSessionIds.length === 0) return;
+    setAssigning(true);
+    setAssignMsg(null);
+    try {
+      const res = await fetch("/api/admin/assign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          session_ids: selectedSessionIds,
+          evaluator_id: unassign ? null : targetEvaluatorId || null,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setAssignMsg(data.error || "Batch assignment failed");
+      } else {
+        setSelectedSessionIds([]);
+        setAssignMsg(
+          unassign
+            ? `Unassigned ${data.updated_count} candidate(s).`
+            : `Assigned ${data.updated_count} candidate(s) to evaluator.`
+        );
+        router.refresh();
+      }
+    } finally {
+      setAssigning(false);
+    }
+  }
+
+  const evaluatorMap = Object.fromEntries(
+    evaluators.map((e) => [e.id, e.full_name || e.email])
+  );
+
   async function handleCreateChallenge(e: React.FormEvent) {
     e.preventDefault();
     setCreateError(null);
@@ -346,12 +394,21 @@ export function AdminConsoleClient({
 
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-[var(--text-primary)] sm:text-3xl">
-            Admin &amp; Evaluator Console
-          </h1>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <h1 className="text-2xl font-extrabold tracking-tight text-[var(--text-primary)] sm:text-3xl">
+              {isAdmin ? "Admin Console" : "Evaluator Review Queue"}
+            </h1>
+            {!isAdmin && (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-[11px] font-semibold text-cyan-500">
+                <ShieldAlert className="h-3.5 w-3.5" />
+                Assigned Batch Only · Anti-Bias Scoped
+              </span>
+            )}
+          </div>
           <p className="mt-1 text-sm text-[var(--text-muted)]">
-            Configure token budgets, analyze correctness vs. AI cost efficiency,
-            calibrate rubrics, and export scorecards.
+            {isAdmin
+              ? "Assign candidate batches to evaluators, configure token budgets, analyze cost efficiency, and calibrate rubrics."
+              : "Review your Admin-assigned candidate batch, inspect prompt/code timelines, add review notes, and export scorecards."}
           </p>
         </div>
 
@@ -421,7 +478,8 @@ export function AdminConsoleClient({
         ))}
       </div>
 
-      {/* Pill-Styled Segmented Tabs */}
+      {/* Pill-Styled Segmented Tabs (Admin sees all 3; Evaluator sees Review Queue only) */}
+      {isAdmin && (
       <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
         <div className="inline-flex flex-wrap gap-1 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-1)] p-1">
           <button
@@ -432,7 +490,7 @@ export function AdminConsoleClient({
                 : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
             }`}
           >
-            Scorecards &amp; Cost Analytics ({normalizedSessions.length})
+            Scorecards &amp; Batch Assignment ({normalizedSessions.length})
           </button>
           <button
             onClick={() => setActiveTab("challenges")}
@@ -466,6 +524,7 @@ export function AdminConsoleClient({
           </button>
         )}
       </div>
+      )}
 
       {/* TAB 1: SCORECARDS & COST ANALYTICS */}
       {activeTab === "scorecards" && (
@@ -580,12 +639,118 @@ export function AdminConsoleClient({
             </div>
           </div>
 
+          {/* Admin-Only Anti-Bias Batch Assignment Toolbar */}
+          {isAdmin && (
+            <div className="surface-card flex flex-wrap items-center justify-between gap-3 rounded-2xl p-4">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--text-primary)]">
+                  <UserCheck className="h-4 w-4 text-[var(--accent)]" />
+                  Batch Assign to Evaluator
+                </span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setSelectedSessionIds(
+                      normalizedSessions
+                        .filter((s) => !s.assigned_evaluator_id)
+                        .map((s) => s.id)
+                    )
+                  }
+                  className="rounded-lg border border-[var(--border-strong)] bg-[var(--surface-2)] px-2.5 py-1 text-[11px] font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                >
+                  Select Unassigned
+                </button>
+                {selectedSessionIds.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedSessionIds([])}
+                    className="text-[11px] font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                  >
+                    Clear ({selectedSessionIds.length})
+                  </button>
+                )}
+                {assignMsg && (
+                  <span className="text-xs font-semibold text-emerald-500">
+                    {assignMsg}
+                  </span>
+                )}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <select
+                  value={targetEvaluatorId}
+                  onChange={(e) => setTargetEvaluatorId(e.target.value)}
+                  className="rounded-lg border border-[var(--border-strong)] bg-[var(--surface-2)] px-3 py-1.5 text-xs text-[var(--text-primary)]"
+                >
+                  {evaluators.length === 0 ? (
+                    <option value="">No Evaluators registered</option>
+                  ) : (
+                    evaluators.map((ev) => (
+                      <option key={ev.id} value={ev.id}>
+                        {ev.full_name} ({ev.email})
+                      </option>
+                    ))
+                  )}
+                </select>
+                <button
+                  type="button"
+                  disabled={
+                    assigning ||
+                    selectedSessionIds.length === 0 ||
+                    !targetEvaluatorId
+                  }
+                  onClick={() => handleBatchAssign(false)}
+                  className="btn-tactile inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3.5 py-1.5 text-xs font-semibold text-[var(--accent-fg)] hover:opacity-95 disabled:opacity-50"
+                >
+                  {assigning ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <UserCheck className="h-3.5 w-3.5" />
+                  )}
+                  Assign Batch ({selectedSessionIds.length})
+                </button>
+                {selectedSessionIds.length > 0 && (
+                  <button
+                    type="button"
+                    disabled={assigning}
+                    onClick={() => handleBatchAssign(true)}
+                    className="btn-tactile rounded-lg border border-[var(--border-strong)] bg-[var(--surface-2)] px-3 py-1.5 text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                  >
+                    Unassign
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Candidate Scorecards Table */}
           <div className="surface-card overflow-x-auto rounded-2xl">
             <table className="w-full text-left text-xs">
               <thead className="border-b border-[var(--border-subtle)] bg-[var(--surface-2)] uppercase text-[var(--text-muted)]">
                 <tr>
+                  {isAdmin && (
+                    <th className="w-10 px-4 py-3">
+                      <input
+                        type="checkbox"
+                        aria-label="Select all candidates"
+                        checked={
+                          normalizedSessions.length > 0 &&
+                          selectedSessionIds.length ===
+                            normalizedSessions.length
+                        }
+                        onChange={(e) =>
+                          setSelectedSessionIds(
+                            e.target.checked
+                              ? normalizedSessions.map((s) => s.id)
+                              : []
+                          )
+                        }
+                        className="h-3.5 w-3.5 accent-[var(--accent)]"
+                      />
+                    </th>
+                  )}
                   <th className="px-4 py-3">Candidate</th>
+                  {isAdmin && <th className="px-3 py-3">Assigned Evaluator</th>}
                   <th className="px-3 py-3 text-center">Prompt (40)</th>
                   <th className="px-3 py-3 text-center">Improv (10)</th>
                   <th className="px-3 py-3 text-center">Tests (30)</th>
@@ -602,11 +767,31 @@ export function AdminConsoleClient({
                     s.token_budget > 0
                       ? Math.round((s.tokens_used / s.token_budget) * 100)
                       : 0;
+                  const isChecked = selectedSessionIds.includes(s.id);
+                  const assignedName = s.assigned_evaluator_id
+                    ? evaluatorMap[s.assigned_evaluator_id] || "Assigned"
+                    : null;
                   return (
                     <tr
                       key={s.id}
                       className="transition-colors hover:bg-[var(--surface-2)]/60"
                     >
+                      {isAdmin && (
+                        <td className="px-4 py-3">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={(e) =>
+                              setSelectedSessionIds((prev) =>
+                                e.target.checked
+                                  ? [...prev, s.id]
+                                  : prev.filter((id) => id !== s.id)
+                              )
+                            }
+                            className="h-3.5 w-3.5 accent-[var(--accent)]"
+                          />
+                        </td>
+                      )}
                       <td className="px-4 py-3">
                         <div className="font-semibold text-[var(--text-primary)]">
                           {s.candidate_name}
@@ -620,6 +805,20 @@ export function AdminConsoleClient({
                           )}
                         </div>
                       </td>
+                      {isAdmin && (
+                        <td className="px-3 py-3">
+                          {assignedName ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-cyan-500/15 px-2 py-0.5 text-[11px] font-semibold text-cyan-500">
+                              <UserCheck className="h-3 w-3" />
+                              {assignedName}
+                            </span>
+                          ) : (
+                            <span className="text-[11px] text-[var(--text-muted)]">
+                              Unassigned
+                            </span>
+                          )}
+                        </td>
+                      )}
                       <td className="tabular-nums px-3 py-3 text-center font-mono text-[var(--text-secondary)]">
                         {s.sc ? Number(s.sc.prompt_quality_score).toFixed(1) : "—"}
                       </td>

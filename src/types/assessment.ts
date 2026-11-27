@@ -1,4 +1,4 @@
-export type UserRole = "admin" | "candidate";
+export type UserRole = "admin" | "evaluator" | "candidate";
 
 export type SupportedLanguage = "python" | "javascript";
 
@@ -69,6 +69,7 @@ export interface CandidateSession {
   id: string;
   challenge_id: string;
   user_id: string | null;
+  assigned_evaluator_id?: string | null;
   candidate_name: string;
   candidate_email: string;
   is_synthetic: boolean;

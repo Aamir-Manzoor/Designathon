@@ -36,7 +36,7 @@ type PreviewTab = "ide" | "bug" | "scorecard";
 export function LandingShowcase({
   signedInRole = null,
 }: {
-  signedInRole?: "admin" | "candidate" | null;
+  signedInRole?: "admin" | "evaluator" | "candidate" | null;
 }) {
   const [previewTab, setPreviewTab] = useState<PreviewTab>("ide");
   const rootRef = useRef<HTMLDivElement>(null);
@@ -175,11 +175,17 @@ export function LandingShowcase({
             </div>
             {signedInRole ? (
               <Link
-                href={signedInRole === "admin" ? "/admin" : "/dashboard"}
+                href={
+                  signedInRole === "admin" || signedInRole === "evaluator"
+                    ? "/admin"
+                    : "/dashboard"
+                }
                 className="btn-tactile inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-4 py-2 text-xs font-semibold text-[var(--accent-fg)] shadow-sm hover:opacity-95"
               >
                 {signedInRole === "admin"
-                  ? "Open Evaluator Console"
+                  ? "Open Admin Console"
+                  : signedInRole === "evaluator"
+                  ? "Open Review Queue"
                   : "Open Challenges"}
                 <ArrowRight className="h-3.5 w-3.5" />
               </Link>
@@ -232,7 +238,7 @@ export function LandingShowcase({
           <div className="hero-stagger mt-9 flex flex-wrap items-center justify-center gap-3.5">
             <Link
               href={
-                signedInRole === "admin"
+                signedInRole === "admin" || signedInRole === "evaluator"
                   ? "/admin"
                   : signedInRole === "candidate"
                   ? "/dashboard"
@@ -806,7 +812,11 @@ export function LandingShowcase({
               </h2>
             </div>
             <Link
-              href={signedInRole === "admin" ? "/admin" : "/login"}
+              href={
+                signedInRole === "admin" || signedInRole === "evaluator"
+                  ? "/admin"
+                  : "/login"
+              }
               className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--accent)] hover:underline"
             >
               Open Evaluator Console

@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Cpu, LogOut, Shield, User, LayoutDashboard } from "lucide-react";
+import { Cpu, LogOut, Shield, User, LayoutDashboard, ClipboardCheck } from "lucide-react";
 import { ThemeSwitcher } from "./ThemeProvider";
+import type { UserRole } from "@/types/assessment";
 
 interface NavbarProps {
   userName: string;
   userEmail: string;
-  role: "admin" | "candidate";
+  role: UserRole;
 }
 
 export function Navbar({ userName, userEmail, role }: NavbarProps) {
@@ -38,22 +39,28 @@ export function Navbar({ userName, userEmail, role }: NavbarProps) {
           </Link>
 
           <nav className="hidden items-center gap-1 sm:flex">
-            {role === "admin" && (
+            {(role === "admin" || role === "evaluator") && (
               <Link
                 href="/admin"
                 className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--text-primary)]"
               >
-                <Shield className="h-3.5 w-3.5 text-[var(--accent)]" />
-                Evaluator Console
+                {role === "admin" ? (
+                  <Shield className="h-3.5 w-3.5 text-[var(--accent)]" />
+                ) : (
+                  <ClipboardCheck className="h-3.5 w-3.5 text-cyan-500" />
+                )}
+                {role === "admin" ? "Admin Console" : "Review Queue"}
               </Link>
             )}
-            <Link
-              href="/dashboard"
-              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--text-primary)]"
-            >
-              <LayoutDashboard className="h-3.5 w-3.5 text-emerald-500" />
-              Challenges
-            </Link>
+            {role !== "evaluator" && (
+              <Link
+                href="/dashboard"
+                className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--text-primary)]"
+              >
+                <LayoutDashboard className="h-3.5 w-3.5 text-emerald-500" />
+                Challenges
+              </Link>
+            )}
           </nav>
         </div>
 
@@ -75,15 +82,23 @@ export function Navbar({ userName, userEmail, role }: NavbarProps) {
               className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1 ${
                 role === "admin"
                   ? "bg-[var(--accent-soft)] text-[var(--accent)] ring-[var(--accent-border)]"
+                  : role === "evaluator"
+                  ? "bg-cyan-500/15 text-cyan-500 ring-cyan-500/30"
                   : "bg-emerald-500/15 text-emerald-500 ring-emerald-500/30"
               }`}
             >
               {role === "admin" ? (
                 <Shield className="h-2.5 w-2.5" />
+              ) : role === "evaluator" ? (
+                <ClipboardCheck className="h-2.5 w-2.5" />
               ) : (
                 <User className="h-2.5 w-2.5" />
               )}
-              {role === "admin" ? "Admin" : "Candidate"}
+              {role === "admin"
+                ? "Admin"
+                : role === "evaluator"
+                ? "Evaluator"
+                : "Candidate"}
             </span>
           </Link>
 

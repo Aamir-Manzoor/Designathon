@@ -38,7 +38,9 @@ export default async function DashboardPage() {
       <Navbar
         userName={profile?.full_name || user.email?.split("@")[0] || "User"}
         userEmail={profile?.email || user.email || ""}
-        role={(profile?.role as "admin" | "candidate") || "candidate"}
+        role={
+          (profile?.role as "admin" | "evaluator" | "candidate") || "candidate"
+        }
       />
       <CandidateDashboardClient
         challenges={(challenges ?? []) as Challenge[]}

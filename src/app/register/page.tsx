@@ -22,7 +22,9 @@ export default function RegisterPage() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<"candidate" | "admin">("candidate");
+  const [role, setRole] = useState<"candidate" | "evaluator" | "admin">(
+    "candidate"
+  );
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -53,7 +55,9 @@ export default function RegisterPage() {
       }
 
       if (data.session) {
-        router.push(role === "admin" ? "/admin" : "/dashboard");
+        router.push(
+          role === "admin" || role === "evaluator" ? "/admin" : "/dashboard"
+        );
         router.refresh();
       } else {
         setInfo(
@@ -124,30 +128,42 @@ export default function RegisterPage() {
               <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
                 Account Role
               </label>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-2">
                 <button
                   type="button"
                   onClick={() => setRole("candidate")}
-                  className={`btn-tactile flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-medium ${
+                  className={`btn-tactile flex items-center justify-center gap-1.5 rounded-xl border px-2 py-2.5 text-xs font-semibold ${
                     role === "candidate"
                       ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
                       : "border-[var(--border-strong)] bg-[var(--surface-2)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                   }`}
                 >
-                  <User className="h-4 w-4" />
+                  <User className="h-3.5 w-3.5" />
                   Candidate
                 </button>
                 <button
                   type="button"
+                  onClick={() => setRole("evaluator")}
+                  className={`btn-tactile flex items-center justify-center gap-1.5 rounded-xl border px-2 py-2.5 text-xs font-semibold ${
+                    role === "evaluator"
+                      ? "border-cyan-500 bg-cyan-500/15 text-cyan-500"
+                      : "border-[var(--border-strong)] bg-[var(--surface-2)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                  }`}
+                >
+                  <Shield className="h-3.5 w-3.5" />
+                  Evaluator
+                </button>
+                <button
+                  type="button"
                   onClick={() => setRole("admin")}
-                  className={`btn-tactile flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-medium ${
+                  className={`btn-tactile flex items-center justify-center gap-1.5 rounded-xl border px-2 py-2.5 text-xs font-semibold ${
                     role === "admin"
                       ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
                       : "border-[var(--border-strong)] bg-[var(--surface-2)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                   }`}
                 >
-                  <Shield className="h-4 w-4" />
-                  Admin / Evaluator
+                  <Shield className="h-3.5 w-3.5" />
+                  Admin
                 </button>
               </div>
             </div>

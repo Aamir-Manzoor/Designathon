@@ -3,6 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { Navbar } from "@/components/Navbar";
 import { ScorecardView } from "@/components/ScorecardView";
+import { EvaluatorNotesCard } from "@/components/EvaluatorNotesCard";
 import { ArrowLeft, ShieldAlert, MessageSquare, Code2 } from "lucide-react";
 import type {
   CodeRevision,
@@ -31,7 +32,11 @@ export default async function AdminSessionReviewPage({
     .eq("id", user.id)
     .single();
 
-  if (profile?.role !== "admin") redirect("/dashboard");
+  if (profile?.role !== "admin" && profile?.role !== "evaluator") {
+    redirect("/dashboard");
+  }
+
+  const viewerRole = profile.role as "admin" | "evaluator";
 
   const { data: session } = await supabase
     .from("candidate_sessions")
@@ -68,9 +73,9 @@ export default async function AdminSessionReviewPage({
   return (
     <div className="min-h-screen bg-[var(--bg-canvas)] text-[var(--text-primary)]">
       <Navbar
-        userName={profile?.full_name || "Admin"}
+        userName={profile?.full_name || "Evaluator"}
         userEmail={profile?.email || user.email || ""}
-        role="admin"
+        role={viewerRole}
       />
 
       <main className="mx-auto max-w-[1600px] space-y-8 px-6 py-8">
@@ -92,10 +97,16 @@ export default async function AdminSessionReviewPage({
         </div>
 
         {scorecard ? (
-          <ScorecardView
-            scorecard={scorecard as Scorecard}
-            candidateName={`${session.candidate_name} (${session.candidate_email}) — ${session.challenge?.title}`}
-          />
+          <>
+            <ScorecardView
+              scorecard={scorecard as Scorecard}
+              candidateName={`${session.candidate_name} (${session.candidate_email}) — ${session.challenge?.title}`}
+            />
+            <EvaluatorNotesCard
+              sessionId={session.id}
+              initialNotes={(scorecard as Scorecard).evaluator_notes}
+            />
+          </>
         ) : (
           <div className="surface-card rounded-2xl p-6 text-sm text-[var(--text-muted)]">
             Session is still in <strong>{session.phase}</strong> phase and has

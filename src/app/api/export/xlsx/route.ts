@@ -20,9 +20,9 @@ export async function GET() {
     .eq("id", user.id)
     .single();
 
-  if (profile?.role !== "admin") {
+  if (profile?.role !== "admin" && profile?.role !== "evaluator") {
     return NextResponse.json(
-      { error: "Admin access required" },
+      { error: "Admin or Evaluator access required" },
       { status: 403 }
     );
   }

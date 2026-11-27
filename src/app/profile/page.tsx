@@ -17,14 +17,15 @@ export default async function ProfilePage() {
     .eq("id", user.id)
     .single();
 
-  const isAdmin = profile?.role === "admin";
+  const isAdminOrEvaluator =
+    profile?.role === "admin" || profile?.role === "evaluator";
 
-  // Admins see cohort-wide evaluation metrics; candidates see their own assessment metrics
+  // Admins see all sessions; Evaluators see their assigned batch (via RLS); Candidates see their own
   const sessionsQuery = supabase
     .from("candidate_sessions")
     .select("tokens_used, tokens_saved, scorecard:scorecards(total_score)");
 
-  const { data: sessions } = isAdmin
+  const { data: sessions } = isAdminOrEvaluator
     ? await sessionsQuery
     : await sessionsQuery.eq("user_id", user.id);
 
@@ -50,9 +51,11 @@ export default async function ProfilePage() {
     id: profile?.id || user.id,
     email: profile?.email || user.email || "",
     full_name: profile?.full_name || user.email?.split("@")[0] || "User",
-    role: (profile?.role === "admin" ? "admin" : "candidate") as
-      | "admin"
-      | "candidate",
+    role: (profile?.role === "admin"
+      ? "admin"
+      : profile?.role === "evaluator"
+      ? "evaluator"
+      : "candidate") as "admin" | "evaluator" | "candidate",
     created_at: profile?.created_at || user.created_at || new Date().toISOString(),
   };
 

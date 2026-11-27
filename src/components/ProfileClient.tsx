@@ -24,12 +24,14 @@ import {
 } from "lucide-react";
 import { formatNumber } from "@/lib/utils";
 
+import type { UserRole } from "@/types/assessment";
+
 interface ProfileClientProps {
   profile: {
     id: string;
     email: string;
     full_name: string;
-    role: "admin" | "candidate";
+    role: UserRole;
     created_at: string;
   };
   stats: {
@@ -130,11 +132,20 @@ export function ProfileClient({ profile, stats }: ProfileClientProps) {
     <div className="mx-auto max-w-[1600px] px-6 py-8">
       <div className="mb-5">
         <Link
-          href={profile.role === "admin" ? "/admin" : "/dashboard"}
+          href={
+            profile.role === "admin" || profile.role === "evaluator"
+              ? "/admin"
+              : "/dashboard"
+          }
           className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)]"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-          Back to {profile.role === "admin" ? "Evaluator Console" : "Challenges"}
+          Back to{" "}
+          {profile.role === "admin"
+            ? "Admin Console"
+            : profile.role === "evaluator"
+            ? "Evaluator Review Queue"
+            : "Challenges"}
         </Link>
       </div>
 
@@ -161,7 +172,11 @@ export function ProfileClient({ profile, stats }: ProfileClientProps) {
                 ) : (
                   <User className="h-3 w-3" />
                 )}
-                {profile.role === "admin" ? "Admin / Evaluator" : "Candidate"}
+                {profile.role === "admin"
+                  ? "Admin"
+                  : profile.role === "evaluator"
+                  ? "Evaluator"
+                  : "Candidate"}
               </span>
             </div>
 
