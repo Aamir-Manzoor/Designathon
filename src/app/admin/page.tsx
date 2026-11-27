@@ -23,32 +23,50 @@ export default async function AdminPage() {
 
   const viewerRole = profile.role as "admin" | "evaluator";
 
-  const [{ data: sessions }, { data: challenges }, { data: evaluators }] =
-    await Promise.all([
-      supabase
-        .from("candidate_sessions")
-        .select(
-          `
+  const [
+    { data: sessions },
+    { data: challenges },
+    { data: evaluators },
+    { data: applications },
+    { data: emails },
+  ] = await Promise.all([
+    supabase
+      .from("candidate_sessions")
+      .select(
+        `
           *,
           challenge:challenges(title, difficulty),
           scorecard:scorecards(*)
         `
-        )
-        .order("started_at", { ascending: false }),
-      viewerRole === "admin"
-        ? supabase
-            .from("challenges")
-            .select("*, test_cases(id, visibility)")
-            .order("created_at", { ascending: false })
-        : Promise.resolve({ data: [] }),
-      viewerRole === "admin"
-        ? supabase
-            .from("profiles")
-            .select("id, full_name, email")
-            .eq("role", "evaluator")
-            .order("full_name", { ascending: true })
-        : Promise.resolve({ data: [] }),
-    ]);
+      )
+      .order("started_at", { ascending: false }),
+    viewerRole === "admin"
+      ? supabase
+          .from("challenges")
+          .select("*, test_cases(id, visibility)")
+          .order("created_at", { ascending: false })
+      : Promise.resolve({ data: [] }),
+    viewerRole === "admin"
+      ? supabase
+          .from("profiles")
+          .select("id, full_name, email")
+          .eq("role", "evaluator")
+          .order("full_name", { ascending: true })
+      : Promise.resolve({ data: [] }),
+    viewerRole === "admin"
+      ? supabase
+          .from("candidate_applications")
+          .select("*")
+          .order("created_at", { ascending: false })
+      : Promise.resolve({ data: [] }),
+    viewerRole === "admin"
+      ? supabase
+          .from("email_notifications")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(30)
+      : Promise.resolve({ data: [] }),
+  ]);
 
   return (
     <div className="min-h-screen bg-[var(--bg-canvas)] text-[var(--text-primary)]">
@@ -66,6 +84,8 @@ export default async function AdminPage() {
           full_name: string;
           email: string;
         }>}
+        applications={(applications ?? []) as never[]}
+        emails={(emails ?? []) as never[]}
       />
     </div>
   );

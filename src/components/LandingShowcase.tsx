@@ -251,10 +251,10 @@ export function LandingShowcase({
             </Link>
             {!signedInRole && (
               <Link
-                href="/register"
+                href="/apply"
                 className="btn-tactile inline-flex items-center gap-2 rounded-xl border border-[var(--border-strong)] bg-[var(--surface-1)] px-6 py-3.5 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-2)]"
               >
-                Create Account
+                Apply as Candidate
               </Link>
             )}
           </div>

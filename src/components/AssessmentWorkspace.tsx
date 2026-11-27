@@ -449,6 +449,7 @@ export function AssessmentWorkspace({
   }
 
   if (session.phase === "submitted" && scorecard) {
+    const isReleased = Boolean(scorecard.score_released);
     return (
       <div className="min-h-screen bg-[var(--bg-canvas)] px-6 py-8 text-[var(--text-primary)]">
         <div className="mx-auto max-w-[1600px]">
@@ -462,15 +463,64 @@ export function AssessmentWorkspace({
             </Link>
             <div className="flex items-center gap-3">
               <ThemeSwitcher compact />
-              <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-semibold text-emerald-500 ring-1 ring-emerald-500/30">
-                Assessment Submitted &amp; Evaluated
+              <span
+                className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${
+                  isReleased
+                    ? "bg-emerald-500/15 text-emerald-500 ring-emerald-500/30"
+                    : "bg-amber-500/15 text-amber-500 ring-amber-500/30"
+                }`}
+              >
+                {isReleased
+                  ? "Official Score Report Released"
+                  : "Submitted · Under Evaluator Review"}
               </span>
             </div>
           </div>
-          <ScorecardView
-            scorecard={scorecard}
-            candidateName={`${session.candidate_name} — ${challenge.title}`}
-          />
+
+          {isReleased ? (
+            <ScorecardView
+              scorecard={scorecard}
+              candidateName={`${session.candidate_name} — ${challenge.title}`}
+            />
+          ) : (
+            <div className="surface-card mx-auto mt-10 max-w-2xl rounded-2xl p-10 text-center">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-500 ring-1 ring-emerald-500/30">
+                <CheckCircle2 className="h-8 w-8" />
+              </div>
+              <h1 className="mt-5 text-2xl font-extrabold text-[var(--text-primary)]">
+                Assessment Submitted Successfully
+              </h1>
+              <p className="mt-3 text-sm leading-relaxed text-[var(--text-muted)]">
+                Thank you,{" "}
+                <strong className="text-[var(--text-primary)]">
+                  {session.candidate_name}
+                </strong>
+                . Your code, prompt history, debugging results, and token usage
+                for{" "}
+                <strong className="text-[var(--text-primary)]">
+                  {challenge.title}
+                </strong>{" "}
+                have been securely recorded.
+              </p>
+              <div className="mt-6 rounded-xl border border-[var(--accent-border)] bg-[var(--accent-soft)] p-4 text-xs leading-relaxed text-[var(--text-secondary)]">
+                <strong className="text-[var(--accent)]">
+                  What happens next?
+                </strong>{" "}
+                An assigned Evaluator will review your submission, and your
+                official 100-point score report will be released soon by the
+                Assessment Admin. A confirmation email has been queued for{" "}
+                <span className="font-mono">{session.candidate_email}</span>.
+              </div>
+              <div className="mt-7">
+                <Link
+                  href="/dashboard"
+                  className="btn-tactile inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-6 py-2.5 text-sm font-semibold text-[var(--accent-fg)]"
+                >
+                  Return to Candidate Dashboard
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );

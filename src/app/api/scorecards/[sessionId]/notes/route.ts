@@ -33,7 +33,10 @@ export async function PATCH(
 
   const { data, error } = await supabase
     .from("scorecards")
-    .update({ evaluator_notes: notes })
+    .update({
+      evaluator_notes: notes,
+      evaluator_reviewed_at: new Date().toISOString(),
+    })
     .eq("session_id", sessionId)
     .select("*")
     .single();

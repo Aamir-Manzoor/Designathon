@@ -4,6 +4,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { Navbar } from "@/components/Navbar";
 import { ScorecardView } from "@/components/ScorecardView";
 import { EvaluatorNotesCard } from "@/components/EvaluatorNotesCard";
+import { ReleaseScoreButton } from "@/components/ReleaseScoreButton";
 import { ArrowLeft, ShieldAlert, MessageSquare, Code2 } from "lucide-react";
 import type {
   CodeRevision,
@@ -79,20 +80,28 @@ export default async function AdminSessionReviewPage({
       />
 
       <main className="mx-auto max-w-[1600px] space-y-8 px-6 py-8">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <Link
             href="/admin"
             className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)]"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Evaluator Console
+            Back to {viewerRole === "admin" ? "Admin Console" : "Review Queue"}
           </Link>
-          <div className="tabular-nums font-mono text-xs text-[var(--text-muted)]">
-            Tokens: {formatNumber(session.tokens_used)} /{" "}
-            {formatNumber(session.token_budget)} · Saved:{" "}
-            <span className="font-semibold text-emerald-500">
-              {formatNumber(session.tokens_saved)}
-            </span>
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="tabular-nums font-mono text-xs text-[var(--text-muted)]">
+              Tokens: {formatNumber(session.tokens_used)} /{" "}
+              {formatNumber(session.token_budget)} · Saved:{" "}
+              <span className="font-semibold text-emerald-500">
+                {formatNumber(session.tokens_saved)}
+              </span>
+            </div>
+            {viewerRole === "admin" && scorecard && (
+              <ReleaseScoreButton
+                sessionId={session.id}
+                initialReleased={Boolean((scorecard as Scorecard).score_released)}
+              />
+            )}
           </div>
         </div>
 

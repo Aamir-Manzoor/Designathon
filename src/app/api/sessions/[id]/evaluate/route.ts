@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { executeTestCases } from "@/lib/engines/executor";
 import { evaluateSession } from "@/lib/engines/scorer";
+import { dispatchEmailNotification } from "@/lib/engines/mailer";
 import type {
   CandidateSession,
   Challenge,
@@ -123,6 +124,7 @@ export async function POST(
         debug_test_cases_score: evaluation.debug_test_cases_score,
         total_score: evaluation.total_score,
         rubric_breakdown: evaluation.rubric_breakdown,
+        score_released: false,
       },
       { onConflict: "session_id" }
     )
@@ -133,8 +135,18 @@ export async function POST(
     return NextResponse.json({ error: scErr.message }, { status: 500 });
   }
 
+  await dispatchEmailNotification({
+    supabase,
+    recipientEmail: session.candidate_email,
+    recipientName: session.candidate_name,
+    emailType: "submission_received",
+    subject: `Assessment Submitted — ${challenge.title}`,
+    body: `Hi ${session.candidate_name},\n\nWe have received your submission for "${challenge.title}". Our evaluation team is reviewing your code, prompt quality, and debugging results.\n\nYou will receive another email notification as soon as the Admin releases your official score report.`,
+  });
+
   return NextResponse.json({
     scorecard,
+    score_released: false,
     final_run: p2Exec,
   });
 }

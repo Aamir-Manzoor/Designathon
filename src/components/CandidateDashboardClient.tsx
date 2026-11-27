@@ -13,6 +13,9 @@ import {
   Loader2,
   ArrowRight,
   ArrowLeft,
+  ShieldCheck,
+  Sparkles,
+  Lock,
 } from "lucide-react";
 import type { Challenge, SupportedLanguage } from "@/types/assessment";
 import { formatNumber } from "@/lib/utils";
@@ -25,20 +28,31 @@ interface SessionSummary {
   token_budget: number;
   started_at: string;
   challenge: { title: string; difficulty: string } | null;
-  scorecard: Array<{ total_score: number }> | { total_score: number } | null;
+  scorecard:
+    | Array<{ total_score: number; score_released?: boolean }>
+    | { total_score: number; score_released?: boolean }
+    | null;
 }
 
 export function CandidateDashboardClient({
   challenges,
   sessions,
+  isAssignedScoped = false,
+  assignedTrack = null,
 }: {
   challenges: Challenge[];
   sessions: SessionSummary[];
+  isAssignedScoped?: boolean;
+  assignedTrack?: string | null;
 }) {
   const router = useRouter();
   const [selectedLang, setSelectedLang] = useState<
     Record<string, SupportedLanguage>
   >({});
+  const [briefingChallenge, setBriefingChallenge] = useState<Challenge | null>(
+    null
+  );
+  const [agreedRules, setAgreedRules] = useState(false);
   const [launchingId, setLaunchingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -66,6 +80,175 @@ export function CandidateDashboardClient({
     }
   }
 
+  // Dedicated Pre-Test "Start Test" Briefing Screen
+  if (briefingChallenge) {
+    const lang = selectedLang[briefingChallenge.id] || "python";
+    return (
+      <div className="mx-auto max-w-4xl px-6 py-10">
+        <button
+          type="button"
+          onClick={() => {
+            setBriefingChallenge(null);
+            setAgreedRules(false);
+          }}
+          className="mb-6 inline-flex items-center gap-1.5 text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Back to Challenges
+        </button>
+
+        <div className="surface-card rounded-2xl p-8">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-5">
+            <div>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-soft)] px-3 py-1 text-xs font-semibold text-[var(--accent)]">
+                <ShieldCheck className="h-3.5 w-3.5" />
+                Assessment Briefing · Ready to Begin
+              </span>
+              <h1 className="mt-3 text-2xl font-extrabold text-[var(--text-primary)]">
+                {briefingChallenge.title}
+              </h1>
+            </div>
+            <span className="rounded-full bg-amber-500/15 px-3 py-1 text-xs font-semibold text-amber-500">
+              {briefingChallenge.difficulty}
+            </span>
+          </div>
+
+          {/* Rules Grid */}
+          <div className="mt-6 grid gap-4 sm:grid-cols-3">
+            <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-2)] p-4">
+              <div className="flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
+                <Clock className="h-4 w-4 text-[var(--accent)]" />
+                Time Limit
+              </div>
+              <div className="tabular-nums mt-1.5 font-mono text-xl font-bold text-[var(--text-primary)]">
+                {briefingChallenge.time_limit_minutes} Minutes
+              </div>
+            </div>
+            <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-2)] p-4">
+              <div className="flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
+                <Gauge className="h-4 w-4 text-emerald-500" />
+                AI Token Budget
+              </div>
+              <div className="tabular-nums mt-1.5 font-mono text-xl font-bold text-[var(--text-primary)]">
+                {formatNumber(briefingChallenge.token_budget)} Tokens
+              </div>
+            </div>
+            <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-2)] p-4">
+              <div className="flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
+                <Sparkles className="h-4 w-4 text-cyan-500" />
+                Evaluation Model
+              </div>
+              <div className="mt-1.5 font-mono text-sm font-bold text-[var(--text-primary)]">
+                40 / 10 / 30 / 20 Rubric
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 space-y-2.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-2)] p-5 text-xs leading-relaxed text-[var(--text-secondary)]">
+            <div className="font-bold text-[var(--text-primary)]">
+              Assessment Guidelines &amp; Integrity Policy
+            </div>
+            <ul className="ml-4 list-disc space-y-1.5">
+              <li>
+                <strong>Phase 1 (Prompt &amp; Build):</strong> Prompt the
+                integrated AI assistant clearly and concisely to generate code
+                and pass all public tests.
+              </li>
+              <li>
+                <strong>Phase 2 (Controlled Bug Injection):</strong> Once your
+                initial tests pass, one reproducible bug will be injected.
+                Diagnose and fix it using your remaining token budget.
+              </li>
+              <li>
+                <strong>Token Efficiency &amp; Proctoring:</strong> Token usage,
+                prompt quality, code revisions, and tab-switch integrity events
+                are recorded automatically.
+              </li>
+              <li>
+                <strong>Score Release:</strong> After submission, your work is
+                reviewed by an Evaluator and your official score report will be
+                released by the Admin via email notification.
+              </li>
+            </ul>
+          </div>
+
+          {/* Language Selector */}
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-semibold text-[var(--text-secondary)]">
+                Select Language:
+              </span>
+              {(["python", "javascript"] as SupportedLanguage[]).map((l) => (
+                <button
+                  key={l}
+                  type="button"
+                  onClick={() =>
+                    setSelectedLang((prev) => ({
+                      ...prev,
+                      [briefingChallenge.id]: l,
+                    }))
+                  }
+                  className={`btn-tactile rounded-lg px-3 py-1.5 text-xs font-semibold capitalize ${
+                    lang === l
+                      ? "bg-[var(--accent)] text-[var(--accent-fg)]"
+                      : "border border-[var(--border-strong)] bg-[var(--surface-2)] text-[var(--text-muted)]"
+                  }`}
+                >
+                  {l}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <label className="mt-6 flex cursor-pointer items-center gap-2.5 text-xs text-[var(--text-secondary)]">
+            <input
+              type="checkbox"
+              checked={agreedRules}
+              onChange={(e) => setAgreedRules(e.target.checked)}
+              className="h-4 w-4 accent-[var(--accent)]"
+            />
+            <span>
+              I have read the instructions and agree to start the timed
+              assessment.
+            </span>
+          </label>
+
+          {error && (
+            <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-500">
+              {error}
+            </div>
+          )}
+
+          <div className="mt-6 flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                setBriefingChallenge(null);
+                setAgreedRules(false);
+              }}
+              className="btn-tactile rounded-xl border border-[var(--border-strong)] px-4 py-2.5 text-xs font-semibold text-[var(--text-secondary)]"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={!agreedRules || launchingId === briefingChallenge.id}
+              onClick={() => launchChallenge(briefingChallenge.id)}
+              className="btn-tactile inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-6 py-2.5 text-sm font-semibold text-[var(--accent-fg)] shadow-sm hover:opacity-95 disabled:opacity-50"
+            >
+              {launchingId === briefingChallenge.id ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Play className="h-4 w-4" />
+              )}
+              Start Test Now
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-[1600px] px-6 py-7">
       <div className="mb-4">
@@ -77,15 +260,25 @@ export function CandidateDashboardClient({
           Back to Home
         </Link>
       </div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-extrabold tracking-tight text-[var(--text-primary)] sm:text-3xl">
-          AI-Assisted Coding Challenges
-        </h1>
-        <p className="mt-1 text-sm text-[var(--text-muted)]">
-          Select a challenge to start a timed assessment with live AI prompting,
-          token-budget guidance, controlled bug injection, and explainable
-          scoring.
-        </p>
+      <div className="mb-8 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <h1 className="text-2xl font-extrabold tracking-tight text-[var(--text-primary)] sm:text-3xl">
+              {isAssignedScoped
+                ? "Your Assigned Coding Challenges"
+                : "AI-Assisted Coding Challenges"}
+            </h1>
+            {isAssignedScoped && (
+              <span className="rounded-full bg-[var(--accent-soft)] px-3 py-1 text-xs font-semibold text-[var(--accent)] ring-1 ring-[var(--accent-border)]">
+                Assigned{assignedTrack ? ` · ${assignedTrack}` : ""}
+              </span>
+            )}
+          </div>
+          <p className="mt-1 text-sm text-[var(--text-muted)]">
+            Review test instructions, launch your timed workspace, optimize
+            token usage, and debug injected bugs.
+          </p>
+        </div>
       </div>
 
       {error && (
@@ -167,18 +360,14 @@ export function CandidateDashboardClient({
                 </div>
 
                 <button
-                  onClick={() => launchChallenge(ch.id)}
-                  disabled={launchingId === ch.id}
-                  className="btn-tactile flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-[var(--accent-fg)] hover:opacity-95 disabled:opacity-60"
+                  onClick={() => {
+                    setBriefingChallenge(ch);
+                    setAgreedRules(false);
+                  }}
+                  className="btn-tactile flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-[var(--accent-fg)] hover:opacity-95"
                 >
-                  {launchingId === ch.id ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <>
-                      <Play className="h-4 w-4" />
-                      Start Assessment
-                    </>
-                  )}
+                  <Play className="h-4 w-4" />
+                  Start Test
                 </button>
               </div>
             </div>
@@ -200,7 +389,7 @@ export function CandidateDashboardClient({
                   <th className="px-4 py-3">Language</th>
                   <th className="px-4 py-3">Phase</th>
                   <th className="px-4 py-3">Tokens Used</th>
-                  <th className="px-4 py-3">Score</th>
+                  <th className="px-4 py-3">Score Status</th>
                   <th className="px-4 py-3 text-right">Action</th>
                 </tr>
               </thead>
@@ -209,6 +398,7 @@ export function CandidateDashboardClient({
                   const sc = Array.isArray(s.scorecard)
                     ? s.scorecard[0]
                     : s.scorecard;
+                  const isReleased = sc ? Boolean(sc.score_released) : false;
                   return (
                     <tr
                       key={s.id}
@@ -242,10 +432,21 @@ export function CandidateDashboardClient({
                         {formatNumber(s.tokens_used)} /{" "}
                         {formatNumber(s.token_budget)}
                       </td>
-                      <td className="tabular-nums px-4 py-3 font-mono text-sm font-bold text-[var(--text-primary)]">
-                        {sc
-                          ? `${Number(sc.total_score).toFixed(1)} / 100`
-                          : "—"}
+                      <td className="tabular-nums px-4 py-3 font-mono text-xs font-bold">
+                        {sc ? (
+                          isReleased ? (
+                            <span className="text-emerald-500">
+                              {Number(sc.total_score).toFixed(1)} / 100
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2.5 py-0.5 font-sans text-[11px] font-semibold text-amber-500">
+                              <Lock className="h-3 w-3" />
+                              Pending Admin Release
+                            </span>
+                          )
+                        ) : (
+                          "—"
+                        )}
                       </td>
                       <td className="px-4 py-3 text-right">
                         <Link
@@ -253,7 +454,9 @@ export function CandidateDashboardClient({
                           className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--accent)] hover:underline"
                         >
                           {s.phase === "submitted"
-                            ? "View Scorecard"
+                            ? isReleased
+                              ? "View Score Report"
+                              : "View Status"
                             : "Resume"}
                           <ArrowRight className="h-3.5 w-3.5" />
                         </Link>

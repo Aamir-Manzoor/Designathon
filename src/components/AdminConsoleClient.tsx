@@ -35,6 +35,12 @@ import {
 } from "lucide-react";
 import { estimateSessionCostUsd } from "@/lib/engines/ai-provider";
 import { formatNumber } from "@/lib/utils";
+import {
+  ApplicantsInvitesPanel,
+  type ApplicantRow,
+  type EmailNotificationRow,
+} from "./ApplicantsInvitesPanel";
+import { ReleaseScoreButton } from "./ReleaseScoreButton";
 
 interface AdminSessionRow {
   id: string;
@@ -56,6 +62,7 @@ interface AdminSessionRow {
         test_cases_score: number;
         debug_test_cases_score: number;
         total_score: number;
+        score_released?: boolean;
       }>
     | {
         prompt_quality_score: number;
@@ -63,6 +70,7 @@ interface AdminSessionRow {
         test_cases_score: number;
         debug_test_cases_score: number;
         total_score: number;
+        score_released?: boolean;
       }
     | null;
 }
@@ -125,16 +133,20 @@ export function AdminConsoleClient({
   sessions,
   challenges,
   evaluators = [],
+  applications = [],
+  emails = [],
 }: {
   viewerRole?: "admin" | "evaluator";
   sessions: AdminSessionRow[];
   challenges: AdminChallengeRow[];
   evaluators?: Array<{ id: string; full_name: string; email: string }>;
+  applications?: ApplicantRow[];
+  emails?: EmailNotificationRow[];
 }) {
   const isAdmin = viewerRole === "admin";
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<
-    "scorecards" | "challenges" | "ops"
+    "scorecards" | "applicants" | "challenges" | "ops"
   >("scorecards");
   const [selectedSessionIds, setSelectedSessionIds] = useState<string[]>([]);
   const [targetEvaluatorId, setTargetEvaluatorId] = useState<string>(
@@ -493,6 +505,16 @@ export function AdminConsoleClient({
             Scorecards &amp; Batch Assignment ({normalizedSessions.length})
           </button>
           <button
+            onClick={() => setActiveTab("applicants")}
+            className={`btn-tactile rounded-lg px-4 py-2 text-xs font-semibold ${
+              activeTab === "applicants"
+                ? "bg-[var(--accent)] text-[var(--accent-fg)] shadow-sm"
+                : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+            }`}
+          >
+            Applicants &amp; Invites ({applications.length})
+          </button>
+          <button
             onClick={() => setActiveTab("challenges")}
             className={`btn-tactile rounded-lg px-4 py-2 text-xs font-semibold ${
               activeTab === "challenges"
@@ -758,6 +780,7 @@ export function AdminConsoleClient({
                   <th className="px-3 py-3 text-center">Total (100)</th>
                   <th className="px-4 py-3">Tokens (Used / Saved)</th>
                   <th className="px-3 py-3">Est. Cost &amp; Efficiency</th>
+                  {isAdmin && <th className="px-3 py-3 text-center">Report Release</th>}
                   <th className="px-4 py-3 text-right">Review</th>
                 </tr>
               </thead>
@@ -881,6 +904,21 @@ export function AdminConsoleClient({
                           {s.efficiencyIndex} pts/1K tok
                         </div>
                       </td>
+                      {isAdmin && (
+                        <td className="px-3 py-3 text-center">
+                          {s.sc ? (
+                            <ReleaseScoreButton
+                              sessionId={s.id}
+                              initialReleased={Boolean(s.sc.score_released)}
+                              compact
+                            />
+                          ) : (
+                            <span className="text-[11px] text-[var(--text-muted)]">
+                              In progress
+                            </span>
+                          )}
+                        </td>
+                      )}
                       <td className="px-4 py-3 text-right">
                         <Link
                           href={`/admin/sessions/${s.id}`}
@@ -897,6 +935,15 @@ export function AdminConsoleClient({
             </table>
           </div>
         </div>
+      )}
+
+      {/* TAB: APPLICANTS, INVITES & EMAIL OUTBOX */}
+      {activeTab === "applicants" && isAdmin && (
+        <ApplicantsInvitesPanel
+          applications={applications}
+          challenges={challenges}
+          emails={emails}
+        />
       )}
 
       {/* TAB 2: CHALLENGES & CONFIGURABLE TOKEN BUDGETS */}
