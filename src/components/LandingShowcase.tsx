@@ -1,7 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import {
   Cpu,
   ArrowRight,
@@ -19,6 +22,14 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { ThemeSwitcher } from "./ThemeProvider";
+import { CursorSpotlight } from "./CursorSpotlight";
+
+const HeroThreeCanvas = dynamic(
+  () => import("./HeroThreeCanvas").then((m) => m.HeroThreeCanvas),
+  { ssr: false }
+);
+
+gsap.registerPlugin(ScrollTrigger);
 
 type PreviewTab = "ide" | "bug" | "scorecard";
 
@@ -28,9 +39,81 @@ export function LandingShowcase({
   signedInRole?: "admin" | "candidate" | null;
 }) {
   const [previewTab, setPreviewTab] = useState<PreviewTab>("ide");
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+    if (prefersReducedMotion || !rootRef.current) return;
+
+    const ctx = gsap.context(() => {
+      // 1. Hero staggered entrance (GPU transforms + opacity only)
+      gsap.from(".hero-stagger", {
+        y: 26,
+        opacity: 0,
+        duration: 0.75,
+        stagger: 0.1,
+        ease: "power3.out",
+        clearProps: "transform",
+      });
+
+      // 2. Hero interactive showcase entrance
+      gsap.from(".hero-showcase", {
+        y: 36,
+        scale: 0.985,
+        opacity: 0,
+        duration: 0.85,
+        delay: 0.35,
+        ease: "power3.out",
+        clearProps: "transform",
+      });
+
+      // 3. Scroll-triggered 5-Stage Workflow cards
+      gsap.from(".workflow-card", {
+        y: 28,
+        opacity: 0,
+        duration: 0.65,
+        stagger: 0.08,
+        ease: "power2.out",
+        clearProps: "transform",
+        scrollTrigger: {
+          trigger: ".workflow-section",
+          start: "top 82%",
+          once: true,
+        },
+      });
+
+      // 4. Scroll-triggered Bento Grid cards
+      gsap.from(".bento-card", {
+        y: 30,
+        opacity: 0,
+        duration: 0.7,
+        stagger: 0.1,
+        ease: "power2.out",
+        clearProps: "transform",
+        scrollTrigger: {
+          trigger: ".bento-section",
+          start: "top 82%",
+          once: true,
+        },
+      });
+    }, rootRef);
+
+    return () => ctx.revert();
+  }, []);
 
   return (
-    <div className="relative min-h-screen overflow-x-clip bg-[var(--bg-canvas)] text-[var(--text-primary)]">
+    <div
+      ref={rootRef}
+      className="relative min-h-screen overflow-x-clip bg-[var(--bg-canvas)] text-[var(--text-primary)]"
+    >
+      {/* Cursify-style GPU cursor spotlight & magnetic ring */}
+      <CursorSpotlight />
+
+      {/* Three.js 3D Neural Token Constellation behind Hero */}
+      <HeroThreeCanvas />
+
       {/* Subtle ambient hero spotlight & architectural dot grid */}
       <div
         aria-hidden
@@ -100,7 +183,7 @@ export function LandingShowcase({
       <main className="relative z-10 mx-auto max-w-[1600px] px-6 pb-24 pt-16 sm:pt-20">
         {/* HERO SECTION */}
         <section className="mx-auto max-w-4xl text-center">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[var(--accent-border)] bg-[var(--accent-soft)] px-3.5 py-1.5 text-xs font-semibold text-[var(--accent)]">
+          <div className="hero-stagger mb-6 inline-flex items-center gap-2 rounded-full border border-[var(--accent-border)] bg-[var(--accent-soft)] px-3.5 py-1.5 text-xs font-semibold text-[var(--accent)]">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--accent)] opacity-75" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--accent)]" />
@@ -108,21 +191,21 @@ export function LandingShowcase({
             Token-Conscious AI Coding Assessment · Live Demo Ready
           </div>
 
-          <h1 className="text-balance text-4xl font-extrabold tracking-tight text-[var(--text-primary)] sm:text-6xl sm:leading-[1.08]">
+          <h1 className="hero-stagger text-balance text-4xl font-extrabold tracking-tight text-[var(--text-primary)] sm:text-6xl sm:leading-[1.08]">
             Measure how engineers{" "}
             <span className="bg-gradient-to-r from-[var(--accent)] via-emerald-400 to-cyan-400 bg-clip-text text-transparent">
               guide AI, debug bugs, and optimize tokens
             </span>
           </h1>
 
-          <p className="text-pretty mx-auto mt-6 max-w-2xl text-base leading-relaxed text-[var(--text-muted)] sm:text-lg">
+          <p className="hero-stagger text-pretty mx-auto mt-6 max-w-2xl text-base leading-relaxed text-[var(--text-muted)] sm:text-lg">
             Conventional coding tests measure syntax memorization. PromptBench
             evaluates real-world AI-assisted engineering: prompt craft,
             iterative refinement, controlled bug debugging, and live token
             efficiency — scored on an explainable 100-point rubric.
           </p>
 
-          <div className="mt-9 flex flex-wrap items-center justify-center gap-3.5">
+          <div className="hero-stagger mt-9 flex flex-wrap items-center justify-center gap-3.5">
             <Link
               href="/login"
               className="btn-tactile inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-6 py-3.5 text-sm font-semibold text-[var(--accent-fg)] shadow-lg hover:opacity-95"
@@ -139,7 +222,7 @@ export function LandingShowcase({
           </div>
 
           {/* Key Metric Strip */}
-          <div className="mx-auto mt-10 grid max-w-2xl grid-cols-1 divide-y divide-[var(--border-subtle)] rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-1)]/80 py-3.5 backdrop-blur sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+          <div className="hero-stagger mx-auto mt-10 grid max-w-2xl grid-cols-1 divide-y divide-[var(--border-subtle)] rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-1)]/80 py-3.5 backdrop-blur sm:grid-cols-3 sm:divide-x sm:divide-y-0">
             <div className="px-4">
               <div className="tabular-nums font-mono text-lg font-bold text-[var(--text-primary)] sm:text-xl">
                 40 / 10 / 30 / 20
@@ -168,7 +251,7 @@ export function LandingShowcase({
         </section>
 
         {/* INTERACTIVE LIVE PRODUCT PREVIEW WINDOW */}
-        <section className="mt-16">
+        <section className="hero-showcase mt-16">
           <div className="surface-card overflow-hidden rounded-2xl p-2">
             {/* Browser Chrome + Interactive View Switcher */}
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-2)] px-4 py-2.5">
@@ -414,7 +497,7 @@ export function LandingShowcase({
         </section>
 
         {/* 5-STAGE ASSESSMENT WORKFLOW */}
-        <section className="mt-20">
+        <section className="workflow-section mt-20">
           <div className="mb-8 flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
             <div>
               <p className="font-mono text-xs font-semibold uppercase tracking-wider text-[var(--accent)]">
@@ -439,7 +522,7 @@ export function LandingShowcase({
             ].map((item, idx) => (
               <div
                 key={item.step}
-                className="surface-card relative rounded-2xl p-5"
+                className="workflow-card surface-card relative rounded-2xl p-5 transition-transform duration-200 hover:-translate-y-1"
               >
                 <div className="flex items-center justify-between">
                   <span className="font-mono text-xs font-bold text-[var(--accent)]">
@@ -461,9 +544,9 @@ export function LandingShowcase({
         </section>
 
         {/* ASYMMETRIC BENTO FEATURE GRID */}
-        <section className="mt-20 grid gap-5 lg:grid-cols-12">
+        <section className="bento-section mt-20 grid gap-5 lg:grid-cols-12">
           {/* Bento 1 (Wide 7) */}
-          <div className="surface-card rounded-2xl p-6 lg:col-span-7">
+          <div className="bento-card surface-card rounded-2xl p-6 transition-transform duration-200 hover:-translate-y-1 lg:col-span-7">
             <div className="flex items-center gap-2 text-xs font-semibold text-[var(--accent)]">
               <Layers className="h-4 w-4" />
               Adaptive Token Optimization Engine
@@ -503,7 +586,7 @@ export function LandingShowcase({
           </div>
 
           {/* Bento 2 (Narrow 5) */}
-          <div className="surface-card rounded-2xl p-6 lg:col-span-5">
+          <div className="bento-card surface-card rounded-2xl p-6 transition-transform duration-200 hover:-translate-y-1 lg:col-span-5">
             <div className="flex items-center gap-2 text-xs font-semibold text-emerald-400">
               <ShieldCheck className="h-4 w-4" />
               Calibrated 100-Point Rubric
@@ -539,7 +622,7 @@ export function LandingShowcase({
           </div>
 
           {/* Bento 3 (Narrow 5) */}
-          <div className="surface-card rounded-2xl p-6 lg:col-span-5">
+          <div className="bento-card surface-card rounded-2xl p-6 transition-transform duration-200 hover:-translate-y-1 lg:col-span-5">
             <div className="flex items-center gap-2 text-xs font-semibold text-cyan-400">
               <Activity className="h-4 w-4" />
               Queue Execution &amp; Auto-Recovery
@@ -555,7 +638,7 @@ export function LandingShowcase({
           </div>
 
           {/* Bento 4 (Wide 7) */}
-          <div className="surface-card rounded-2xl p-6 lg:col-span-7">
+          <div className="bento-card surface-card rounded-2xl p-6 transition-transform duration-200 hover:-translate-y-1 lg:col-span-7">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-xs font-semibold text-amber-400">
                 <FileSpreadsheet className="h-4 w-4" />
