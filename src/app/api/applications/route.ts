@@ -53,23 +53,24 @@ export async function POST(request: Request) {
     );
   }
 
-  const { data, error } = await supabase
+  const payload = {
+    full_name: fullName,
+    email,
+    track: body.track?.trim() || "Full-Stack Engineer",
+    preferred_language:
+      body.preferred_language === "javascript" ? "javascript" : "python",
+    github_url: body.github_url?.trim() || null,
+    status: "pending" as const,
+  };
+
+  // Omit .select() after .insert() so anonymous applicants do not need SELECT RLS permission on candidate_applications
+  const { error } = await supabase
     .from("candidate_applications")
-    .insert({
-      full_name: fullName,
-      email,
-      track: body.track?.trim() || "Full-Stack Engineer",
-      preferred_language:
-        body.preferred_language === "javascript" ? "javascript" : "python",
-      github_url: body.github_url?.trim() || null,
-      status: "pending",
-    })
-    .select("*")
-    .single();
+    .insert(payload);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ application: data }, { status: 201 });
+  return NextResponse.json({ application: payload }, { status: 201 });
 }
