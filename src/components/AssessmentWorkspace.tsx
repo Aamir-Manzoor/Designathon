@@ -27,6 +27,7 @@ import {
   PanelRightOpen,
 } from "lucide-react";
 import { ThemeSwitcher, useTheme } from "./ThemeProvider";
+import { MarkdownText } from "./MarkdownText";
 import { TokenBudgetMeter } from "./TokenBudgetMeter";
 import { ScorecardView } from "./ScorecardView";
 import {
@@ -707,9 +708,10 @@ export function AssessmentWorkspace({
           <div className="flex-1 overflow-y-auto p-4">
             {leftTab === "problem" ? (
               <div className="space-y-5">
-                <div className="whitespace-pre-wrap text-xs leading-relaxed text-[var(--text-secondary)]">
-                  {challenge.description}
-                </div>
+                <MarkdownText
+                  content={challenge.description}
+                  className="text-xs"
+                />
 
                 <div>
                   <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
@@ -969,10 +971,13 @@ export function AssessmentWorkspace({
                       in:{turn.prompt_tokens} / out:{turn.completion_tokens}
                     </span>
                   </div>
-                  <div className="whitespace-pre-wrap break-words leading-relaxed">
-                    {turn.ai_response.replace(/```[\s\S]*?```/g, "").trim() ||
-                      "Generated updated code below:"}
-                  </div>
+                  <MarkdownText
+                    content={
+                      turn.ai_response.replace(/```[\s\S]*?```/g, "").trim() ||
+                      "Generated updated code below:"
+                    }
+                    className="break-words text-xs"
+                  />
                   {turn.extracted_code && (
                     <div className="mt-2.5 overflow-hidden rounded-lg border border-[var(--border-strong)] bg-[var(--surface-1)]">
                       <div className="flex items-center justify-between border-b border-[var(--border-subtle)] bg-[var(--surface-2)] px-2.5 py-1.5">
