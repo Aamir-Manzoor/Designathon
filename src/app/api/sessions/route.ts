@@ -71,21 +71,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Challenge not found" }, { status: 404 });
   }
 
-  // Enforce single-attempt lock for candidates on official exams (practice sessions remain allowed)
+  // Enforce strict single-access lock for candidates on official exams (practice sessions remain allowed)
   if (!isPractice && profile?.role === "candidate") {
     const { data: existingOfficial } = await supabase
       .from("candidate_sessions")
       .select("id, phase")
       .eq("user_id", user.id)
       .eq("is_practice", false)
-      .eq("phase", "submitted")
       .limit(1);
 
     if (existingOfficial && existingOfficial.length > 0) {
       return NextResponse.json(
         {
           error:
-            "Exam already submitted. You cannot start the official assessment again — visit your Profile to view your assessment status.",
+            "You can access the official assessment only once. Visit your Profile to check your assessment status.",
         },
         { status: 403 }
       );

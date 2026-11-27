@@ -14,6 +14,10 @@ vi.mock("@/lib/engines/mailer", () => ({
 import { PATCH as patchNotes } from "@/app/api/scorecards/[sessionId]/notes/route";
 import { POST as postRelease } from "@/app/api/scorecards/[sessionId]/release/route";
 import { POST as postInviteEvaluator } from "@/app/api/admin/invite-evaluator/route";
+import {
+  PATCH as patchApplication,
+  DELETE as deleteApplication,
+} from "@/app/api/applications/[id]/route";
 
 describe("Enterprise Workflow & Security API Guards", () => {
   beforeEach(() => {
@@ -223,5 +227,74 @@ describe("Enterprise Workflow & Security API Guards", () => {
     );
     expect(okRes.status).toBe(201);
     expect(mockDispatchEmail).toHaveBeenCalledTimes(1);
+  });
+
+  it("allows Admins to reject (revoking invite_token) and delete applications", async () => {
+    let deletedId: string | null = null;
+    mockSupabase = {
+      auth: { getUser: async () => ({ data: { user: { id: "admin-1" } } }) },
+      from: (table: string) => {
+        if (table === "profiles") {
+          return {
+            select: () => ({
+              eq: () => ({
+                single: async () => ({ data: { role: "admin" } }),
+              }),
+            }),
+          };
+        }
+        return {
+          select: () => ({
+            eq: () => ({
+              single: async () => ({
+                data: {
+                  id: "app-1",
+                  full_name: "Applicant",
+                  email: "app@test.com",
+                  invite_role: "candidate",
+                },
+              }),
+            }),
+          }),
+          update: (payload: Record<string, unknown>) => ({
+            eq: () => ({
+              select: () => ({
+                single: async () => ({
+                  data: { id: "app-1", ...payload },
+                  error: null,
+                }),
+              }),
+            }),
+          }),
+          delete: () => ({
+            eq: async (_col: string, val: string) => {
+              deletedId = val;
+              return { error: null };
+            },
+          }),
+        };
+      },
+    };
+
+    const rejRes = await patchApplication(
+      new Request("http://localhost/api/applications/app-1", {
+        method: "PATCH",
+        body: JSON.stringify({ status: "rejected" }),
+      }),
+      { params: Promise.resolve({ id: "app-1" }) }
+    );
+    expect(rejRes.status).toBe(200);
+    const rejJson = await rejRes.json();
+    expect(rejJson.application.status).toBe("rejected");
+    expect(rejJson.application.invite_token).toBeNull();
+
+    const delRes = await deleteApplication(
+      new Request("http://localhost/api/applications/app-1", {
+        method: "DELETE",
+      }),
+      { params: Promise.resolve({ id: "app-1" }) }
+    );
+    expect(delRes.status).toBe(200);
+    expect(deletedId).toBe("app-1");
   });
 });

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import {
   Play,
@@ -15,9 +16,9 @@ import {
   Sparkles,
   ArrowLeft,
   Loader2,
-  CopyCheck,
   ShieldAlert,
   SendHorizonal,
+  Maximize2,
   Minimize2,
   RotateCcw,
   Cpu,
@@ -26,7 +27,7 @@ import {
   PanelRightClose,
   PanelRightOpen,
 } from "lucide-react";
-import { ThemeSwitcher, useTheme } from "./ThemeProvider";
+import { useTheme } from "./ThemeProvider";
 import { MarkdownText } from "./MarkdownText";
 import { TokenBudgetMeter } from "./TokenBudgetMeter";
 import { ScorecardView } from "./ScorecardView";
@@ -75,6 +76,7 @@ export function AssessmentWorkspace({
   initialRuns,
   initialScorecard,
 }: WorkspaceProps) {
+  const router = useRouter();
   const { theme } = useTheme();
   const [session, setSession] = useState<CandidateSession>(initialSession);
   const [code, setCode] = useState<string>(initialSession.current_code);
@@ -116,6 +118,17 @@ export function AssessmentWorkspace({
   const [leftTab, setLeftTab] = useState<"problem" | "revisions">("problem");
   const [showLeftPane, setShowLeftPane] = useState(true);
   const [showRightPane, setShowRightPane] = useState(true);
+  const [expandedPane, setExpandedPane] = useState<
+    "none" | "left" | "center" | "right"
+  >("none");
+  const [showExitModal, setShowExitModal] = useState(false);
+
+  // Internal editor-only clipboard tracking (allows copy/paste inside Monaco, blocks external paste)
+  const editorInstanceRef = useRef<{
+    getSelection?: () => unknown;
+    getModel?: () => { getValueInRange?: (sel: unknown) => string } | null;
+  } | null>(null);
+  const internalClipboardRef = useRef<string>("");
   const [timeExpired, setTimeExpired] = useState<boolean>(
     () =>
       initialSession.phase !== "submitted" &&
@@ -250,6 +263,28 @@ export function AssessmentWorkspace({
     }, 1500);
     return () => clearTimeout(timer);
   }, [code, session.id, session.phase, session.current_code]);
+
+  // Intercept Browser Back button & tab unload during active official exams
+  useEffect(() => {
+    if (session.phase === "submitted" || session.is_practice) return;
+
+    window.history.pushState({ officialExamGuard: true }, "", window.location.href);
+    const onPopState = () => {
+      window.history.pushState({ officialExamGuard: true }, "", window.location.href);
+      setShowExitModal(true);
+    };
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+
+    window.addEventListener("popstate", onPopState);
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => {
+      window.removeEventListener("popstate", onPopState);
+      window.removeEventListener("beforeunload", onBeforeUnload);
+    };
+  }, [session.phase, session.is_practice]);
 
   // Integrity listener: log tab blur events
   useEffect(() => {
@@ -459,18 +494,28 @@ export function AssessmentWorkspace({
     }
   }
 
-  async function handleSubmitFinal() {
+  async function handleSubmitFinal(redirectAfter = false) {
     setErrorMsg(null);
     setSubmitting(true);
     try {
-      const res = await fetch(`/api/sessions/${session.id}/evaluate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setErrorMsg(data.error || "Evaluation failed");
+      let res: Response | null = null;
+      let data: { error?: string; scorecard?: Scorecard | null } = {};
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          res = await fetch(`/api/sessions/${session.id}/evaluate`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ code: codeRef.current }),
+          });
+          data = await res.json().catch(() => ({}));
+          if (res.ok) break;
+        } catch {
+          if (attempt === 1) throw new Error("Network error");
+        }
+      }
+
+      if (!res || !res.ok) {
+        setErrorMsg(data.error || "Submission failed. Please try again.");
         setSubmitting(false);
         return;
       }
@@ -479,8 +524,12 @@ export function AssessmentWorkspace({
       } catch {
         // ignore
       }
-      setScorecard(data.scorecard);
+      setShowExitModal(false);
+      setScorecard(data.scorecard ?? null);
       setSession((prev) => ({ ...prev, phase: "submitted" }));
+      if (redirectAfter) {
+        router.push("/profile");
+      }
     } catch {
       setErrorMsg("Network error submitting assessment.");
     } finally {
@@ -524,10 +573,10 @@ export function AssessmentWorkspace({
     );
   }
 
-  if (session.phase === "submitted" && scorecard) {
-    const isReleased = Boolean(scorecard.score_released);
-    const isPassed = scorecard.evaluator_decision === "passed";
-    const isRejected = scorecard.evaluator_decision === "rejected";
+  if (session.phase === "submitted") {
+    const isReleased = Boolean(scorecard?.score_released);
+    const isPassed = scorecard?.evaluator_decision === "passed";
+    const isRejected = scorecard?.evaluator_decision === "rejected";
     return (
       <div className="min-h-screen bg-[var(--bg-canvas)] px-4 py-8 text-[var(--text-primary)] sm:px-6">
         <div className="mx-auto max-w-[1600px]">
@@ -540,7 +589,6 @@ export function AssessmentWorkspace({
               Back to Profile &amp; Assessment Status
             </Link>
             <div className="flex items-center gap-3">
-              <ThemeSwitcher compact />
               <span
                 className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${
                   isReleased
@@ -613,7 +661,7 @@ export function AssessmentWorkspace({
                   Evaluator Feedback
                 </div>
                 <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-[var(--text-primary)]">
-                  {scorecard.evaluator_notes?.trim() ||
+                  {scorecard?.evaluator_notes?.trim() ||
                     "Thank you for completing the assessment. Our hiring team will follow up with next steps."}
                 </p>
               </div>
@@ -673,8 +721,20 @@ export function AssessmentWorkspace({
   }
 
   const passedCount = latestResults.filter((r) => r.passed).length;
+  const visibleLeft =
+    expandedPane === "left" || (expandedPane === "none" && showLeftPane);
+  const visibleCenter =
+    expandedPane === "center" || expandedPane === "none";
+  const visibleRight =
+    expandedPane === "right" || (expandedPane === "none" && showRightPane);
+
+  const leftSpan = expandedPane === "left" ? "lg:col-span-12" : "lg:col-span-3";
+  const rightSpan =
+    expandedPane === "right" ? "lg:col-span-12" : "lg:col-span-4";
   const centerSpan =
-    showLeftPane && showRightPane
+    expandedPane === "center"
+      ? "lg:col-span-12"
+      : showLeftPane && showRightPane
       ? "lg:col-span-5"
       : showLeftPane
       ? "lg:col-span-9"
@@ -683,24 +743,81 @@ export function AssessmentWorkspace({
       : "lg:col-span-12";
 
   return (
-    <div
-      onCopy={(e) => e.preventDefault()}
-      onCut={(e) => e.preventDefault()}
-      className="flex min-h-screen select-none flex-col bg-[var(--bg-canvas)] text-[var(--text-primary)] lg:h-screen lg:overflow-hidden"
-    >
+    <div className="flex min-h-screen flex-col bg-[var(--bg-canvas)] text-[var(--text-primary)] lg:h-screen lg:overflow-hidden">
+      {/* Exit Confirmation Modal for Single-Attempt Official Exams */}
+      {showExitModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
+          <div className="surface-card w-full max-w-md rounded-2xl border border-amber-500/40 p-6 shadow-2xl">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-amber-500">
+                <ShieldAlert className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="text-base font-extrabold text-[var(--text-primary)]">
+                  Leave &amp; Auto-Submit Test?
+                </h2>
+                <p className="text-xs text-[var(--text-muted)]">
+                  Official assessments can be accessed only once.
+                </p>
+              </div>
+            </div>
+            <p className="mt-4 text-xs leading-relaxed text-[var(--text-secondary)]">
+              If you go back or leave this window,{" "}
+              <strong className="text-[var(--text-primary)]">
+                your test will be submitted automatically
+              </strong>{" "}
+              with your current editor code and cannot be reopened.
+            </p>
+            <div className="mt-6 flex flex-wrap justify-end gap-2.5">
+              <button
+                type="button"
+                disabled={submitting}
+                onClick={() => setShowExitModal(false)}
+                className="btn-tactile rounded-xl border border-[var(--border-strong)] bg-[var(--surface-2)] px-4 py-2 text-xs font-semibold text-[var(--text-primary)]"
+              >
+                Stay in Assessment
+              </button>
+              <button
+                type="button"
+                disabled={submitting}
+                onClick={() => handleSubmitFinal(true)}
+                className="btn-tactile inline-flex items-center gap-1.5 rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-slate-950 hover:bg-amber-400 disabled:opacity-60"
+              >
+                {submitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                Submit &amp; Exit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Top IDE Bar */}
       <header className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-[var(--border-subtle)] bg-[var(--surface-1)] px-4 py-2.5">
         <div className="flex min-w-0 items-center gap-2.5">
-          <Link
-            href="/dashboard"
-            className="btn-tactile shrink-0 rounded-lg p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text-primary)]"
-            title="Back to Dashboard"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
           <button
             type="button"
-            onClick={() => setShowLeftPane((v) => !v)}
+            onClick={() => {
+              if (session.is_practice) {
+                router.push("/dashboard");
+              } else {
+                setShowExitModal(true);
+              }
+            }}
+            className="btn-tactile shrink-0 rounded-lg p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text-primary)]"
+            title={
+              session.is_practice
+                ? "Back to Practice Portal"
+                : "Leave & Submit Official Exam"
+            }
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setExpandedPane("none");
+              setShowLeftPane((v) => !v);
+            }}
             className="btn-tactile hidden shrink-0 rounded-lg border border-[var(--border-subtle)] p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text-primary)] lg:inline-flex"
             title={showLeftPane ? "Collapse Problem Pane" : "Expand Problem Pane"}
           >
@@ -746,9 +863,6 @@ export function AssessmentWorkspace({
         </div>
 
         <div className="flex items-center gap-2.5">
-          <div className="hidden lg:block">
-            <ThemeSwitcher compact />
-          </div>
           <span className="hidden items-center gap-1 text-xs text-[var(--text-muted)] md:flex">
             <Save
               className={`h-3.5 w-3.5 ${
@@ -791,7 +905,7 @@ export function AssessmentWorkspace({
           )}
 
           <button
-            onClick={handleSubmitFinal}
+            onClick={() => handleSubmitFinal(false)}
             disabled={submitting}
             className="btn-tactile inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3.5 py-1.5 text-xs font-semibold text-[var(--accent-fg)] hover:opacity-95 disabled:opacity-60"
           >
@@ -805,8 +919,11 @@ export function AssessmentWorkspace({
 
           <button
             type="button"
-            onClick={() => setShowRightPane((v) => !v)}
-            className="btn-tactile rounded-lg border border-[var(--border-subtle)] p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text-primary)]"
+            onClick={() => {
+              setExpandedPane("none");
+              setShowRightPane((v) => !v);
+            }}
+            className="btn-tactile hidden rounded-lg border border-[var(--border-subtle)] p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text-primary)] lg:inline-flex"
             title={showRightPane ? "Collapse AI Pane" : "Expand AI Pane"}
           >
             {showRightPane ? (
@@ -875,9 +992,14 @@ export function AssessmentWorkspace({
       {/* Main Collapsible 3-Pane IDE */}
       <div className="flex min-h-0 flex-1 flex-col lg:grid lg:grid-cols-12">
         {/* LEFT PANE */}
-        {showLeftPane && (
-        <aside className="flex min-h-0 min-w-0 flex-col border-b border-[var(--border-subtle)] bg-[var(--surface-1)] lg:col-span-3 lg:border-b-0 lg:border-r">
-          <div className="flex border-b border-[var(--border-subtle)] text-xs font-medium">
+        {visibleLeft && (
+        <aside
+          onCopy={(e) => e.preventDefault()}
+          onCut={(e) => e.preventDefault()}
+          onContextMenu={(e) => e.preventDefault()}
+          className={`${leftSpan} flex min-h-0 min-w-0 select-none flex-col border-b border-[var(--border-subtle)] bg-[var(--surface-1)] lg:border-b-0 lg:border-r`}
+        >
+          <div className="flex items-center border-b border-[var(--border-subtle)] text-xs font-medium">
             <button
               onClick={() => setLeftTab("problem")}
               className={`flex-1 py-2.5 text-center transition-colors ${
@@ -898,6 +1020,24 @@ export function AssessmentWorkspace({
             >
               <History className="h-3.5 w-3.5" />
               Revisions ({revisions.length})
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                setExpandedPane((p) => (p === "left" ? "none" : "left"))
+              }
+              className="btn-tactile mr-2 hidden rounded-md p-1 text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text-primary)] lg:inline-flex"
+              title={
+                expandedPane === "left"
+                  ? "Restore Split View"
+                  : "Expand Question Panel"
+              }
+            >
+              {expandedPane === "left" ? (
+                <Minimize2 className="h-3.5 w-3.5" />
+              ) : (
+                <Maximize2 className="h-3.5 w-3.5" />
+              )}
             </button>
           </div>
 
@@ -978,31 +1118,97 @@ export function AssessmentWorkspace({
         )}
 
         {/* CENTER PANE */}
+        {visibleCenter && (
         <section className={`${centerSpan} flex min-h-[520px] min-w-0 flex-col border-b border-[var(--border-subtle)] lg:min-h-0 lg:border-b-0 lg:border-r`}>
           <div className="flex items-center justify-between border-b border-[var(--border-subtle)] bg-[var(--surface-2)] px-3 py-2">
             <span className="font-mono text-xs text-[var(--text-secondary)]">
               solution.{session.language === "python" ? "py" : "js"}
             </span>
-            <button
-              onClick={handleRunTests}
-              disabled={runningTests}
-              className="btn-tactile inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 py-1 text-xs font-semibold text-[var(--accent-fg)] hover:opacity-95 disabled:opacity-60"
-            >
-              {runningTests ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Play className="h-3.5 w-3.5" />
-              )}
-              Run Tests
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() =>
+                  setExpandedPane((p) => (p === "center" ? "none" : "center"))
+                }
+                className="btn-tactile hidden items-center gap-1 rounded-lg border border-[var(--border-strong)] bg-[var(--surface-1)] px-2 py-1 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] lg:inline-flex"
+                title={
+                  expandedPane === "center"
+                    ? "Exit Full Screen Editor"
+                    : "Full Screen Code Editor (Collapse Side Panels)"
+                }
+              >
+                {expandedPane === "center" ? (
+                  <Minimize2 className="h-3.5 w-3.5" />
+                ) : (
+                  <Maximize2 className="h-3.5 w-3.5" />
+                )}
+              </button>
+              <button
+                onClick={handleRunTests}
+                disabled={runningTests}
+                className="btn-tactile inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 py-1 text-xs font-semibold text-[var(--accent-fg)] hover:opacity-95 disabled:opacity-60"
+              >
+                {runningTests ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Play className="h-3.5 w-3.5" />
+                )}
+                Run Tests
+              </button>
+            </div>
           </div>
 
-          <div className="min-h-0 flex-1 bg-[var(--surface-1)]">
+          <div
+            className="min-h-0 flex-1 bg-[var(--surface-1)]"
+            onCopyCapture={() => {
+              const ed = editorInstanceRef.current;
+              const sel = ed?.getSelection?.();
+              const modelText =
+                sel !== null && sel !== undefined
+                  ? ed?.getModel?.()?.getValueInRange?.(sel) ?? ""
+                  : "";
+              const selected =
+                modelText || window.getSelection()?.toString() || "";
+              if (selected) {
+                internalClipboardRef.current = selected;
+              }
+            }}
+            onCutCapture={() => {
+              const ed = editorInstanceRef.current;
+              const sel = ed?.getSelection?.();
+              const modelText =
+                sel !== null && sel !== undefined
+                  ? ed?.getModel?.()?.getValueInRange?.(sel) ?? ""
+                  : "";
+              const selected =
+                modelText || window.getSelection()?.toString() || "";
+              if (selected) {
+                internalClipboardRef.current = selected;
+              }
+            }}
+            onPasteCapture={(e) => {
+              const pasted = e.clipboardData?.getData("text/plain") ?? "";
+              const norm = (s: string) => s.replace(/\r\n/g, "\n");
+              if (
+                !internalClipboardRef.current ||
+                norm(pasted) !== norm(internalClipboardRef.current)
+              ) {
+                e.preventDefault();
+                e.stopPropagation();
+                setErrorMsg(
+                  "External paste blocked: you may only copy and paste code written within this code editor."
+                );
+              }
+            }}
+          >
             <MonacoEditor
               height="100%"
               language={session.language}
               theme={theme === "light" ? "light" : "vs-dark"}
               value={code}
+              onMount={(editor) => {
+                editorInstanceRef.current = editor as unknown as typeof editorInstanceRef.current;
+              }}
               onChange={(val) => {
                 setCode(val ?? "");
                 if (readyForBugInjection) setReadyForBugInjection(false);
@@ -1099,10 +1305,11 @@ export function AssessmentWorkspace({
             )}
           </div>
         </section>
+        )}
 
         {/* RIGHT PANE: Token Meter + Multi-Provider AI Chat + Compression */}
-        {showRightPane && (
-        <aside className="flex min-h-[480px] min-w-0 flex-col bg-[var(--surface-1)] lg:col-span-4 lg:min-h-0">
+        {visibleRight && (
+        <aside className={`${rightSpan} flex min-h-[480px] min-w-0 flex-col bg-[var(--surface-1)] lg:min-h-0`}>
           <TokenBudgetMeter
             tokensUsed={session.tokens_used}
             tokenBudget={session.token_budget}
@@ -1111,26 +1318,51 @@ export function AssessmentWorkspace({
             liveHints={liveHints}
           />
 
-          {/* Multi-Provider Switcher Bar */}
+          {/* Multi-Provider Switcher + Expand Bar */}
           <div className="flex items-center justify-between border-b border-[var(--border-subtle)] bg-[var(--surface-2)] px-3.5 py-1.5 text-[11px]">
             <span className="flex items-center gap-1 text-[var(--text-muted)]">
               <Cpu className="h-3 w-3 text-[var(--accent)]" />
               AI Provider
             </span>
-            <select
-              value={provider}
-              onChange={(e) => setProvider(e.target.value as AIProviderId)}
-              className="rounded-md border border-[var(--border-strong)] bg-[var(--surface-1)] px-2 py-0.5 text-[11px] text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
-            >
-              <option value="auto">Auto (Gemini → Failover)</option>
-              <option value="gemini">Google Gemini (Flash-Lite)</option>
-              <option value="groq">Groq (Llama 3.3 70B)</option>
-              <option value="openrouter">OpenRouter (Qwen Coder)</option>
-            </select>
+            <div className="flex items-center gap-2">
+              <select
+                value={provider}
+                onChange={(e) => setProvider(e.target.value as AIProviderId)}
+                className="rounded-md border border-[var(--border-strong)] bg-[var(--surface-1)] px-2 py-0.5 text-[11px] text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+              >
+                <option value="auto">Auto (Gemini → Failover)</option>
+                <option value="gemini">Google Gemini (Flash-Lite)</option>
+                <option value="groq">Groq (Llama 3.3 70B)</option>
+                <option value="openrouter">OpenRouter (Qwen Coder)</option>
+              </select>
+              <button
+                type="button"
+                onClick={() =>
+                  setExpandedPane((p) => (p === "right" ? "none" : "right"))
+                }
+                className="btn-tactile hidden rounded-md p-1 text-[var(--text-muted)] hover:bg-[var(--surface-1)] hover:text-[var(--text-primary)] lg:inline-flex"
+                title={
+                  expandedPane === "right"
+                    ? "Restore Split View"
+                    : "Expand AI Assistant Panel"
+                }
+              >
+                {expandedPane === "right" ? (
+                  <Minimize2 className="h-3.5 w-3.5" />
+                ) : (
+                  <Maximize2 className="h-3.5 w-3.5" />
+                )}
+              </button>
+            </div>
           </div>
 
-          {/* Chat Transcript */}
-          <div className="flex-1 space-y-3 overflow-y-auto p-3.5">
+          {/* Chat Transcript (copy outside editor disabled) */}
+          <div
+            onCopy={(e) => e.preventDefault()}
+            onCut={(e) => e.preventDefault()}
+            onContextMenu={(e) => e.preventDefault()}
+            className="flex-1 select-none space-y-3 overflow-y-auto p-3.5"
+          >
             {turns.length === 0 && (
               <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-2)] p-4 text-center text-xs text-[var(--text-muted)]">
                 <Sparkles className="mx-auto mb-2 h-5 w-5 text-[var(--accent)]" />

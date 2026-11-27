@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Cpu, LogOut, Shield, User, LayoutDashboard, ClipboardCheck } from "lucide-react";
 import { ThemeSwitcher } from "./ThemeProvider";
 import type { UserRole } from "@/types/assessment";
@@ -14,6 +14,7 @@ interface NavbarProps {
 
 export function Navbar({ userName, userEmail, role }: NavbarProps) {
   const router = useRouter();
+  const pathname = usePathname();
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -65,7 +66,7 @@ export function Navbar({ userName, userEmail, role }: NavbarProps) {
         </div>
 
         <div className="flex items-center gap-3">
-          <ThemeSwitcher />
+          {pathname !== "/profile" && <ThemeSwitcher />}
 
           <Link
             href="/profile"

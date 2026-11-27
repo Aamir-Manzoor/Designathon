@@ -3,6 +3,8 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { executionQueue } from "@/lib/engines/execution-queue";
 import type { CandidateSession, TestCase } from "@/types/assessment";
 
+export const maxDuration = 60;
+
 export async function POST(request: Request) {
   const supabase = await createServerSupabase();
   const {

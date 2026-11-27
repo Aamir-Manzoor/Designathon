@@ -12,6 +12,8 @@ import {
   ExternalLink,
   Shuffle,
   UserCheck,
+  XCircle,
+  Trash2,
 } from "lucide-react";
 
 export interface ApplicantRow {
@@ -21,7 +23,8 @@ export interface ApplicantRow {
   track: string;
   preferred_language: string;
   github_url: string | null;
-  status: "pending" | "invited" | "registered";
+  status: "pending" | "invited" | "registered" | "rejected";
+  invite_role?: "candidate" | "evaluator";
   invite_token: string | null;
   assigned_challenge_ids: string[];
   assigned_evaluator_id?: string | null;
@@ -78,8 +81,49 @@ export function ApplicantsInvitesPanel({
     )
   );
   const [sendingId, setSendingId] = useState<string | null>(null);
+  const [actionId, setActionId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
+
+  async function handleRejectInvite(appId: string) {
+    setActionId(appId);
+    setStatusMsg(null);
+    try {
+      const res = await fetch(`/api/applications/${appId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "rejected" }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setStatusMsg(data.error || "Could not reject invitation");
+      } else {
+        setStatusMsg("Invitation rejected and access link revoked.");
+        router.refresh();
+      }
+    } finally {
+      setActionId(null);
+    }
+  }
+
+  async function handleDeleteInvite(appId: string) {
+    setActionId(appId);
+    setStatusMsg(null);
+    try {
+      const res = await fetch(`/api/applications/${appId}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setStatusMsg(data.error || "Could not delete invitation");
+      } else {
+        setStatusMsg("Application / invitation deleted permanently.");
+        router.refresh();
+      }
+    } finally {
+      setActionId(null);
+    }
+  }
 
   // Admin Invite-Only Evaluator state
   const [evalName, setEvalName] = useState("");
@@ -338,11 +382,18 @@ export function ApplicantsInvitesPanel({
                               ? "bg-emerald-500/15 text-emerald-500"
                               : app.status === "invited"
                               ? "bg-cyan-500/15 text-cyan-500"
+                              : app.status === "rejected"
+                              ? "bg-red-500/15 text-red-500"
                               : "bg-amber-500/15 text-amber-500"
                           }`}
                         >
                           {app.status}
                         </span>
+                        {app.invite_role === "evaluator" && (
+                          <span className="rounded-full bg-cyan-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase text-cyan-500">
+                            Evaluator Invite
+                          </span>
+                        )}
                         <span className="text-xs text-[var(--text-muted)]">
                           {app.track} · {app.preferred_language}
                         </span>
@@ -369,25 +420,54 @@ export function ApplicantsInvitesPanel({
                             : "Copy Access Link"}
                         </button>
                       )}
+                      {app.invite_role !== "evaluator" && (
+                        <button
+                          type="button"
+                          disabled={sendingId === app.id || actionId === app.id}
+                          onClick={() => handleSendInvite(app.id)}
+                          className="btn-tactile inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3.5 py-1.5 text-xs font-semibold text-[var(--accent-fg)] hover:opacity-95 disabled:opacity-60"
+                        >
+                          {sendingId === app.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Send className="h-3.5 w-3.5" />
+                          )}
+                          {app.invite_token
+                            ? "Update & Resend Link"
+                            : "Approve & Send Access Link"}
+                        </button>
+                      )}
+                      {app.status !== "rejected" && app.status !== "registered" && (
+                        <button
+                          type="button"
+                          disabled={actionId === app.id || sendingId === app.id}
+                          onClick={() => handleRejectInvite(app.id)}
+                          className="btn-tactile inline-flex items-center gap-1 rounded-lg border border-amber-500/35 bg-amber-500/10 px-2.5 py-1.5 text-xs font-semibold text-amber-500 hover:bg-amber-500/20 disabled:opacity-60"
+                          title="Reject invitation and revoke link"
+                        >
+                          <XCircle className="h-3.5 w-3.5" />
+                          Reject
+                        </button>
+                      )}
                       <button
                         type="button"
-                        disabled={sendingId === app.id}
-                        onClick={() => handleSendInvite(app.id)}
-                        className="btn-tactile inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3.5 py-1.5 text-xs font-semibold text-[var(--accent-fg)] hover:opacity-95 disabled:opacity-60"
+                        disabled={actionId === app.id || sendingId === app.id}
+                        onClick={() => handleDeleteInvite(app.id)}
+                        className="btn-tactile inline-flex items-center gap-1 rounded-lg border border-red-500/35 bg-red-500/10 px-2.5 py-1.5 text-xs font-semibold text-red-500 hover:bg-red-500/20 disabled:opacity-60"
+                        title="Delete permanently"
                       >
-                        {sendingId === app.id ? (
+                        {actionId === app.id ? (
                           <Loader2 className="h-3.5 w-3.5 animate-spin" />
                         ) : (
-                          <Send className="h-3.5 w-3.5" />
+                          <Trash2 className="h-3.5 w-3.5" />
                         )}
-                        {app.invite_token
-                          ? "Update & Resend Link"
-                          : "Approve & Send Access Link"}
+                        Delete
                       </button>
                     </div>
                   </div>
 
-                  {/* Challenge & Evaluator Assignment */}
+                  {/* Challenge & Evaluator Assignment (for Candidate applications only) */}
+                  {app.invite_role !== "evaluator" && (
                   <div className="mt-3 border-t border-[var(--border-subtle)] pt-3">
                     <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                       <div className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
@@ -455,6 +535,7 @@ export function ApplicantsInvitesPanel({
                       })}
                     </div>
                   </div>
+                  )}
                 </div>
               );
             })}

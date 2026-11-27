@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { ThemeSwitcher } from "@/components/ThemeProvider";
 import {
   Cpu,
   Lock,
@@ -73,9 +72,6 @@ export default function LoginPage() {
         >
           ← Back to Home
         </Link>
-      </div>
-      <div className="absolute right-6 top-6 z-20">
-        <ThemeSwitcher />
       </div>
 
       <div className="relative z-10 w-full max-w-md">

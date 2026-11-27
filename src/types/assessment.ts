@@ -73,6 +73,7 @@ export interface CandidateSession {
   candidate_name: string;
   candidate_email: string;
   is_synthetic: boolean;
+  is_practice?: boolean;
   language: SupportedLanguage;
   phase: SessionPhase;
   current_code: string;

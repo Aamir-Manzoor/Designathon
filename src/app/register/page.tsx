@@ -4,7 +4,6 @@ import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { ThemeSwitcher } from "@/components/ThemeProvider";
 import {
   Cpu,
   Lock,
@@ -312,9 +311,6 @@ export default function RegisterPage() {
         >
           ← Back to Home
         </Link>
-      </div>
-      <div className="absolute right-6 top-6 z-20">
-        <ThemeSwitcher />
       </div>
 
       <Suspense

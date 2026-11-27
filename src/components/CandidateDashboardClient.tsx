@@ -62,10 +62,8 @@ export function CandidateDashboardClient({
     challenges[challenges.length - 1] ||
     null;
 
-  // Single-attempt lock: once an official exam is submitted, candidate cannot start it again
-  const submittedOfficialSession = sessions.find(
-    (s) => !s.is_practice && s.phase === "submitted"
-  );
+  // Strict single-access lock: once an official exam has been launched or submitted, candidate cannot start it again
+  const submittedOfficialSession = sessions.find((s) => !s.is_practice);
   const hasSubmittedOfficial = Boolean(submittedOfficialSession);
 
   // Resume is ONLY allowed for Practice tests, never for Official tests
