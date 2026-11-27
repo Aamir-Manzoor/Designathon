@@ -212,7 +212,7 @@ export function LandingShowcase({
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--accent)] opacity-75" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--accent)]" />
             </span>
-            Token-Conscious AI Coding Assessment · Live Demo Ready
+            Token-Conscious AI Coding Assessment Platform
           </div>
 
           <h1 className="hero-stagger text-balance text-4xl font-extrabold tracking-tight text-[var(--text-primary)] sm:text-6xl sm:leading-[1.08]">
@@ -231,18 +231,26 @@ export function LandingShowcase({
 
           <div className="hero-stagger mt-9 flex flex-wrap items-center justify-center gap-3.5">
             <Link
-              href="/login"
+              href={
+                signedInRole === "admin"
+                  ? "/admin"
+                  : signedInRole === "candidate"
+                  ? "/dashboard"
+                  : "/login"
+              }
               className="btn-tactile inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-6 py-3.5 text-sm font-semibold text-[var(--accent-fg)] shadow-lg hover:opacity-95"
             >
               Launch Assessment Workspace
               <ArrowRight className="h-4 w-4" />
             </Link>
-            <Link
-              href="/register"
-              className="btn-tactile inline-flex items-center gap-2 rounded-xl border border-[var(--border-strong)] bg-[var(--surface-1)] px-6 py-3.5 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-2)]"
-            >
-              Create Account
-            </Link>
+            {!signedInRole && (
+              <Link
+                href="/register"
+                className="btn-tactile inline-flex items-center gap-2 rounded-xl border border-[var(--border-strong)] bg-[var(--surface-1)] px-6 py-3.5 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-2)]"
+              >
+                Create Account
+              </Link>
+            )}
           </div>
 
           {/* Key Metric Strip */}
@@ -798,10 +806,10 @@ export function LandingShowcase({
               </h2>
             </div>
             <Link
-              href="/login"
+              href={signedInRole === "admin" ? "/admin" : "/login"}
               className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--accent)] hover:underline"
             >
-              Inspect full cohort &amp; export .xlsx in Evaluator Console
+              Open Evaluator Console
               <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>
@@ -923,22 +931,28 @@ export function LandingShowcase({
             <div>
               <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--accent)]">
                 <Sparkles className="h-3.5 w-3.5" />
-                Ready to inspect live
+                Get Started
               </div>
               <h2 className="mt-1 text-2xl font-bold">
-                Switch themes live or sign in with demo credentials
+                Start evaluating AI-assisted engineering today
               </h2>
               <p className="mt-1 text-sm text-[var(--text-muted)]">
-                Full JWT authentication for both Admin / Evaluator and Candidate
-                portals.
+                Role-based access for Evaluators and Candidates with full
+                session analytics.
               </p>
             </div>
             <div className="flex shrink-0 items-center gap-3">
               <Link
-                href="/login"
+                href={
+                  signedInRole === "admin"
+                    ? "/admin"
+                    : signedInRole === "candidate"
+                    ? "/dashboard"
+                    : "/login"
+                }
                 className="btn-tactile inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-6 py-3 text-sm font-semibold text-[var(--accent-fg)] hover:opacity-95"
               >
-                Open Demo Login
+                {signedInRole ? "Go to Workspace" : "Sign In"}
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
