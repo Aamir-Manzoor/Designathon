@@ -4,7 +4,11 @@ import type {
   TestCase,
 } from "@/types/assessment";
 import { executeTestCases } from "./executor";
-import { extractCodeFromMarkdown, getGeminiClient, getGeminiModel } from "./gemini";
+import {
+  extractCodeFromMarkdown,
+  generateTextWithFallback,
+  getGeminiClient,
+} from "./gemini";
 
 export interface BugInjectionResult {
   mutatedCode: string;
@@ -63,24 +67,14 @@ export async function injectControlledBug(params: {
   const client = getGeminiClient();
   if (client) {
     try {
-      const res = await client.models.generateContent({
-        model: getGeminiModel(),
-        contents: [
-          {
-            role: "user",
-            parts: [
-              {
-                text: [
-                  `Inject ONE subtle, realistic, syntactically valid bug into this ${language} code.`,
-                  `Target bug instruction: ${rule.fallback_bug_instruction}`,
-                  `Do NOT add comments revealing the bug. Return ONLY the complete mutated ${language} code inside a \`\`\`${language} block.`,
-                  `\n\`\`\`${language}\n${workingCode}\n\`\`\``,
-                ].join("\n"),
-              },
-            ],
-          },
-        ],
-        config: { temperature: 0.1 },
+      const res = await generateTextWithFallback({
+        prompt: [
+          `Inject ONE subtle, realistic, syntactically valid bug into this ${language} code.`,
+          `Target bug instruction: ${rule.fallback_bug_instruction}`,
+          `Do NOT add comments revealing the bug. Return ONLY the complete mutated ${language} code inside a \`\`\`${language} block.`,
+          `\n\`\`\`${language}\n${workingCode}\n\`\`\``,
+        ].join("\n"),
+        temperature: 0.1,
       });
 
       const mutated = extractCodeFromMarkdown(res.text ?? "", language);

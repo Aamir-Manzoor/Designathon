@@ -6,7 +6,7 @@ import type {
   ScorecardBreakdown,
   SingleTestResult,
 } from "@/types/assessment";
-import { getGeminiClient, getGeminiModel } from "./gemini";
+import { generateTextWithFallback, getGeminiClient } from "./gemini";
 
 export interface EvaluationResult {
   prompt_quality_score: number;
@@ -287,13 +287,10 @@ export async function evaluateSession(params: {
         `\nCandidate Prompt Transcript:\n${transcript}`,
       ].join("\n");
 
-      const res = await client.models.generateContent({
-        model: getGeminiModel(),
-        contents: [{ role: "user", parts: [{ text: evalPrompt }] }],
-        config: {
-          temperature: 0.1,
-          responseMimeType: "application/json",
-        },
+      const res = await generateTextWithFallback({
+        prompt: evalPrompt,
+        temperature: 0.1,
+        responseMimeType: "application/json",
       });
 
       const parsed = JSON.parse(res.text ?? "{}");

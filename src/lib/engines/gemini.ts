@@ -70,6 +70,56 @@ export interface GeminiTurnResult {
   model: string;
 }
 
+/**
+ * Shared resilient Gemini text/JSON generator with automatic retry and model failover.
+ */
+export async function generateTextWithFallback(params: {
+  prompt: string;
+  temperature?: number;
+  responseMimeType?: string;
+}): Promise<{ text: string; model: string }> {
+  const client = getGeminiClient();
+  if (!client) {
+    throw new Error("GEMINI_API_KEY is not configured.");
+  }
+
+  const candidates = getGeminiModelCandidates();
+  let lastError: unknown = null;
+
+  for (const model of candidates) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const res = await client.models.generateContent({
+          model,
+          contents: [{ role: "user", parts: [{ text: params.prompt }] }],
+          config: {
+            temperature: params.temperature ?? 0.1,
+            ...(params.responseMimeType
+              ? { responseMimeType: params.responseMimeType }
+              : {}),
+          },
+        });
+        return { text: res.text ?? "", model };
+      } catch (err) {
+        lastError = err;
+        const msg = err instanceof Error ? err.message : String(err);
+        if (msg.includes("404") || msg.includes("NOT_FOUND")) {
+          break;
+        }
+        if (attempt === 0 && isRetryableOrUnavailable(err)) {
+          await new Promise((r) => setTimeout(r, 800));
+          continue;
+        }
+        break;
+      }
+    }
+  }
+
+  throw lastError instanceof Error
+    ? lastError
+    : new Error("All Gemini models are currently unavailable.");
+}
+
 export async function generateCodingReply(params: {
   systemInstruction: string;
   messages: Array<{ role: "user" | "model"; text: string }>;
