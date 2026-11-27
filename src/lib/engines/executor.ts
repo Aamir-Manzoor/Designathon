@@ -210,10 +210,69 @@ async function runViaLocalFallback(
   };
 }
 
+async function runViaPistonCloud(
+  code: string,
+  language: SupportedLanguage,
+  testCases: TestCase[]
+): Promise<ExecutionBatchResult> {
+  const startTime = Date.now();
+  const pistonLang = language === "python" ? "python" : "javascript";
+  const pistonVersion = language === "python" ? "3.10.0" : "18.15.0";
+  const results: SingleTestResult[] = [];
+
+  for (const tc of testCases) {
+    const t0 = Date.now();
+    const res = await fetch("https://emkc.org/api/v2/piston/execute", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        language: pistonLang,
+        version: pistonVersion,
+        files: [{ content: code }],
+        stdin: tc.input,
+        run_timeout: 3000,
+      }),
+    });
+    if (!res.ok) {
+      throw new Error(`Piston execute failed: HTTP ${res.status}`);
+    }
+    const data = (await res.json()) as {
+      run?: { stdout?: string; stderr?: string; code?: number };
+    };
+    const actual = (data.run?.stdout ?? "").trim();
+    const expected = tc.expected_output.trim();
+    const stderr = data.run?.stderr?.trim() || null;
+    const passed =
+      (data.run?.code ?? 0) === 0 &&
+      normalizeOutput(actual) === normalizeOutput(expected);
+
+    results.push({
+      test_case_id: tc.id,
+      name: tc.name,
+      visibility: tc.visibility,
+      passed,
+      actual_output: actual,
+      expected_output: expected,
+      stderr,
+      status: passed ? "Accepted" : stderr ? "Runtime Error" : "Wrong Answer",
+      runtime_ms: Date.now() - t0,
+    });
+  }
+
+  return {
+    engine: "judge0",
+    passedCount: results.filter((r) => r.passed).length,
+    totalCount: results.length,
+    runtimeMs: Date.now() - startTime,
+    results,
+  };
+}
+
 /**
  * Executes candidate code against a list of test cases.
- * Uses Judge0 CE when configured; gracefully falls back to local sandboxed runner
- * if ALLOW_LOCAL_EXECUTOR_FALLBACK=true and Judge0 CE is unavailable.
+ * 1) Primary: Judge0 CE when configured
+ * 2) Cloud fallback on Vercel / Linux serverless: Piston API (supports Python & JS)
+ * 3) Local fallback on dev machines: isolated Python/Node child process
  */
 export async function executeTestCases(
   code: string,
@@ -232,10 +291,7 @@ export async function executeTestCases(
       return await runViaJudge0(code, language, testCases);
     } catch (err) {
       if (!allowFallback) throw err;
-      console.warn(
-        "[Executor] Judge0 CE failed, falling back to local runner:",
-        err
-      );
+      console.warn("[Executor] Judge0 CE failed, trying fallback:", err);
     }
   }
 
@@ -245,5 +301,15 @@ export async function executeTestCases(
     );
   }
 
-  return await runViaLocalFallback(code, language, testCases);
+  // On Vercel serverless, local Python is not installed — use Piston cloud sandbox first
+  if (process.env.VERCEL && language === "python") {
+    return await runViaPistonCloud(code, language, testCases);
+  }
+
+  try {
+    return await runViaLocalFallback(code, language, testCases);
+  } catch (localErr) {
+    console.warn("[Executor] Local fallback failed, trying Piston cloud:", localErr);
+    return await runViaPistonCloud(code, language, testCases);
+  }
 }
