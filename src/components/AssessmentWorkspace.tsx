@@ -449,7 +449,7 @@ export function AssessmentWorkspace({
   if (session.phase === "submitted" && scorecard) {
     return (
       <div className="min-h-screen bg-[var(--bg-canvas)] px-6 py-8 text-[var(--text-primary)]">
-        <div className="mx-auto max-w-5xl">
+        <div className="mx-auto max-w-[1600px]">
           <div className="mb-6 flex items-center justify-between">
             <Link
               href="/dashboard"

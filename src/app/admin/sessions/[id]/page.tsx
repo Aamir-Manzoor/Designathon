@@ -73,7 +73,7 @@ export default async function AdminSessionReviewPage({
         role="admin"
       />
 
-      <main className="mx-auto max-w-6xl space-y-8 px-6 py-8">
+      <main className="mx-auto max-w-[1600px] space-y-8 px-6 py-8">
         <div className="flex items-center justify-between">
           <Link
             href="/admin"

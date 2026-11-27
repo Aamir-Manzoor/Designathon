@@ -47,7 +47,7 @@ export function LandingShowcase({
 
       {/* Sticky Glass Navbar */}
       <header className="sticky top-0 z-40 border-b border-[var(--border-subtle)] bg-[var(--bg-canvas)]/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3.5">
+        <div className="mx-auto flex max-w-[1600px] items-center justify-between px-6 py-3.5">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--accent-border)] bg-[var(--accent-soft)]">
               <Cpu className="h-4.5 w-4.5 text-[var(--accent)]" />
@@ -97,7 +97,7 @@ export function LandingShowcase({
         </div>
       </header>
 
-      <main className="relative z-10 mx-auto max-w-7xl px-6 pb-24 pt-16 sm:pt-20">
+      <main className="relative z-10 mx-auto max-w-[1600px] px-6 pb-24 pt-16 sm:pt-20">
         {/* HERO SECTION */}
         <section className="mx-auto max-w-4xl text-center">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[var(--accent-border)] bg-[var(--accent-soft)] px-3.5 py-1.5 text-xs font-semibold text-[var(--accent)]">
