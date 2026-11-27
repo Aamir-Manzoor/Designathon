@@ -520,6 +520,106 @@ export function LandingShowcase({
           </div>
         </section>
 
+        {/* WHY CONVENTIONAL TESTS FAIL — DIRECT PROBLEM STATEMENT TIE-IN */}
+        <section className="mt-20">
+          <div className="mb-8 flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
+            <div>
+              <p className="font-mono text-xs font-semibold uppercase tracking-wider text-[var(--accent)]">
+                The Assessment Gap
+              </p>
+              <h2 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">
+                Why conventional coding tests break in the AI era
+              </h2>
+            </div>
+            <p className="text-xs text-[var(--text-muted)]">
+              Built to measure coding outcomes and token-conscious AI engineering
+            </p>
+          </div>
+
+          <div className="grid gap-5 lg:grid-cols-2">
+            <div className="surface-card rounded-2xl border-rose-500/25 p-6">
+              <div className="inline-flex items-center gap-2 rounded-full bg-rose-500/10 px-3 py-1 text-xs font-semibold text-rose-500">
+                <XCircle className="h-3.5 w-3.5" />
+                Conventional Coding Tests
+              </div>
+              <ul className="mt-4 space-y-3 text-sm text-[var(--text-secondary)]">
+                <li className="flex items-start gap-2.5">
+                  <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-rose-500" />
+                  <span>
+                    Rarely measure how effectively developers{" "}
+                    <strong className="text-[var(--text-primary)]">
+                      guide AI or validate its output
+                    </strong>
+                    .
+                  </span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-rose-500" />
+                  <span>
+                    Excessive prompting, repeated context, and unnecessary model
+                    calls{" "}
+                    <strong className="text-[var(--text-primary)]">
+                      spike assessment API costs
+                    </strong>{" "}
+                    without improving code quality.
+                  </span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-rose-500" />
+                  <span>
+                    Binary pass/fail test results hide whether a candidate can{" "}
+                    <strong className="text-[var(--text-primary)]">
+                      debug subtle injected regressions
+                    </strong>
+                    .
+                  </span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="surface-card rounded-2xl border-[var(--accent-border)] p-6">
+              <div className="inline-flex items-center gap-2 rounded-full bg-[var(--accent-soft)] px-3 py-1 text-xs font-semibold text-[var(--accent)]">
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                PromptBench AI Assessment Platform
+              </div>
+              <ul className="mt-4 space-y-3 text-sm text-[var(--text-secondary)]">
+                <li className="flex items-start gap-2.5">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+                  <span>
+                    Prompt-faithful AI generation +{" "}
+                    <strong className="text-[var(--text-primary)]">
+                      controlled reproducible bug injection
+                    </strong>{" "}
+                    and guided debugging.
+                  </span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+                  <span>
+                    Live candidate{" "}
+                    <strong className="text-[var(--text-primary)]">
+                      Token Budget Meter
+                    </strong>
+                    , burn warnings, prompt compression, and adaptive context
+                    reduction.
+                  </span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+                  <span>
+                    Explainable{" "}
+                    <strong className="text-[var(--text-primary)]">
+                      100-point rubric
+                    </strong>{" "}
+                    (40 / 10 / 30 / 20) with turn citations, integrity logs, and
+                    3-sheet Excel scorecards.
+                  </span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
         {/* 5-STAGE ASSESSMENT WORKFLOW */}
         <section className="workflow-section mt-20">
           <div className="mb-8 flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
@@ -683,6 +783,137 @@ export function LandingShowcase({
               </code>{" "}
               exports.
             </p>
+          </div>
+        </section>
+
+        {/* PRE-LOADED SYNTHETIC COHORT SPOTLIGHT */}
+        <section className="mt-20">
+          <div className="mb-6 flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
+            <div>
+              <p className="font-mono text-xs font-semibold uppercase tracking-wider text-emerald-500">
+                Correctness vs. Token Efficiency
+              </p>
+              <h2 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">
+                5 Synthetic Candidate Scorecards Pre-Loaded
+              </h2>
+            </div>
+            <Link
+              href="/login"
+              className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--accent)] hover:underline"
+            >
+              Inspect full cohort &amp; export .xlsx in Admin Console
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+
+          <div className="surface-card overflow-x-auto rounded-2xl">
+            <table className="w-full text-left text-xs">
+              <thead className="border-b border-[var(--border-subtle)] bg-[var(--surface-2)] uppercase text-[var(--text-muted)]">
+                <tr>
+                  <th className="px-5 py-3.5">Candidate Persona</th>
+                  <th className="px-4 py-3.5 text-center">Score (/100)</th>
+                  <th className="px-4 py-3.5">Token Burn (of 6,000)</th>
+                  <th className="px-4 py-3.5">Tokens Saved</th>
+                  <th className="px-5 py-3.5">Key Takeaway</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[var(--border-subtle)]">
+                {[
+                  {
+                    name: "Aarav Sharma",
+                    tag: "Optimal Engineer",
+                    score: "92.0",
+                    tokens: 1420,
+                    pct: 24,
+                    saved: "+1,180",
+                    note: "Spec-driven Turn #1 + surgical 1-line debug prompt.",
+                    tone: "emerald",
+                  },
+                  {
+                    name: "Marcus Chen",
+                    tag: "Minimalist",
+                    score: "89.0",
+                    tokens: 1180,
+                    pct: 20,
+                    saved: "+890",
+                    note: "Lowest token footprint in cohort with fast verification.",
+                    tone: "emerald",
+                  },
+                  {
+                    name: "Rohan Verma",
+                    tag: "Strong Debugger",
+                    score: "86.0",
+                    tokens: 2380,
+                    pct: 40,
+                    saved: "+1,520",
+                    note: "High prompt improvement (+9/10) across iterative turns.",
+                    tone: "cyan",
+                  },
+                  {
+                    name: "Maya Lin",
+                    tag: "High Token Burn",
+                    score: "74.0",
+                    tokens: 5120,
+                    pct: 85,
+                    saved: "+2,340",
+                    note: "Working code, but pasted full files & triggered 85% warning.",
+                    tone: "amber",
+                  },
+                  {
+                    name: "Elena Rostova",
+                    tag: "Budget Critical",
+                    score: "61.0",
+                    tokens: 5540,
+                    pct: 92,
+                    saved: "+2,610",
+                    note: "Vague prompts burned 92% budget and missed boundary debug.",
+                    tone: "rose",
+                  },
+                ].map((c) => (
+                  <tr
+                    key={c.name}
+                    className="transition-colors hover:bg-[var(--surface-2)]/60"
+                  >
+                    <td className="px-5 py-3.5">
+                      <div className="font-semibold text-[var(--text-primary)]">
+                        {c.name}
+                      </div>
+                      <div className="text-[11px] text-[var(--text-muted)]">
+                        {c.tag}
+                      </div>
+                    </td>
+                    <td className="tabular-nums px-4 py-3.5 text-center font-mono text-sm font-bold text-[var(--text-primary)]">
+                      {c.score}
+                    </td>
+                    <td className="tabular-nums px-4 py-3.5 font-mono">
+                      <div className="flex items-center gap-2">
+                        <div className="h-1.5 w-20 overflow-hidden rounded-full bg-[var(--surface-2)]">
+                          <div
+                            className={`h-full rounded-full ${
+                              c.pct >= 85
+                                ? "bg-rose-500"
+                                : c.pct >= 60
+                                ? "bg-amber-500"
+                                : "bg-emerald-500"
+                            }`}
+                            style={{ width: `${c.pct}%` }}
+                          />
+                        </div>
+                        <span className="text-[var(--text-secondary)]">
+                          {c.tokens.toLocaleString()} ({c.pct}%)
+                        </span>
+                      </div>
+                    </td>
+                    <td className="tabular-nums px-4 py-3.5 font-mono font-semibold text-emerald-500">
+                      {c.saved}
+                    </td>
+                    <td className="px-5 py-3.5 text-[var(--text-secondary)]">
+                      {c.note}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </section>
 
