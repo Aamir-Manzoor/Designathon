@@ -807,7 +807,7 @@ export function AssessmentWorkspace({
       : "lg:col-span-12";
 
   return (
-    <div className="flex min-h-screen flex-col bg-[var(--bg-canvas)] text-[var(--text-primary)] lg:h-screen lg:overflow-hidden">
+    <div className="flex min-h-[100dvh] flex-col bg-[var(--bg-canvas)] text-[var(--text-primary)] lg:h-[100dvh] lg:overflow-hidden">
       {/* Exit Confirmation Modal for Single-Attempt Official Exams */}
       {showExitModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
@@ -900,7 +900,7 @@ export function AssessmentWorkspace({
                 {session.language}
               </span>
             </div>
-            <div className="mt-0.5 flex items-center gap-2 text-[11px]">
+            <div className="mt-0.5 hidden items-center gap-2 text-[11px] sm:flex">
               <span
                 className={
                   session.phase === "coding"
@@ -1608,7 +1608,7 @@ export function AssessmentWorkspace({
                     ? "Describe the failing debug test and ask for a targeted fix..."
                     : "Write a clear, token-conscious prompt (Enter to send)..."
                 }
-                className="flex-1 resize-none rounded-xl border border-[var(--border-strong)] bg-[var(--surface-1)] p-2.5 text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none"
+                className="flex-1 resize-none rounded-xl border border-[var(--border-strong)] bg-[var(--surface-1)] p-2.5 text-base text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none sm:text-xs"
               />
               <button
                 type="submit"

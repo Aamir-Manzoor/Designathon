@@ -17,9 +17,9 @@ export function ScorecardView({
   return (
     <div className="space-y-6">
       {/* Top Hero Score */}
-      <div className="surface-card rounded-2xl border-[var(--accent-border)] p-6">
+      <div className="surface-card rounded-2xl border-[var(--accent-border)] p-4 sm:p-6">
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-          <div>
+          <div className="min-w-0">
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[var(--accent)]">
               <Award className="h-4 w-4" />
               Explainable Assessment Scorecard
@@ -38,7 +38,7 @@ export function ScorecardView({
               </p>
             )}
           </div>
-          <div className="flex shrink-0 flex-col items-center justify-center rounded-xl border border-[var(--accent-border)] bg-[var(--accent-soft)] px-6 py-4">
+          <div className="flex w-full shrink-0 flex-col items-center justify-center rounded-xl border border-[var(--accent-border)] bg-[var(--accent-soft)] px-6 py-4 sm:w-auto">
             <span className="tabular-nums font-mono text-3xl font-extrabold text-[var(--text-primary)]">
               {Number(scorecard.total_score).toFixed(1)}
             </span>

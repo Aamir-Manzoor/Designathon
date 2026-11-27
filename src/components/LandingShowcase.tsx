@@ -154,7 +154,7 @@ export function LandingShowcase({
 
       {/* Sticky Solid-Surface Header (no heavy backdrop-blur over WebGL) */}
       <header className="sticky top-0 z-40 border-b border-[var(--border-subtle)] bg-[var(--bg-canvas)]/95">
-        <div className="mx-auto flex max-w-[1600px] items-center justify-between px-6 py-3.5">
+        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-2 px-4 py-3 sm:px-6 sm:py-3.5">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--accent-border)] bg-[var(--accent-soft)]">
               <Cpu className="h-4.5 w-4.5 text-[var(--accent)]" />
@@ -191,15 +191,15 @@ export function LandingShowcase({
               <>
                 <Link
                   href="/login"
-                  className="btn-tactile rounded-lg px-3.5 py-2 text-xs font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-2)] hover:text-[var(--text-primary)]"
+                  className="btn-tactile rounded-lg px-2.5 py-1.5 text-xs font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-2)] hover:text-[var(--text-primary)] sm:px-3.5 sm:py-2"
                 >
                   Sign In
                 </Link>
                 <Link
-                  href="/register"
-                  className="btn-tactile inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-4 py-2 text-xs font-semibold text-[var(--accent-fg)] shadow-sm hover:opacity-95"
+                  href="/apply"
+                  className="btn-tactile inline-flex items-center gap-1 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-xs font-semibold text-[var(--accent-fg)] shadow-sm hover:opacity-95 sm:gap-1.5 sm:px-4 sm:py-2"
                 >
-                  Launch Portal
+                  <span>Apply</span>
                   <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
               </>
@@ -208,32 +208,32 @@ export function LandingShowcase({
         </div>
       </header>
 
-      <main className="relative z-10 mx-auto max-w-[1600px] px-6 pb-24 pt-16 sm:pt-20">
+      <main className="relative z-10 mx-auto max-w-[1600px] px-4 pb-16 pt-10 sm:px-6 sm:pb-24 sm:pt-20">
         {/* HERO SECTION */}
         <section className="mx-auto max-w-4xl text-center">
-          <div className="hero-stagger mb-6 inline-flex items-center gap-2 rounded-full border border-[var(--accent-border)] bg-[var(--accent-soft)] px-3.5 py-1.5 text-xs font-semibold text-[var(--accent)]">
-            <span className="relative flex h-2 w-2">
+          <div className="hero-stagger mb-5 inline-flex max-w-full items-center gap-2 rounded-full border border-[var(--accent-border)] bg-[var(--accent-soft)] px-3 py-1.5 text-[11px] font-semibold text-[var(--accent)] sm:mb-6 sm:px-3.5 sm:text-xs">
+            <span className="relative flex h-2 w-2 shrink-0">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--accent)] opacity-75" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--accent)]" />
             </span>
-            Token-Conscious AI Coding Assessment Platform
+            <span className="truncate">Token-Conscious AI Coding Assessment Platform</span>
           </div>
 
-          <h1 className="hero-stagger text-balance text-4xl font-extrabold tracking-tight text-[var(--text-primary)] sm:text-6xl sm:leading-[1.08]">
+          <h1 className="hero-stagger text-balance text-3xl font-extrabold tracking-tight text-[var(--text-primary)] sm:text-5xl lg:text-6xl lg:leading-[1.08]">
             Measure how engineers{" "}
             <span className="bg-gradient-to-r from-[var(--accent)] via-emerald-400 to-cyan-400 bg-clip-text text-transparent">
               guide AI, debug bugs, and optimize tokens
             </span>
           </h1>
 
-          <p className="hero-stagger text-pretty mx-auto mt-6 max-w-2xl text-base leading-relaxed text-[var(--text-muted)] sm:text-lg">
+          <p className="hero-stagger text-pretty mx-auto mt-5 max-w-2xl text-sm leading-relaxed text-[var(--text-muted)] sm:mt-6 sm:text-lg">
             Conventional coding tests measure syntax memorization. PromptBench
             evaluates real-world AI-assisted engineering: prompt craft,
             iterative refinement, controlled bug debugging, and live token
             efficiency — scored on an explainable 100-point rubric.
           </p>
 
-          <div className="hero-stagger mt-9 flex flex-wrap items-center justify-center gap-3.5">
+          <div className="hero-stagger mt-8 flex flex-col items-stretch justify-center gap-3 sm:mt-9 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3.5">
             <Link
               href={
                 signedInRole === "admin" || signedInRole === "evaluator"
@@ -242,7 +242,7 @@ export function LandingShowcase({
                   ? "/dashboard"
                   : "/login"
               }
-              className="btn-tactile inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-6 py-3.5 text-sm font-semibold text-[var(--accent-fg)] shadow-lg hover:opacity-95"
+              className="btn-tactile inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-6 py-3.5 text-sm font-semibold text-[var(--accent-fg)] shadow-lg hover:opacity-95 sm:w-auto"
             >
               Launch Assessment Workspace
               <ArrowRight className="h-4 w-4" />
@@ -250,7 +250,7 @@ export function LandingShowcase({
             {!signedInRole && (
               <Link
                 href="/apply"
-                className="btn-tactile inline-flex items-center gap-2 rounded-xl border border-[var(--border-strong)] bg-[var(--surface-1)] px-6 py-3.5 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-2)]"
+                className="btn-tactile inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--border-strong)] bg-[var(--surface-1)] px-6 py-3.5 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-2)] sm:w-auto"
               >
                 Apply as Candidate
               </Link>
@@ -300,7 +300,7 @@ export function LandingShowcase({
                 </span>
               </div>
 
-              <div className="flex flex-wrap rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-1)] p-0.5 text-xs">
+              <div className="flex w-full overflow-x-auto rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-1)] p-0.5 text-xs sm:w-auto">
                 {[
                   { id: "ide" as PreviewTab, label: "1. AI IDE & Token Meter", icon: Terminal },
                   { id: "bug" as PreviewTab, label: "2. Controlled Bug Injection", icon: Bug },
@@ -310,7 +310,7 @@ export function LandingShowcase({
                     key={tab.id}
                     type="button"
                     onClick={() => setPreviewTab(tab.id)}
-                    className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[11px] font-semibold transition-colors ${
+                    className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-[11px] font-semibold transition-colors ${
                       previewTab === tab.id
                         ? "bg-[var(--accent)] text-[var(--accent-fg)]"
                         : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
@@ -485,7 +485,7 @@ export function LandingShowcase({
                       1,420 tok · $0.00029 · 64.8 pts/1K tok
                     </div>
                   </div>
-                  <div className="lg:col-span-8 grid grid-cols-2 gap-3 text-xs">
+                  <div className="grid grid-cols-1 gap-3 text-xs sm:grid-cols-2 lg:col-span-8">
                     {[
                       {
                         label: "Prompt Quality",
@@ -696,7 +696,7 @@ export function LandingShowcase({
               tiers as token budgets tighten — paired with 1-click prompt
               compression and multi-provider failover.
             </p>
-            <div className="mt-5 grid grid-cols-3 gap-2.5 text-center font-mono text-xs">
+            <div className="mt-5 grid grid-cols-1 gap-2.5 text-center font-mono text-xs sm:grid-cols-3">
               <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-2)] p-3">
                 <div className="text-[10px] text-[var(--text-muted)]">
                   &lt;50% Used
@@ -820,7 +820,7 @@ export function LandingShowcase({
           </div>
 
           <div className="surface-card overflow-x-auto rounded-2xl">
-            <table className="w-full text-left text-xs">
+            <table className="w-full min-w-[680px] text-left text-xs">
               <thead className="border-b border-[var(--border-subtle)] bg-[var(--surface-2)] uppercase text-[var(--text-muted)]">
                 <tr>
                   <th className="px-5 py-3.5">Candidate</th>

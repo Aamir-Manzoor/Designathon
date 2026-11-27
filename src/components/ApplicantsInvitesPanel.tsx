@@ -246,7 +246,7 @@ export function ApplicantsInvitesPanel({
       {/* Invite-Only Evaluator Onboarding */}
       <form
         onSubmit={handleInviteEvaluator}
-        className="surface-card rounded-2xl border-cyan-500/25 p-6"
+        className="surface-card rounded-2xl border-cyan-500/25 p-4 sm:p-6"
       >
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
@@ -309,7 +309,7 @@ export function ApplicantsInvitesPanel({
       </form>
 
       {/* Candidate Applications */}
-      <div className="surface-card rounded-2xl p-6">
+      <div className="surface-card rounded-2xl p-4 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="flex items-center gap-2 text-base font-bold text-[var(--text-primary)]">
@@ -584,7 +584,7 @@ export function ApplicantsInvitesPanel({
       </div>
 
       {/* Built-In Email Outbox Viewer */}
-      <div className="surface-card rounded-2xl p-6">
+      <div className="surface-card rounded-2xl p-4 sm:p-6">
         <h2 className="flex items-center gap-2 text-base font-bold text-[var(--text-primary)]">
           <Mail className="h-4 w-4 text-cyan-500" />
           Email Notifications Outbox ({emails.length})

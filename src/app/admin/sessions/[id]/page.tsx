@@ -79,7 +79,7 @@ export default async function AdminSessionReviewPage({
         role={viewerRole}
       />
 
-      <main className="mx-auto max-w-[1600px] space-y-8 px-6 py-8">
+      <main className="mx-auto max-w-[1600px] space-y-6 px-4 py-6 sm:space-y-8 sm:px-6 sm:py-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Link
             href="/admin"
@@ -194,8 +194,8 @@ export default async function AdminSessionReviewPage({
         </section>
 
         {/* Final Code & Integrity Log */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          <section className="surface-card rounded-2xl p-5">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <section className="surface-card min-w-0 rounded-2xl p-4 sm:p-5">
             <h2 className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
               <Code2 className="h-4 w-4 text-emerald-500" />
               Final Submitted Code ({revisions?.length ?? 0} revisions)
@@ -214,7 +214,7 @@ export default async function AdminSessionReviewPage({
             )}
           </section>
 
-          <section className="surface-card rounded-2xl p-5">
+          <section className="surface-card min-w-0 rounded-2xl p-4 sm:p-5">
             <h2 className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
               <ShieldAlert className="h-4 w-4 text-amber-500" />
               Integrity &amp; Proctoring Log ({integrityEvents?.length ?? 0})

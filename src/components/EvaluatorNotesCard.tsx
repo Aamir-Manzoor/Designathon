@@ -137,7 +137,7 @@ export function EvaluatorNotesCard({
   return (
     <form
       onSubmit={handleSubmitEvaluation}
-      className="surface-card rounded-2xl p-6"
+      className="surface-card rounded-2xl p-4 sm:p-6"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
@@ -204,7 +204,7 @@ export function EvaluatorNotesCard({
         <button
           type="submit"
           disabled={submitting || !decision}
-          className="btn-tactile inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent)] px-5 py-2.5 text-xs font-semibold text-[var(--accent-fg)] hover:opacity-95 disabled:opacity-50"
+          className="btn-tactile inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-[var(--accent)] px-5 py-2.5 text-xs font-semibold text-[var(--accent-fg)] hover:opacity-95 disabled:opacity-50 sm:w-auto"
         >
           {submitting ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />

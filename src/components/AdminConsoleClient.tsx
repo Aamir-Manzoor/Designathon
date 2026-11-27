@@ -540,7 +540,7 @@ export function AdminConsoleClient({
                 <kpi.icon className={`h-4 w-4 ${kpi.color}`} />
               </div>
             </div>
-            <div className="tabular-nums mt-3 font-mono text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
+            <div className="tabular-nums mt-3 font-mono text-2xl font-extrabold tracking-tight text-[var(--text-primary)] sm:text-3xl">
               {kpi.value}
             </div>
             <div className="mt-1.5 text-xs text-[var(--text-muted)]">
@@ -553,10 +553,10 @@ export function AdminConsoleClient({
       {/* Pill-Styled Segmented Tabs (Admin sees all 3; Evaluator sees Review Queue only) */}
       {isAdmin && (
       <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex w-full overflow-x-auto rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-1)] p-1 sm:w-auto sm:inline-flex">
+        <div className="flex w-full gap-1 overflow-x-auto rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-1)] p-1 sm:w-auto sm:inline-flex">
           <button
             onClick={() => setActiveTab("scorecards")}
-            className={`btn-tactile rounded-lg px-4 py-2 text-xs font-semibold ${
+            className={`btn-tactile shrink-0 whitespace-nowrap rounded-lg px-3.5 py-2 text-xs font-semibold sm:px-4 ${
               activeTab === "scorecards"
                 ? "bg-[var(--accent)] text-[var(--accent-fg)] shadow-sm"
                 : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
@@ -566,7 +566,7 @@ export function AdminConsoleClient({
           </button>
           <button
             onClick={() => setActiveTab("applicants")}
-            className={`btn-tactile rounded-lg px-4 py-2 text-xs font-semibold ${
+            className={`btn-tactile shrink-0 whitespace-nowrap rounded-lg px-3.5 py-2 text-xs font-semibold sm:px-4 ${
               activeTab === "applicants"
                 ? "bg-[var(--accent)] text-[var(--accent-fg)] shadow-sm"
                 : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
@@ -576,7 +576,7 @@ export function AdminConsoleClient({
           </button>
           <button
             onClick={() => setActiveTab("challenges")}
-            className={`btn-tactile rounded-lg px-4 py-2 text-xs font-semibold ${
+            className={`btn-tactile shrink-0 whitespace-nowrap rounded-lg px-3.5 py-2 text-xs font-semibold sm:px-4 ${
               activeTab === "challenges"
                 ? "bg-[var(--accent)] text-[var(--accent-fg)] shadow-sm"
                 : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
@@ -586,7 +586,7 @@ export function AdminConsoleClient({
           </button>
           <button
             onClick={() => setActiveTab("ops")}
-            className={`btn-tactile rounded-lg px-4 py-2 text-xs font-semibold ${
+            className={`btn-tactile shrink-0 whitespace-nowrap rounded-lg px-3.5 py-2 text-xs font-semibold sm:px-4 ${
               activeTab === "ops"
                 ? "bg-[var(--accent)] text-[var(--accent-fg)] shadow-sm"
                 : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
@@ -611,9 +611,9 @@ export function AdminConsoleClient({
       {/* TAB 1: SCORECARDS & COST ANALYTICS */}
       {activeTab === "scorecards" && (
         <div className="mt-6 space-y-6">
-          <div className="grid gap-6 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             {/* Bar Chart */}
-            <div className="surface-card rounded-2xl p-5">
+            <div className="surface-card min-w-0 rounded-2xl p-4 sm:p-5">
               <h2 className="text-sm font-bold text-[var(--text-primary)]">
                 Score (/100) vs. Token Budget Used (%)
               </h2>
@@ -664,7 +664,7 @@ export function AdminConsoleClient({
             </div>
 
             {/* Scatter Chart */}
-            <div className="surface-card rounded-2xl p-5">
+            <div className="surface-card min-w-0 rounded-2xl p-4 sm:p-5">
               <h2 className="text-sm font-bold text-[var(--text-primary)]">
                 Correctness vs. AI Token Efficiency (Scatter)
               </h2>
