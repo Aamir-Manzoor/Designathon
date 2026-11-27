@@ -63,33 +63,54 @@ export async function injectControlledBug(params: {
     }
   }
 
-  // 2. Try Gemini semantic single-bug injection if API key is configured
+  // 2. Try Gemini minimal surgical single-bug injection strictly on the candidate's submitted code
   const client = getGeminiClient();
   if (client) {
     try {
       const res = await generateTextWithFallback({
         prompt: [
-          `Inject ONE subtle, realistic, syntactically valid bug into this ${language} code.`,
-          `Target bug instruction: ${rule.fallback_bug_instruction}`,
-          `Do NOT add comments revealing the bug. Return ONLY the complete mutated ${language} code inside a \`\`\`${language} block.`,
+          `Inject ONE subtle, realistic, syntactically valid bug directly into the candidate's EXACT ${language} code below.`,
+          `CRITICAL RULES:`,
+          `- Modify ONLY 1 to 2 lines of the candidate's existing logic. Do NOT rewrite, refactor, or rename variables/functions.`,
+          `- Every other line of the candidate's submitted code MUST remain identical.`,
+          `- Target bug instruction: ${rule.fallback_bug_instruction}`,
+          `- Do NOT add comments revealing the bug. Return ONLY the mutated ${language} code inside a \`\`\`${language} block.`,
           `\n\`\`\`${language}\n${workingCode}\n\`\`\``,
         ].join("\n"),
-        temperature: 0.1,
+        temperature: 0.05,
       });
 
       const mutated = extractCodeFromMarkdown(res.text ?? "", language);
       if (mutated && mutated !== workingCode) {
-        const check = await executeTestCases(mutated, language, verifySuite);
-        const failing = check.results.find((r) => !r.passed);
-        if (failing) {
-          return {
-            mutatedCode: mutated,
-            bugTitle: rule.title,
-            bugDescription: rule.description,
-            bugHint: rule.hint,
-            method: "gemini_semantic",
-            verifiedFailingTest: failing.name,
-          };
+        // Verify Gemini preserved the candidate's code (at least 65% line overlap)
+        const origLines = workingCode
+          .split("\n")
+          .map((l) => l.trim())
+          .filter(Boolean);
+        const mutSet = new Set(
+          mutated
+            .split("\n")
+            .map((l) => l.trim())
+            .filter(Boolean)
+        );
+        const overlap =
+          origLines.length > 0
+            ? origLines.filter((l) => mutSet.has(l)).length / origLines.length
+            : 0;
+
+        if (overlap >= 0.65) {
+          const check = await executeTestCases(mutated, language, verifySuite);
+          const failing = check.results.find((r) => !r.passed);
+          if (failing && failing.status !== "Runtime Error") {
+            return {
+              mutatedCode: mutated,
+              bugTitle: rule.title,
+              bugDescription: rule.description,
+              bugHint: rule.hint,
+              method: "gemini_semantic",
+              verifiedFailingTest: failing.name,
+            };
+          }
         }
       }
     } catch (err) {

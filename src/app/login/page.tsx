@@ -156,13 +156,17 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-6 border-t border-[var(--border-subtle)] pt-5 text-center text-sm text-[var(--text-muted)]">
-            Don&apos;t have an account?{" "}
+            Need assessment access?{" "}
             <Link
-              href="/register"
+              href="/apply"
               className="font-semibold text-[var(--accent)] hover:underline"
             >
-              Create an account
+              Request a Candidate Invite
             </Link>
+            <p className="mt-1.5 text-xs text-[var(--text-muted)]">
+              Account registration for Candidates and Evaluators is by Admin
+              invitation link only.
+            </p>
           </div>
         </div>
       </div>

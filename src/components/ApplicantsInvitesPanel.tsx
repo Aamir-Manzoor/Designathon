@@ -81,6 +81,40 @@ export function ApplicantsInvitesPanel({
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
 
+  // Admin Invite-Only Evaluator state
+  const [evalName, setEvalName] = useState("");
+  const [evalEmail, setEvalEmail] = useState("");
+  const [invitingEval, setInvitingEval] = useState(false);
+  const [evalInviteUrl, setEvalInviteUrl] = useState<string | null>(null);
+
+  async function handleInviteEvaluator(e: React.FormEvent) {
+    e.preventDefault();
+    setInvitingEval(true);
+    setStatusMsg(null);
+    setEvalInviteUrl(null);
+    try {
+      const res = await fetch("/api/admin/invite-evaluator", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ full_name: evalName, email: evalEmail }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setStatusMsg(data.error || "Could not send evaluator invite");
+      } else {
+        setEvalName("");
+        setEvalEmail("");
+        setEvalInviteUrl(data.invite_url || null);
+        setStatusMsg(
+          `Evaluator invitation emailed (${data.delivery_status}). They can now register via their personal invite link.`
+        );
+        router.refresh();
+      }
+    } finally {
+      setInvitingEval(false);
+    }
+  }
+
   function toggleChallenge(appId: string, challengeId: string) {
     setSelectedChallenges((prev) => {
       const curr = prev[appId] || [];
@@ -162,6 +196,71 @@ export function ApplicantsInvitesPanel({
 
   return (
     <div className="mt-6 space-y-8">
+      {/* Invite-Only Evaluator Onboarding */}
+      <form
+        onSubmit={handleInviteEvaluator}
+        className="surface-card rounded-2xl border-cyan-500/25 p-6"
+      >
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 className="flex items-center gap-2 text-base font-bold text-[var(--text-primary)]">
+              <UserCheck className="h-4 w-4 text-cyan-500" />
+              Invite Evaluator (Invitation-Only Access)
+            </h2>
+            <p className="mt-1 text-xs text-[var(--text-muted)]">
+              Evaluators cannot self-register. Send a personal registration
+              email so they can create their Evaluator account.
+            </p>
+          </div>
+          {evalInviteUrl && (
+            <button
+              type="button"
+              onClick={() => copyLink("eval-new", evalInviteUrl)}
+              className="btn-tactile inline-flex items-center gap-1.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-xs font-semibold text-cyan-500"
+            >
+              {copiedId === "eval-new" ? (
+                <Check className="h-3.5 w-3.5" />
+              ) : (
+                <Copy className="h-3.5 w-3.5" />
+              )}
+              {copiedId === "eval-new"
+                ? "Copied Evaluator Link"
+                : "Copy Evaluator Invite Link"}
+            </button>
+          )}
+        </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <input
+            type="text"
+            required
+            value={evalName}
+            onChange={(e) => setEvalName(e.target.value)}
+            placeholder="Evaluator Full Name"
+            className="rounded-xl border border-[var(--border-strong)] bg-[var(--surface-2)] px-3.5 py-2 text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none"
+          />
+          <input
+            type="email"
+            required
+            value={evalEmail}
+            onChange={(e) => setEvalEmail(e.target.value)}
+            placeholder="evaluator@company.com"
+            className="rounded-xl border border-[var(--border-strong)] bg-[var(--surface-2)] px-3.5 py-2 text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none"
+          />
+          <button
+            type="submit"
+            disabled={invitingEval}
+            className="btn-tactile inline-flex items-center justify-center gap-1.5 rounded-xl bg-cyan-600 px-4 py-2 text-xs font-semibold text-white hover:bg-cyan-500 disabled:opacity-60"
+          >
+            {invitingEval ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Send className="h-3.5 w-3.5" />
+            )}
+            Send Evaluator Invite Email
+          </button>
+        </div>
+      </form>
+
       {/* Candidate Applications */}
       <div className="surface-card rounded-2xl p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">

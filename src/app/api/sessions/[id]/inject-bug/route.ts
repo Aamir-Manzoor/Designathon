@@ -71,6 +71,24 @@ export async function POST(
     );
   }
 
+  // Gate Phase 2 strictly behind passing 100% of Phase 1 public tests on the candidate's submitted code
+  const publicTests = tests.filter((t) => t.visibility === "public");
+  if (publicTests.length > 0) {
+    const phase1Check = await executeTestCases(
+      workingCode,
+      session.language,
+      publicTests
+    );
+    if (phase1Check.passedCount < phase1Check.totalCount) {
+      return NextResponse.json(
+        {
+          error: `Complete Phase 1 first: only ${phase1Check.passedCount}/${phase1Check.totalCount} public test cases passed on your submitted code.`,
+        },
+        { status: 400 }
+      );
+    }
+  }
+
   const injection = await injectControlledBug({
     workingCode,
     language: session.language,

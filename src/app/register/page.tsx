@@ -25,6 +25,7 @@ interface InviteInfo {
   track: string;
   preferred_language: string;
   status: string;
+  invite_role: "candidate" | "evaluator";
   assigned_count: number;
 }
 
@@ -39,9 +40,6 @@ function RegisterFormContent() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<"candidate" | "evaluator" | "admin">(
-    "candidate"
-  );
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -50,16 +48,17 @@ function RegisterFormContent() {
     if (!inviteToken) return;
     const supabase = createClient();
     supabase
-      .rpc("get_invite_by_token", { p_token: inviteToken })
+      .rpc("get_invite_details_by_token", { p_token: inviteToken })
       .then(({ data, error: rpcErr }) => {
         if (!rpcErr && Array.isArray(data) && data.length > 0) {
           const row = data[0] as InviteInfo;
           setInvite(row);
           setFullName(row.full_name);
           setEmail(row.email);
-          setRole("candidate");
         } else {
-          setError("This assessment invite link is invalid or has expired.");
+          setError(
+            "This invitation link is invalid, expired, or has already been used."
+          );
         }
         setInviteLoading(false);
       });
@@ -67,19 +66,27 @@ function RegisterFormContent() {
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
+    if (!invite || !inviteToken) {
+      setError("A valid Admin invitation link is required to create an account.");
+      return;
+    }
+
     setError(null);
     setInfo(null);
     setLoading(true);
 
     try {
       const supabase = createClient();
+      const targetRole =
+        invite.invite_role === "evaluator" ? "evaluator" : "candidate";
+
       const { data, error: signUpError } = await supabase.auth.signUp({
-        email: email.trim(),
+        email: invite.email.trim(),
         password,
         options: {
           data: {
             full_name: fullName.trim(),
-            role: invite ? "candidate" : role,
+            role: targetRole,
           },
         },
       });
@@ -91,21 +98,14 @@ function RegisterFormContent() {
       }
 
       if (data.session) {
-        if (inviteToken) {
-          await supabase.rpc("claim_candidate_invite", {
-            p_token: inviteToken,
-          });
-        }
-        const effectiveRole = invite ? "candidate" : role;
-        router.push(
-          effectiveRole === "admin" || effectiveRole === "evaluator"
-            ? "/admin"
-            : "/dashboard"
-        );
+        await supabase.rpc("claim_candidate_invite", {
+          p_token: inviteToken,
+        });
+        router.push(targetRole === "evaluator" ? "/admin" : "/dashboard");
         router.refresh();
       } else {
         setInfo(
-          "Account created! Please check your inbox to verify your email address, then sign in."
+          "Account created! Please check your email inbox to confirm your account, then sign in."
         );
         setLoading(false);
       }
@@ -127,12 +127,18 @@ function RegisterFormContent() {
           </span>
         </Link>
         <h1 className="text-balance mt-6 text-2xl font-bold text-[var(--text-primary)]">
-          {invite ? "Accept Assessment Invitation" : "Create your account"}
+          {invite
+            ? invite.invite_role === "evaluator"
+              ? "Accept Evaluator Invitation"
+              : "Accept Assessment Invitation"
+            : "Invitation Required"}
         </h1>
         <p className="mt-2 text-sm text-[var(--text-muted)]">
           {invite
-            ? `Set your password to access your ${invite.assigned_count} assigned challenge(s)`
-            : "Choose Candidate to take challenges or Admin / Evaluator to manage assessments"}
+            ? invite.invite_role === "evaluator"
+              ? "Set your password to access your Evaluator Review Queue"
+              : `Set your password to access your ${invite.assigned_count} assigned challenge(s)`
+            : "Candidate and Evaluator accounts can only be created via an Admin invitation email."}
         </p>
       </div>
 
@@ -140,24 +146,62 @@ function RegisterFormContent() {
         {inviteLoading ? (
           <div className="flex items-center justify-center gap-2 py-8 text-xs text-[var(--text-muted)]">
             <Loader2 className="h-4 w-4 animate-spin" />
-            Validating assessment invite link...
+            Validating invitation link...
+          </div>
+        ) : !invite ? (
+          <div className="space-y-4 text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-500 ring-1 ring-amber-500/30">
+              <Lock className="h-6 w-6" />
+            </div>
+            {error && (
+              <div className="flex items-start gap-2 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-left text-xs text-red-500">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
+            <p className="text-xs leading-relaxed text-[var(--text-secondary)]">
+              Direct account registration is disabled. Candidates must first
+              submit an application and use the personal invite link emailed by
+              the Admin. Evaluators must use the Evaluator invite link sent by
+              the Admin.
+            </p>
+            <div className="flex flex-col gap-2.5 pt-2">
+              <Link
+                href="/apply"
+                className="btn-tactile flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-[var(--accent-fg)]"
+              >
+                Apply as a Candidate
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link
+                href="/login"
+                className="btn-tactile flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--border-strong)] bg-[var(--surface-2)] px-4 py-2.5 text-xs font-semibold text-[var(--text-primary)]"
+              >
+                Already registered? Sign In
+              </Link>
+            </div>
           </div>
         ) : (
           <form onSubmit={handleRegister} className="space-y-4">
-            {invite && (
-              <div className="flex items-start gap-2.5 rounded-xl border border-[var(--accent-border)] bg-[var(--accent-soft)] p-3.5 text-xs text-[var(--text-primary)]">
+            <div className="flex items-start gap-2.5 rounded-xl border border-[var(--accent-border)] bg-[var(--accent-soft)] p-3.5 text-xs text-[var(--text-primary)]">
+              {invite.invite_role === "evaluator" ? (
+                <Shield className="mt-0.5 h-4 w-4 shrink-0 text-cyan-500" />
+              ) : (
                 <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-[var(--accent)]" />
-                <div>
-                  <div className="font-semibold text-[var(--accent)]">
-                    Verified Assessment Invite · {invite.track}
-                  </div>
-                  <div className="mt-0.5 text-[var(--text-secondary)]">
-                    {invite.assigned_count} coding challenge(s) have been
-                    assigned to your portal.
-                  </div>
+              )}
+              <div>
+                <div className="font-semibold text-[var(--accent)]">
+                  {invite.invite_role === "evaluator"
+                    ? "Verified Evaluator Invitation"
+                    : `Verified Candidate Invite · ${invite.track}`}
+                </div>
+                <div className="mt-0.5 text-[var(--text-secondary)]">
+                  {invite.invite_role === "evaluator"
+                    ? "Your account will be provisioned with Evaluator review access."
+                    : `${invite.assigned_count} sealed challenge(s) assigned to your portal.`}
                 </div>
               </div>
-            )}
+            </div>
 
             {error && (
               <div className="flex items-start gap-2.5 rounded-xl border border-red-500/30 bg-red-500/10 p-3.5 text-sm text-red-500">
@@ -173,52 +217,6 @@ function RegisterFormContent() {
               </div>
             )}
 
-            {!invite && (
-              <div>
-                <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-                  Account Role
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setRole("candidate")}
-                    className={`btn-tactile flex items-center justify-center gap-1.5 rounded-xl border px-2 py-2.5 text-xs font-semibold ${
-                      role === "candidate"
-                        ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
-                        : "border-[var(--border-strong)] bg-[var(--surface-2)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-                    }`}
-                  >
-                    <User className="h-3.5 w-3.5" />
-                    Candidate
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setRole("evaluator")}
-                    className={`btn-tactile flex items-center justify-center gap-1.5 rounded-xl border px-2 py-2.5 text-xs font-semibold ${
-                      role === "evaluator"
-                        ? "border-cyan-500 bg-cyan-500/15 text-cyan-500"
-                        : "border-[var(--border-strong)] bg-[var(--surface-2)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-                    }`}
-                  >
-                    <Shield className="h-3.5 w-3.5" />
-                    Evaluator
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setRole("admin")}
-                    className={`btn-tactile flex items-center justify-center gap-1.5 rounded-xl border px-2 py-2.5 text-xs font-semibold ${
-                      role === "admin"
-                        ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
-                        : "border-[var(--border-strong)] bg-[var(--surface-2)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-                    }`}
-                  >
-                    <Shield className="h-3.5 w-3.5" />
-                    Admin
-                  </button>
-                </div>
-              </div>
-            )}
-
             <div>
               <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
                 Full Name
@@ -230,35 +228,30 @@ function RegisterFormContent() {
                   required
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  placeholder="Alex Rivera"
-                  className="w-full rounded-xl border border-[var(--border-strong)] bg-[var(--surface-2)] py-2.5 pl-10 pr-4 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-[var(--accent)] focus:bg-[var(--surface-1)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-soft)]"
+                  className="w-full rounded-xl border border-[var(--border-strong)] bg-[var(--surface-2)] py-2.5 pl-10 pr-4 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:bg-[var(--surface-1)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-soft)]"
                 />
               </div>
             </div>
 
             <div>
               <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-                Email Address
+                Invited Email Address (Locked)
               </label>
               <div className="relative">
                 <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]" />
                 <input
                   type="email"
                   required
-                  readOnly={Boolean(invite)}
+                  readOnly
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@company.com"
-                  className={`w-full rounded-xl border border-[var(--border-strong)] bg-[var(--surface-2)] py-2.5 pl-10 pr-4 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-[var(--accent)] focus:bg-[var(--surface-1)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-soft)] ${
-                    invite ? "cursor-not-allowed opacity-75" : ""
-                  }`}
+                  className="w-full cursor-not-allowed rounded-xl border border-[var(--border-strong)] bg-[var(--surface-2)] py-2.5 pl-10 pr-4 text-sm text-[var(--text-primary)] opacity-75"
                 />
               </div>
             </div>
 
             <div>
               <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-                Password (min 6 characters)
+                Create Password (min 6 characters)
               </label>
               <div className="relative">
                 <Lock className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]" />
@@ -283,7 +276,7 @@ function RegisterFormContent() {
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <>
-                  {invite ? "Create Account & Enter Portal" : "Create Account"}
+                  Create Account &amp; Enter Portal
                   <ArrowRight className="h-4 w-4" />
                 </>
               )}

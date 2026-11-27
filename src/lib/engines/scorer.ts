@@ -101,34 +101,44 @@ function computeHeuristicPromptScores(params: {
   );
   const hasDebugTurn = turns.some((t) => t.phase === "debugging");
 
+  const vagueCount = turns.filter((t) =>
+    /^(solve|fix|write|do|help|code|answer)\b/i.test(t.user_prompt.trim()) &&
+    t.user_prompt.trim().length < 45
+  ).length;
+
   const clarity = Math.min(
     perCriterion,
     Math.max(
-      3,
-      (avgPromptLen >= 60 && avgPromptLen <= 450 ? 8.5 : 6.2) -
-        warningCount * 0.5
+      0,
+      (avgPromptLen >= 80 && avgPromptLen <= 450
+        ? 8.0
+        : avgPromptLen >= 45
+        ? 5.0
+        : 2.0) -
+        warningCount * 1.2 -
+        vagueCount * 2.0
     )
   );
   const edgeCases = Math.min(
     perCriterion,
-    mentionsEdgeCases ? 8.5 : 5.5
+    Math.max(0, (mentionsEdgeCases ? 7.5 : 2.5) - vagueCount * 1.5)
   );
   const efficiency = Math.min(
     perCriterion,
     Math.max(
-      2.5,
-      budgetRatio <= 0.4
-        ? 9.5
-        : budgetRatio <= 0.7
-        ? 7.8
-        : budgetRatio <= 0.9
-        ? 5.5
-        : 3.5
+      0,
+      (budgetRatio <= 0.35
+        ? 9.0
+        : budgetRatio <= 0.6
+        ? 6.5
+        : budgetRatio <= 0.8
+        ? 4.0
+        : 1.5) - warningCount * 1.0
     )
   );
   const decomposition = Math.min(
     perCriterion,
-    Math.max(4, (hasDebugTurn ? 8.0 : 6.5) - warningCount * 0.4)
+    Math.max(0, (hasDebugTurn ? 7.5 : 3.5) - warningCount * 1.0 - vagueCount * 1.5)
   );
 
   const pqTotal = round2(clarity + edgeCases + efficiency + decomposition);
@@ -136,12 +146,12 @@ function computeHeuristicPromptScores(params: {
     Math.min(
       maxPI,
       Math.max(
-        3,
-        turns.length >= 2
-          ? hasDebugTurn
-            ? 8.5 - warningCount * 0.5
-            : 7.0 - warningCount * 0.4
-          : 6.5
+        0,
+        turns.length < 2
+          ? 1.5
+          : hasDebugTurn
+          ? 7.5 - warningCount * 1.0 - vagueCount * 1.5
+          : 4.5 - warningCount * 1.0
       )
     )
   );
@@ -232,18 +242,22 @@ export async function evaluateSession(params: {
     (p1Passed / p1Total) * (rubric.test_cases_max || 30)
   );
 
-  // 2. Deterministic Debug Test Cases score (20 pts) — debug + regression tests on final submitted code
+  // 2. Strict Deterministic Debug Test Cases score (20 pts)
+  // If candidate never completed Phase 1 and entered Phase 2 debugging, award 0 / 20 strictly.
   const debugTests = phase2Results.filter((r) => r.visibility === "debug");
   const allFinalPassed = phase2Results.filter((r) => r.passed).length;
   const allFinalTotal = phase2Results.length || 1;
   const debugPassed = debugTests.filter((r) => r.passed).length;
   const debugTotal = debugTests.length || 1;
 
-  // Weight 70% on explicit debug tests + 30% on no regressions across all tests
-  const debugRatio =
-    debugTests.length > 0
-      ? 0.7 * (debugPassed / debugTotal) + 0.3 * (allFinalPassed / allFinalTotal)
-      : allFinalPassed / allFinalTotal;
+  const enteredDebugging = Boolean(session.injected_bug_code);
+  const debugRatio = !enteredDebugging
+    ? 0
+    : debugTests.length > 0 && debugPassed === 0
+    ? 0
+    : debugTests.length > 0
+    ? 0.8 * (debugPassed / debugTotal) + 0.2 * (allFinalPassed / allFinalTotal)
+    : allFinalPassed / allFinalTotal;
   const debugScore = round2(debugRatio * (rubric.debug_test_cases_max || 20));
 
   // 3. Prompt Quality (40) & Prompt Improvement (10) via Gemini Structured JSON (with deterministic fallback)
@@ -263,7 +277,13 @@ export async function evaluateSession(params: {
         .join("\n\n");
 
       const evalPrompt = [
-        `You are an objective technical assessment rubric evaluator.`,
+        `You are a STRICT senior staff engineer grading a technical AI-assisted coding assessment.`,
+        `Do NOT inflate scores. Apply rigorous hiring bar standards:`,
+        `- Vague or lazy prompts ("solve this", "fix bug", "write the code") MUST score <= 2/10 on Clarity, Edge-Case Awareness, and Decomposition.`,
+        `- If the candidate did not explicitly state edge cases, complexity, or input/output constraints, Edge-Case Awareness MUST be <= 3/10.`,
+        `- If token usage exceeded 70% of budget or had efficiency warnings, Context & Token Efficiency MUST be <= 5/10.`,
+        `- Single-turn sessions with no iterative refinement MUST score <= 2/10 on prompt_improvement.`,
+        `- Full marks (9-10/10) are ONLY for surgical, constraint-aware, token-disciplined engineering prompts.`,
         `Challenge: ${challenge.title}`,
         `Token usage: ${session.tokens_used} / ${session.token_budget} tokens (${session.tokens_saved} saved by context optimization).`,
         `Score the candidate's prompting strictly as JSON matching this schema:`,

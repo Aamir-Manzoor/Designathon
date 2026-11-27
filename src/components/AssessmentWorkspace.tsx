@@ -122,6 +122,11 @@ export function AssessmentWorkspace({
       new Date(initialSession.expires_at).getTime() <= Date.now()
   );
   const autoSubmittedRef = useRef(false);
+  const codeRef = useRef(code);
+  useEffect(() => {
+    codeRef.current = code;
+  }, [code]);
+
   const [secondsLeft, setSecondsLeft] = useState<number>(() =>
     Math.max(
       0,
@@ -186,17 +191,19 @@ export function AssessmentWorkspace({
     turns,
   ]);
 
-  // Countdown timer with automatic close + auto-submit at 00:00
+  // Exact wall-clock countdown timer (unaffected by typing/re-renders) with automatic close + auto-submit at 00:00
   useEffect(() => {
     if (session.phase === "submitted") return;
-    if (secondsLeft <= 0) {
+    const expiresAtMs = new Date(session.expires_at).getTime();
+
+    const triggerAutoSubmit = () => {
       setTimeExpired(true);
       if (!autoSubmittedRef.current) {
         autoSubmittedRef.current = true;
         fetch(`/api/sessions/${session.id}/evaluate`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ code }),
+          body: JSON.stringify({ code: codeRef.current }),
         })
           .then((r) => r.json())
           .then((data) => {
@@ -207,13 +214,20 @@ export function AssessmentWorkspace({
           })
           .catch(() => {});
       }
-      return;
-    }
-    const interval = setInterval(() => {
-      setSecondsLeft((prev) => Math.max(0, prev - 1));
-    }, 1000);
+    };
+
+    const tick = () => {
+      const remaining = Math.max(0, Math.floor((expiresAtMs - Date.now()) / 1000));
+      setSecondsLeft(remaining);
+      if (remaining <= 0) {
+        triggerAutoSubmit();
+      }
+    };
+
+    tick();
+    const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
-  }, [session.phase, secondsLeft, session.id, code]);
+  }, [session.phase, session.expires_at, session.id]);
 
   // Debounced autosave with automatic retry on transient failure
   useEffect(() => {
@@ -669,7 +683,11 @@ export function AssessmentWorkspace({
       : "lg:col-span-12";
 
   return (
-    <div className="flex min-h-screen flex-col bg-[var(--bg-canvas)] text-[var(--text-primary)] lg:h-screen lg:overflow-hidden">
+    <div
+      onCopy={(e) => e.preventDefault()}
+      onCut={(e) => e.preventDefault()}
+      className="flex min-h-screen select-none flex-col bg-[var(--bg-canvas)] text-[var(--text-primary)] lg:h-screen lg:overflow-hidden"
+    >
       {/* Top IDE Bar */}
       <header className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-[var(--border-subtle)] bg-[var(--surface-1)] px-4 py-2.5">
         <div className="flex min-w-0 items-center gap-2.5">
@@ -757,22 +775,18 @@ export function AssessmentWorkspace({
             {formatDuration(secondsLeft)}
           </div>
 
-          {session.phase === "coding" && (
+          {session.phase === "coding" && readyForBugInjection && (
             <button
               onClick={handleInjectBug}
               disabled={injectingBug}
-              className={`btn-tactile inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold ${
-                readyForBugInjection
-                  ? "animate-pulse bg-amber-500 text-slate-950 hover:bg-amber-400"
-                  : "border border-amber-500/40 bg-amber-500/15 text-amber-400 hover:bg-amber-500/25"
-              }`}
+              className="btn-tactile inline-flex animate-pulse items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-slate-950 hover:bg-amber-400 disabled:opacity-60"
             >
               {injectingBug ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
               ) : (
                 <Bug className="h-3.5 w-3.5" />
               )}
-              Inject Bug (Phase 2)
+              Proceed to Phase 2 (Inject Bug)
             </button>
           )}
 
@@ -989,7 +1003,10 @@ export function AssessmentWorkspace({
               language={session.language}
               theme={theme === "light" ? "light" : "vs-dark"}
               value={code}
-              onChange={(val) => setCode(val ?? "")}
+              onChange={(val) => {
+                setCode(val ?? "");
+                if (readyForBugInjection) setReadyForBugInjection(false);
+              }}
               options={{
                 fontSize: 14,
                 lineHeight: 22,
@@ -997,6 +1014,7 @@ export function AssessmentWorkspace({
                 scrollBeyondLastLine: false,
                 padding: { top: 14 },
                 automaticLayout: true,
+                contextmenu: false,
               }}
             />
           </div>
@@ -1161,20 +1179,16 @@ export function AssessmentWorkspace({
                     className="break-words text-xs"
                   />
                   {turn.extracted_code && (
-                    <div className="mt-2.5 overflow-hidden rounded-lg border border-[var(--border-strong)] bg-[var(--surface-1)]">
+                    <div
+                      onCopy={(e) => e.preventDefault()}
+                      onCut={(e) => e.preventDefault()}
+                      onContextMenu={(e) => e.preventDefault()}
+                      className="mt-2.5 select-none overflow-hidden rounded-lg border border-[var(--border-strong)] bg-[var(--surface-1)]"
+                    >
                       <div className="flex items-center justify-between border-b border-[var(--border-subtle)] bg-[var(--surface-2)] px-2.5 py-1.5">
                         <span className="font-mono text-[10px] text-[var(--text-muted)]">
-                          {session.language} patch
+                          {session.language} suggestion (copy disabled)
                         </span>
-                        <button
-                          onClick={() =>
-                            applyAiCode(turn.extracted_code!, turn.turn_number)
-                          }
-                          className="btn-tactile inline-flex items-center gap-1 rounded bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-500 ring-1 ring-emerald-500/35 hover:bg-emerald-500/25"
-                        >
-                          <CopyCheck className="h-3 w-3" />
-                          Apply to Editor
-                        </button>
                       </div>
                       <pre className="max-h-48 overflow-auto p-2.5 font-mono text-[11px] leading-relaxed text-[var(--text-primary)]">
                         <code>{turn.extracted_code}</code>
