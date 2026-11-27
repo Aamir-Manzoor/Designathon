@@ -806,10 +806,11 @@ export function AssessmentWorkspace({
               value={code}
               onChange={(val) => setCode(val ?? "")}
               options={{
-                fontSize: 13,
+                fontSize: 14,
+                lineHeight: 22,
                 minimap: { enabled: false },
                 scrollBeyondLastLine: false,
-                padding: { top: 12 },
+                padding: { top: 14 },
                 automaticLayout: true,
               }}
             />
