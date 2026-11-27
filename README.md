@@ -2,6 +2,28 @@
 
 An enterprise-grade AI-assisted coding assessment platform built with **Next.js (App Router, TypeScript)**, **Tailwind CSS**, **Supabase (PostgreSQL + JWT Auth + RLS)**, **Judge0 CE**, and **Google Gemini**.
 
+## Live Demo & Submission Deliverables
+
+- **Live Deployed App:** [https://promptbench-beta.vercel.app](https://promptbench-beta.vercel.app)
+- **Presentation Deck:** [PromptBench_Designathon_Presentation.pptx](./PromptBench_Designathon_Presentation.pptx)
+- **Solution Architecture Abstract (PDF):** [PromptBench_Solution_Architecture_Abstract.pdf](./PromptBench_Solution_Architecture_Abstract.pdf)
+
+### Demo Credentials (Hackathon Evaluation)
+
+Use the dedicated demo accounts below at [https://promptbench-beta.vercel.app/login](https://promptbench-beta.vercel.app/login) to explore all three roles immediately:
+
+| Role | Email | Password |
+| :--- | :--- | :--- |
+| **Admin** | `admin@promptbench.ai` | `Admin@12345` |
+| **Evaluator** *(3 candidates pre-assigned)* | `evaluator@promptbench.ai` | `Evaluator@12345` |
+| **Candidate** | `candidate@promptbench.ai` | `Candidate@12345` |
+
+### Product Walkthrough Video
+
+[![PromptBench Demo Walkthrough](./docs/promptbench-demo-thumbnail.jpg)](./docs/promptbench-demo.mp4)
+
+> Click the thumbnail above or open [docs/promptbench-demo.mp4](./docs/promptbench-demo.mp4) to watch the full product walkthrough (live token budgets, controlled bug injection inside candidate code, and explainable 100-point rubric scoring).
+
 ## Minimum Scope Implemented
 1. **Challenge Configuration & Launch**: Full Admin console to configure coding challenges, time limits, token budgets, public/hidden/debug test cases, and deterministic bug-injection rules. Pre-seeded with 3 complete challenges (*Sliding Window API Rate Limiter*, *Log Anomaly & Spike Aggregator*, *Deployment Maintenance Window Merger*).
 2. **AI-Assisted Coding & Controlled Bug Injection Workflow**:
@@ -43,4 +65,4 @@ ALLOW_LOCAL_EXECUTOR_FALLBACK=true
 npm install
 npm run dev
 ```
-Open `http://localhost:3000`. Register an **Admin / Evaluator** account to view the 5 pre-seeded candidate scorecards and export `.xlsx`, or register a **Candidate** account to take the live AI-assisted assessment.
+Open `http://localhost:3001` (or visit the live deployment at [https://promptbench-beta.vercel.app](https://promptbench-beta.vercel.app)). Register an **Admin / Evaluator** account to view the 5 pre-seeded candidate scorecards and export `.xlsx`, or register a **Candidate** account to take the live AI-assisted assessment.
