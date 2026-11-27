@@ -121,7 +121,7 @@ export function LandingShowcase() {
           </div>
 
           {/* Key Metric Strip */}
-          <div className="mx-auto mt-10 grid max-w-2xl grid-cols-3 divide-x divide-[var(--border-subtle)] rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-1)]/80 py-3.5 backdrop-blur">
+          <div className="mx-auto mt-10 grid max-w-2xl grid-cols-1 divide-y divide-[var(--border-subtle)] rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-1)]/80 py-3.5 backdrop-blur sm:grid-cols-3 sm:divide-x sm:divide-y-0">
             <div className="px-4">
               <div className="tabular-nums font-mono text-lg font-bold text-[var(--text-primary)] sm:text-xl">
                 40 / 10 / 30 / 20
@@ -163,7 +163,7 @@ export function LandingShowcase() {
                 </span>
               </div>
 
-              <div className="inline-flex rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-1)] p-0.5 text-xs">
+              <div className="flex flex-wrap rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-1)] p-0.5 text-xs">
                 {[
                   { id: "ide" as PreviewTab, label: "1. AI IDE & Token Meter", icon: Terminal },
                   { id: "bug" as PreviewTab, label: "2. Controlled Bug Injection", icon: Bug },
@@ -314,7 +314,7 @@ export function LandingShowcase() {
                       <XCircle className="h-4 w-4" />
                       DEBUG TEST FAILED: Exact Window Boundary
                     </div>
-                    <div className="mt-3 space-y-1.5 font-mono text-[11px]">
+                    <div className="mt-3 space-y-1.5 break-all font-mono text-[11px]">
                       <div className="text-slate-400">
                         Input: {"{\"limit\":2,\"window\":10,\"requests\":[0,5,10]}"}
                       </div>

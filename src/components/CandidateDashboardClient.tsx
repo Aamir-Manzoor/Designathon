@@ -182,7 +182,7 @@ export function CandidateDashboardClient({
           <h2 className="mb-4 text-lg font-bold text-[var(--text-primary)]">
             Your Assessment Sessions
           </h2>
-          <div className="surface-card overflow-hidden rounded-2xl">
+          <div className="surface-card overflow-x-auto rounded-2xl">
             <table className="w-full text-left text-sm">
               <thead className="border-b border-[var(--border-subtle)] bg-[var(--surface-2)] text-xs uppercase text-[var(--text-muted)]">
                 <tr>

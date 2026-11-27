@@ -477,21 +477,21 @@ export function AssessmentWorkspace({
   const passedCount = latestResults.filter((r) => r.passed).length;
   const centerSpan =
     showLeftPane && showRightPane
-      ? "col-span-5"
+      ? "lg:col-span-5"
       : showLeftPane
-      ? "col-span-9"
+      ? "lg:col-span-9"
       : showRightPane
-      ? "col-span-8"
-      : "col-span-12";
+      ? "lg:col-span-8"
+      : "lg:col-span-12";
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-[var(--bg-canvas)] text-[var(--text-primary)]">
+    <div className="flex min-h-screen flex-col bg-[var(--bg-canvas)] text-[var(--text-primary)] lg:h-screen lg:overflow-hidden">
       {/* Top IDE Bar */}
-      <header className="flex shrink-0 items-center justify-between border-b border-[var(--border-subtle)] bg-[var(--surface-1)] px-4 py-2.5">
-        <div className="flex items-center gap-2.5">
+      <header className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-[var(--border-subtle)] bg-[var(--surface-1)] px-4 py-2.5">
+        <div className="flex min-w-0 items-center gap-2.5">
           <Link
             href="/dashboard"
-            className="btn-tactile rounded-lg p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text-primary)]"
+            className="btn-tactile shrink-0 rounded-lg p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text-primary)]"
             title="Back to Dashboard"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -499,7 +499,7 @@ export function AssessmentWorkspace({
           <button
             type="button"
             onClick={() => setShowLeftPane((v) => !v)}
-            className="btn-tactile rounded-lg border border-[var(--border-subtle)] p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text-primary)]"
+            className="btn-tactile hidden shrink-0 rounded-lg border border-[var(--border-subtle)] p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text-primary)] lg:inline-flex"
             title={showLeftPane ? "Collapse Problem Pane" : "Expand Problem Pane"}
           >
             {showLeftPane ? (
@@ -508,12 +508,12 @@ export function AssessmentWorkspace({
               <PanelLeftOpen className="h-3.5 w-3.5" />
             )}
           </button>
-          <div>
+          <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <h1 className="text-sm font-bold text-[var(--text-primary)]">
+              <h1 className="truncate text-sm font-bold text-[var(--text-primary)]">
                 {challenge.title}
               </h1>
-              <span className="rounded bg-[var(--accent-soft)] px-1.5 py-0.5 font-mono text-[11px] uppercase text-[var(--accent)]">
+              <span className="shrink-0 rounded bg-[var(--accent-soft)] px-1.5 py-0.5 font-mono text-[11px] uppercase text-[var(--accent)]">
                 {session.language}
               </span>
             </div>
@@ -675,10 +675,10 @@ export function AssessmentWorkspace({
       )}
 
       {/* Main Collapsible 3-Pane IDE */}
-      <div className="grid min-h-0 flex-1 grid-cols-12">
+      <div className="flex min-h-0 flex-1 flex-col lg:grid lg:grid-cols-12">
         {/* LEFT PANE */}
         {showLeftPane && (
-        <aside className="col-span-3 flex min-h-0 flex-col border-r border-[var(--border-subtle)] bg-[var(--surface-1)]">
+        <aside className="flex min-h-0 min-w-0 flex-col border-b border-[var(--border-subtle)] bg-[var(--surface-1)] lg:col-span-3 lg:border-b-0 lg:border-r">
           <div className="flex border-b border-[var(--border-subtle)] text-xs font-medium">
             <button
               onClick={() => setLeftTab("problem")}
@@ -718,16 +718,16 @@ export function AssessmentWorkspace({
                     {publicTests.map((tc) => (
                       <div
                         key={tc.id}
-                        className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-2)] p-2.5 font-mono text-[11px]"
+                        className="min-w-0 overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-2)] p-2.5 font-mono text-[11px]"
                       >
                         <div className="font-sans font-semibold text-[var(--text-primary)]">
                           {tc.name}
                         </div>
-                        <div className="mt-1 text-[var(--text-secondary)]">
+                        <div className="mt-1 break-all text-[var(--text-secondary)]">
                           <span className="text-[var(--text-muted)]">in:</span>{" "}
                           {tc.input}
                         </div>
-                        <div className="mt-0.5 text-emerald-500">
+                        <div className="mt-0.5 break-all text-emerald-500">
                           <span className="text-[var(--text-muted)]">out:</span>{" "}
                           {tc.expected_output}
                         </div>
@@ -779,7 +779,7 @@ export function AssessmentWorkspace({
         )}
 
         {/* CENTER PANE */}
-        <section className={`${centerSpan} flex min-h-0 flex-col border-r border-[var(--border-subtle)]`}>
+        <section className={`${centerSpan} flex min-h-[520px] min-w-0 flex-col border-b border-[var(--border-subtle)] lg:min-h-0 lg:border-b-0 lg:border-r`}>
           <div className="flex items-center justify-between border-b border-slate-800 bg-[#0d1117] px-3 py-2">
             <span className="font-mono text-xs text-slate-400">
               solution.{session.language === "python" ? "py" : "js"}
@@ -875,7 +875,7 @@ export function AssessmentWorkspace({
                       </span>
                     </div>
                     {!r.passed && (
-                      <div className="mt-1.5 space-y-0.5 font-mono text-[11px]">
+                      <div className="mt-1.5 space-y-0.5 break-all font-mono text-[11px]">
                         <div className="text-emerald-500">
                           Expected: {r.expected_output}
                         </div>
@@ -898,7 +898,7 @@ export function AssessmentWorkspace({
 
         {/* RIGHT PANE: Token Meter + Multi-Provider AI Chat + Compression */}
         {showRightPane && (
-        <aside className="col-span-4 flex min-h-0 flex-col bg-[var(--surface-1)]">
+        <aside className="flex min-h-[480px] min-w-0 flex-col bg-[var(--surface-1)] lg:col-span-4 lg:min-h-0">
           <TokenBudgetMeter
             tokensUsed={session.tokens_used}
             tokenBudget={session.token_budget}
@@ -942,9 +942,9 @@ export function AssessmentWorkspace({
             )}
 
             {turns.map((turn) => (
-              <div key={turn.id} className="space-y-2">
-                <div className="ml-6 rounded-xl border border-[var(--accent-border)] bg-[var(--accent-soft)] p-3 text-xs text-[var(--text-primary)]">
-                  <div className="mb-1 flex items-center justify-between text-[10px] font-medium text-[var(--accent)]">
+              <div key={turn.id} className="min-w-0 space-y-2">
+                <div className="ml-4 min-w-0 overflow-hidden rounded-xl border border-[var(--accent-border)] bg-[var(--accent-soft)] p-3 text-xs text-[var(--text-primary)] sm:ml-6">
+                  <div className="mb-1 flex flex-wrap items-center justify-between gap-1 text-[10px] font-medium text-[var(--accent)]">
                     <span>Turn #{turn.turn_number} · You</span>
                     <span className="tabular-nums font-mono">
                       {turn.prompt_tokens + turn.completion_tokens} tok
@@ -953,13 +953,13 @@ export function AssessmentWorkspace({
                         : ""}
                     </span>
                   </div>
-                  <p className="whitespace-pre-wrap leading-relaxed">
+                  <p className="whitespace-pre-wrap break-words leading-relaxed">
                     {turn.user_prompt}
                   </p>
                 </div>
 
-                <div className="mr-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-2)] p-3 text-xs text-[var(--text-primary)]">
-                  <div className="mb-1.5 flex items-center justify-between text-[10px] text-[var(--text-muted)]">
+                <div className="mr-2 min-w-0 overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-2)] p-3 text-xs text-[var(--text-primary)] sm:mr-4">
+                  <div className="mb-1.5 flex flex-wrap items-center justify-between gap-1 text-[10px] text-[var(--text-muted)]">
                     <span className="font-semibold text-emerald-400">
                       AI Assistant
                     </span>
@@ -967,7 +967,7 @@ export function AssessmentWorkspace({
                       in:{turn.prompt_tokens} / out:{turn.completion_tokens}
                     </span>
                   </div>
-                  <div className="whitespace-pre-wrap leading-relaxed">
+                  <div className="whitespace-pre-wrap break-words leading-relaxed">
                     {turn.ai_response.replace(/```[\s\S]*?```/g, "").trim() ||
                       "Generated updated code below:"}
                   </div>

@@ -181,12 +181,12 @@ export default async function AdminSessionReviewPage({
                 ((integrityEvents ?? []) as IntegrityEvent[]).map((ev) => (
                   <div
                     key={ev.id}
-                    className="flex items-center justify-between rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-2)] px-3 py-2 text-xs"
+                    className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-2)] px-3 py-2 text-xs"
                   >
-                    <span className="font-mono font-semibold text-amber-500">
+                    <span className="shrink-0 font-mono font-semibold text-amber-500">
                       {ev.event_type}
                     </span>
-                    <span className="font-mono text-[11px] text-[var(--text-muted)]">
+                    <span className="break-all font-mono text-[11px] text-[var(--text-muted)]">
                       {JSON.stringify(ev.metadata)}
                     </span>
                   </div>
