@@ -448,19 +448,22 @@ export function AssessmentWorkspace({
 
   if (session.phase === "submitted" && scorecard) {
     return (
-      <div className="min-h-screen bg-[#090d16] px-6 py-8">
+      <div className="min-h-screen bg-[var(--bg-canvas)] px-6 py-8 text-[var(--text-primary)]">
         <div className="mx-auto max-w-5xl">
           <div className="mb-6 flex items-center justify-between">
             <Link
               href="/dashboard"
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-400 hover:text-white"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)]"
             >
               <ArrowLeft className="h-4 w-4" />
               Back to Challenges
             </Link>
-            <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-medium text-emerald-300 ring-1 ring-emerald-500/30">
-              Assessment Submitted &amp; Evaluated
-            </span>
+            <div className="flex items-center gap-3">
+              <ThemeSwitcher compact />
+              <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-semibold text-emerald-500 ring-1 ring-emerald-500/30">
+                Assessment Submitted &amp; Evaluated
+              </span>
+            </div>
           </div>
           <ScorecardView
             scorecard={scorecard}
@@ -676,23 +679,23 @@ export function AssessmentWorkspace({
         {/* LEFT PANE */}
         {showLeftPane && (
         <aside className="col-span-3 flex min-h-0 flex-col border-r border-[var(--border-subtle)] bg-[var(--surface-1)]">
-          <div className="flex border-b border-slate-800 text-xs font-medium">
+          <div className="flex border-b border-[var(--border-subtle)] text-xs font-medium">
             <button
               onClick={() => setLeftTab("problem")}
-              className={`flex-1 py-2.5 text-center transition ${
+              className={`flex-1 py-2.5 text-center transition-colors ${
                 leftTab === "problem"
-                  ? "border-b-2 border-indigo-500 text-white"
-                  : "text-slate-400 hover:text-slate-200"
+                  ? "border-b-2 border-[var(--accent)] font-semibold text-[var(--text-primary)]"
+                  : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
               }`}
             >
               Problem &amp; Tests
             </button>
             <button
               onClick={() => setLeftTab("revisions")}
-              className={`flex flex-1 items-center justify-center gap-1 py-2.5 text-center transition ${
+              className={`flex flex-1 items-center justify-center gap-1 py-2.5 text-center transition-colors ${
                 leftTab === "revisions"
-                  ? "border-b-2 border-indigo-500 text-white"
-                  : "text-slate-400 hover:text-slate-200"
+                  ? "border-b-2 border-[var(--accent)] font-semibold text-[var(--text-primary)]"
+                  : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
               }`}
             >
               <History className="h-3.5 w-3.5" />
@@ -703,28 +706,29 @@ export function AssessmentWorkspace({
           <div className="flex-1 overflow-y-auto p-4">
             {leftTab === "problem" ? (
               <div className="space-y-5">
-                <div className="whitespace-pre-wrap text-xs leading-relaxed text-slate-300">
+                <div className="whitespace-pre-wrap text-xs leading-relaxed text-[var(--text-secondary)]">
                   {challenge.description}
                 </div>
 
                 <div>
-                  <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
                     Public Test Cases ({publicTests.length})
                   </h3>
                   <div className="space-y-2.5">
                     {publicTests.map((tc) => (
                       <div
                         key={tc.id}
-                        className="rounded-lg border border-slate-800 bg-[#090d16] p-2.5 font-mono text-[11px]"
+                        className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-2)] p-2.5 font-mono text-[11px]"
                       >
-                        <div className="font-sans font-semibold text-slate-200">
+                        <div className="font-sans font-semibold text-[var(--text-primary)]">
                           {tc.name}
                         </div>
-                        <div className="mt-1 text-slate-400">
-                          <span className="text-slate-500">in:</span> {tc.input}
+                        <div className="mt-1 text-[var(--text-secondary)]">
+                          <span className="text-[var(--text-muted)]">in:</span>{" "}
+                          {tc.input}
                         </div>
-                        <div className="mt-0.5 text-emerald-300">
-                          <span className="text-slate-500">out:</span>{" "}
+                        <div className="mt-0.5 text-emerald-500">
+                          <span className="text-[var(--text-muted)]">out:</span>{" "}
                           {tc.expected_output}
                         </div>
                       </div>
@@ -737,32 +741,32 @@ export function AssessmentWorkspace({
                 {revisions.map((rev) => (
                   <div
                     key={rev.id}
-                    className="rounded-lg border border-slate-800 bg-[#090d16] p-3"
+                    className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-2)] p-3"
                   >
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-semibold text-white">
+                      <span className="font-semibold text-[var(--text-primary)]">
                         Rev #{rev.revision_number}
                       </span>
                       <span
-                        className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${
+                        className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${
                           rev.source === "bug_injection"
-                            ? "bg-amber-500/20 text-amber-300"
+                            ? "bg-amber-500/20 text-amber-500"
                             : rev.source === "ai_apply"
-                            ? "bg-indigo-500/20 text-indigo-300"
-                            : "bg-slate-800 text-slate-300"
+                            ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+                            : "bg-[var(--surface-1)] text-[var(--text-muted)]"
                         }`}
                       >
                         {rev.source}
                       </span>
                     </div>
                     {rev.note && (
-                      <p className="mt-1 text-[11px] text-slate-400">
+                      <p className="mt-1 text-[11px] text-[var(--text-muted)]">
                         {rev.note}
                       </p>
                     )}
                     <button
                       onClick={() => setCode(rev.code)}
-                      className="mt-2 text-[11px] font-medium text-indigo-400 hover:text-indigo-300"
+                      className="mt-2 text-[11px] font-semibold text-[var(--accent)] hover:underline"
                     >
                       Restore to editor
                     </button>
@@ -812,23 +816,23 @@ export function AssessmentWorkspace({
           </div>
 
           {/* Bottom Execution Console */}
-          <div className="h-56 shrink-0 overflow-y-auto border-t border-slate-800 bg-[#0b1120] p-3">
+          <div className="h-56 shrink-0 overflow-y-auto border-t border-[var(--border-subtle)] bg-[var(--surface-1)] p-3">
             <div className="mb-2 flex items-center justify-between">
-              <div className="flex items-center gap-2 text-xs font-semibold text-slate-200">
+              <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-primary)]">
                 Test Execution Results
                 {latestResults.length > 0 && (
                   <span
-                    className={`rounded-full px-2 py-0.5 text-[11px] ${
+                    className={`tabular-nums rounded-full px-2 py-0.5 text-[11px] ${
                       passedCount === latestResults.length
-                        ? "bg-emerald-500/15 text-emerald-300"
-                        : "bg-amber-500/15 text-amber-300"
+                        ? "bg-emerald-500/15 text-emerald-500"
+                        : "bg-amber-500/15 text-amber-500"
                     }`}
                   >
                     {passedCount} / {latestResults.length} Passed
                   </span>
                 )}
               </div>
-              <span className="font-mono text-[10px] text-slate-500">
+              <span className="tabular-nums font-mono text-[10px] text-[var(--text-muted)]">
                 Engine: {executorEngine}
                 {queueMeta
                   ? ` · Queue wait: ${queueMeta.waitMs}ms · ${queueMeta.jobId}`
@@ -837,7 +841,7 @@ export function AssessmentWorkspace({
             </div>
 
             {latestResults.length === 0 ? (
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-[var(--text-muted)]">
                 Click &ldquo;Run Tests&rdquo; to enqueue isolated sandbox
                 execution.
               </p>
@@ -846,40 +850,40 @@ export function AssessmentWorkspace({
                 {latestResults.map((r) => (
                   <div
                     key={r.test_case_id}
-                    className={`rounded-lg border p-2.5 text-xs ${
+                    className={`rounded-xl border p-2.5 text-xs ${
                       r.passed
                         ? "border-emerald-500/25 bg-emerald-500/5"
                         : "border-red-500/30 bg-red-500/10"
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5 font-medium text-slate-100">
+                      <div className="flex items-center gap-1.5 font-semibold text-[var(--text-primary)]">
                         {r.passed ? (
-                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
                         ) : (
-                          <XCircle className="h-3.5 w-3.5 text-red-400" />
+                          <XCircle className="h-3.5 w-3.5 text-red-500" />
                         )}
                         {r.name}
                         {r.visibility === "debug" && (
-                          <span className="rounded bg-amber-500/20 px-1.5 py-0.5 text-[10px] text-amber-300">
+                          <span className="rounded bg-amber-500/20 px-1.5 py-0.5 text-[10px] text-amber-500">
                             DEBUG TEST
                           </span>
                         )}
                       </div>
-                      <span className="font-mono text-[10px] text-slate-400">
+                      <span className="tabular-nums font-mono text-[10px] text-[var(--text-muted)]">
                         {r.status} · {r.runtime_ms}ms
                       </span>
                     </div>
                     {!r.passed && (
                       <div className="mt-1.5 space-y-0.5 font-mono text-[11px]">
-                        <div className="text-emerald-300">
+                        <div className="text-emerald-500">
                           Expected: {r.expected_output}
                         </div>
-                        <div className="text-red-300">
+                        <div className="text-red-500">
                           Actual: {r.actual_output || "(empty)"}
                         </div>
                         {r.stderr && (
-                          <div className="text-amber-300">
+                          <div className="text-amber-500">
                             Stderr: {r.stderr}
                           </div>
                         )}
@@ -904,15 +908,15 @@ export function AssessmentWorkspace({
           />
 
           {/* Multi-Provider Switcher Bar */}
-          <div className="flex items-center justify-between border-b border-slate-800 bg-[#0a0f1d] px-3.5 py-1.5 text-[11px]">
-            <span className="flex items-center gap-1 text-slate-400">
-              <Cpu className="h-3 w-3 text-indigo-400" />
+          <div className="flex items-center justify-between border-b border-[var(--border-subtle)] bg-[var(--surface-2)] px-3.5 py-1.5 text-[11px]">
+            <span className="flex items-center gap-1 text-[var(--text-muted)]">
+              <Cpu className="h-3 w-3 text-[var(--accent)]" />
               AI Provider
             </span>
             <select
               value={provider}
               onChange={(e) => setProvider(e.target.value as AIProviderId)}
-              className="rounded border border-slate-700 bg-[#090d16] px-2 py-0.5 text-[11px] text-slate-200 focus:border-indigo-500 focus:outline-none"
+              className="rounded-md border border-[var(--border-strong)] bg-[var(--surface-1)] px-2 py-0.5 text-[11px] text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
             >
               <option value="auto">Auto (Gemini → Failover)</option>
               <option value="gemini">Google Gemini (Flash-Lite)</option>
@@ -924,9 +928,9 @@ export function AssessmentWorkspace({
           {/* Chat Transcript */}
           <div className="flex-1 space-y-3 overflow-y-auto p-3.5">
             {turns.length === 0 && (
-              <div className="rounded-xl border border-dashed border-slate-700 bg-[#090d16] p-4 text-center text-xs text-slate-400">
-                <Sparkles className="mx-auto mb-2 h-5 w-5 text-indigo-400" />
-                <p className="font-medium text-slate-200">
+              <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-2)] p-4 text-center text-xs text-[var(--text-muted)]">
+                <Sparkles className="mx-auto mb-2 h-5 w-5 text-[var(--accent)]" />
+                <p className="font-semibold text-[var(--text-primary)]">
                   AI Coding Assistant Ready
                 </p>
                 <p className="mt-1 leading-relaxed">
@@ -939,10 +943,10 @@ export function AssessmentWorkspace({
 
             {turns.map((turn) => (
               <div key={turn.id} className="space-y-2">
-                <div className="ml-6 rounded-xl border border-indigo-500/30 bg-indigo-600/15 p-3 text-xs text-slate-100">
-                  <div className="mb-1 flex items-center justify-between text-[10px] text-indigo-300">
+                <div className="ml-6 rounded-xl border border-[var(--accent-border)] bg-[var(--accent-soft)] p-3 text-xs text-[var(--text-primary)]">
+                  <div className="mb-1 flex items-center justify-between text-[10px] font-medium text-[var(--accent)]">
                     <span>Turn #{turn.turn_number} · You</span>
-                    <span className="font-mono">
+                    <span className="tabular-nums font-mono">
                       {turn.prompt_tokens + turn.completion_tokens} tok
                       {turn.tokens_saved > 0
                         ? ` · saved ${turn.tokens_saved}`
@@ -1035,7 +1039,7 @@ export function AssessmentWorkspace({
           {/* Prompt Composer */}
           <form
             onSubmit={handleSendPrompt}
-            className="shrink-0 border-t border-slate-800 bg-[#0d1424] p-3"
+            className="shrink-0 border-t border-[var(--border-subtle)] bg-[var(--surface-2)] p-3"
           >
             {promptInput.trim().length > 35 && (
               <div className="mb-1.5 flex justify-end">
@@ -1043,7 +1047,7 @@ export function AssessmentWorkspace({
                   type="button"
                   onClick={handleCompressPrompt}
                   disabled={compressing}
-                  className="inline-flex items-center gap-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-300 transition hover:bg-emerald-500/20"
+                  className="btn-tactile inline-flex items-center gap-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-500 hover:bg-emerald-500/20"
                 >
                   {compressing ? (
                     <Loader2 className="h-3 w-3 animate-spin" />
@@ -1073,12 +1077,12 @@ export function AssessmentWorkspace({
                     ? "Describe the failing debug test and ask for a targeted fix..."
                     : "Write a clear, token-conscious prompt (Enter to send)..."
                 }
-                className="flex-1 resize-none rounded-lg border border-slate-700 bg-[#090d16] p-2.5 text-xs text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
+                className="flex-1 resize-none rounded-xl border border-[var(--border-strong)] bg-[var(--surface-1)] p-2.5 text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none"
               />
               <button
                 type="submit"
                 disabled={sendingAI || !promptInput.trim()}
-                className="flex items-center justify-center rounded-lg bg-indigo-600 px-3.5 text-white transition hover:bg-indigo-500 disabled:opacity-50"
+                className="btn-tactile flex items-center justify-center rounded-xl bg-[var(--accent)] px-3.5 text-[var(--accent-fg)] hover:opacity-95 disabled:opacity-50"
               >
                 {sendingAI ? (
                   <Loader2 className="h-4 w-4 animate-spin" />

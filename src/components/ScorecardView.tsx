@@ -17,32 +17,32 @@ export function ScorecardView({
   return (
     <div className="space-y-6">
       {/* Top Hero Score */}
-      <div className="rounded-xl border border-indigo-500/30 bg-gradient-to-br from-indigo-950/60 via-[#111827] to-[#111827] p-6">
+      <div className="surface-card rounded-2xl border-[var(--accent-border)] p-6">
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-indigo-300">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[var(--accent)]">
               <Award className="h-4 w-4" />
               Explainable Assessment Scorecard
             </div>
             {candidateName && (
-              <h2 className="mt-1 text-xl font-bold text-white">
+              <h2 className="mt-1 text-xl font-bold text-[var(--text-primary)]">
                 {candidateName}
               </h2>
             )}
-            <p className="mt-1.5 text-sm text-slate-300">
+            <p className="mt-1.5 text-sm text-[var(--text-secondary)]">
               {b?.overall_verdict}
             </p>
             {b?.token_efficiency_summary && (
-              <p className="mt-1 text-xs text-emerald-300">
+              <p className="mt-1 text-xs font-medium text-emerald-500">
                 {b.token_efficiency_summary}
               </p>
             )}
           </div>
-          <div className="flex shrink-0 flex-col items-center justify-center rounded-xl border border-indigo-500/40 bg-[#090d16] px-6 py-4">
-            <span className="text-3xl font-extrabold text-white">
+          <div className="flex shrink-0 flex-col items-center justify-center rounded-xl border border-[var(--accent-border)] bg-[var(--accent-soft)] px-6 py-4">
+            <span className="tabular-nums font-mono text-3xl font-extrabold text-[var(--text-primary)]">
               {Number(scorecard.total_score).toFixed(1)}
             </span>
-            <span className="text-xs font-medium text-slate-400">
+            <span className="text-xs font-medium text-[var(--text-muted)]">
               out of 100
             </span>
           </div>
@@ -57,49 +57,48 @@ export function ScorecardView({
             score: Number(scorecard.prompt_quality_score),
             max: 40,
             icon: Sparkles,
-            color: "text-indigo-400",
+            color: "text-[var(--accent)]",
           },
           {
             label: "Prompt Improvement",
             score: Number(scorecard.prompt_improvement_score),
             max: 10,
             icon: MessageSquare,
-            color: "text-cyan-400",
+            color: "text-cyan-500",
           },
           {
             label: "Test Cases",
             score: Number(scorecard.test_cases_score),
             max: 30,
             icon: CheckCircle2,
-            color: "text-emerald-400",
+            color: "text-emerald-500",
           },
           {
             label: "Debug Test Cases",
             score: Number(scorecard.debug_test_cases_score),
             max: 20,
             icon: Bug,
-            color: "text-amber-400",
+            color: "text-amber-500",
           },
         ].map((item) => {
           const pct = Math.min(100, Math.round((item.score / item.max) * 100));
           return (
-            <div
-              key={item.label}
-              className="rounded-xl border border-slate-800 bg-[#111827] p-4"
-            >
-              <div className="flex items-center justify-between text-xs text-slate-400">
+            <div key={item.label} className="surface-card rounded-xl p-4">
+              <div className="flex items-center justify-between text-xs text-[var(--text-muted)]">
                 <span>{item.label}</span>
                 <item.icon className={`h-4 w-4 ${item.color}`} />
               </div>
-              <div className="mt-2 flex items-baseline gap-1">
-                <span className="text-2xl font-bold text-white">
+              <div className="tabular-nums mt-2 flex items-baseline gap-1 font-mono">
+                <span className="text-2xl font-bold text-[var(--text-primary)]">
                   {item.score.toFixed(1)}
                 </span>
-                <span className="text-xs text-slate-500">/ {item.max}</span>
+                <span className="text-xs text-[var(--text-muted)]">
+                  / {item.max}
+                </span>
               </div>
-              <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+              <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface-2)]">
                 <div
-                  className="h-full bg-indigo-500"
+                  className="h-full rounded-full bg-[var(--accent)]"
                   style={{ width: `${pct}%` }}
                 />
               </div>
@@ -110,12 +109,12 @@ export function ScorecardView({
 
       {/* Detailed Explainable Criteria */}
       {b?.prompt_quality?.criteria && (
-        <div className="rounded-xl border border-slate-800 bg-[#111827] p-5">
-          <h3 className="text-sm font-semibold text-white">
+        <div className="surface-card rounded-2xl p-5">
+          <h3 className="text-sm font-semibold text-[var(--text-primary)]">
             Prompt Quality Breakdown ({b.prompt_quality.total} /{" "}
             {b.prompt_quality.max})
           </h3>
-          <p className="mt-1 text-xs text-slate-400">
+          <p className="mt-1 text-xs text-[var(--text-muted)]">
             {b.prompt_quality.summary}
           </p>
 
@@ -123,17 +122,17 @@ export function ScorecardView({
             {b.prompt_quality.criteria.map((c) => (
               <div
                 key={c.criterion}
-                className="rounded-lg border border-slate-800 bg-[#0b1120] p-3.5"
+                className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-2)] p-3.5"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-200">
+                  <span className="text-xs font-semibold text-[var(--text-primary)]">
                     {c.criterion}
                   </span>
-                  <span className="font-mono text-xs font-bold text-indigo-300">
+                  <span className="tabular-nums font-mono text-xs font-bold text-[var(--accent)]">
                     {c.score} / {c.max_score}
                   </span>
                 </div>
-                <p className="mt-1.5 text-xs leading-relaxed text-slate-400">
+                <p className="mt-1.5 text-xs leading-relaxed text-[var(--text-secondary)]">
                   {c.explanation}
                 </p>
                 {c.cited_turns?.length > 0 && (
@@ -141,7 +140,7 @@ export function ScorecardView({
                     {c.cited_turns.map((t) => (
                       <span
                         key={t}
-                        className="rounded bg-slate-800 px-1.5 py-0.5 font-mono text-[10px] text-slate-300"
+                        className="rounded border border-[var(--border-subtle)] bg-[var(--surface-1)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--text-secondary)]"
                       >
                         Turn #{t}
                       </span>
@@ -156,27 +155,27 @@ export function ScorecardView({
 
       {/* Other 3 Pillars Summaries */}
       <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-xl border border-slate-800 bg-[#111827] p-4">
-          <div className="text-xs font-semibold text-cyan-300">
+        <div className="surface-card rounded-xl p-4">
+          <div className="text-xs font-semibold text-cyan-500">
             Prompt Improvement ({b?.prompt_improvement?.total ?? 0}/10)
           </div>
-          <p className="mt-1.5 text-xs leading-relaxed text-slate-400">
+          <p className="mt-1.5 text-xs leading-relaxed text-[var(--text-secondary)]">
             {b?.prompt_improvement?.summary}
           </p>
         </div>
-        <div className="rounded-xl border border-slate-800 bg-[#111827] p-4">
-          <div className="text-xs font-semibold text-emerald-300">
+        <div className="surface-card rounded-xl p-4">
+          <div className="text-xs font-semibold text-emerald-500">
             Test Cases ({b?.test_cases?.total ?? 0}/30)
           </div>
-          <p className="mt-1.5 text-xs leading-relaxed text-slate-400">
+          <p className="mt-1.5 text-xs leading-relaxed text-[var(--text-secondary)]">
             {b?.test_cases?.summary}
           </p>
         </div>
-        <div className="rounded-xl border border-slate-800 bg-[#111827] p-4">
-          <div className="text-xs font-semibold text-amber-300">
+        <div className="surface-card rounded-xl p-4">
+          <div className="text-xs font-semibold text-amber-500">
             Debug Test Cases ({b?.debug_test_cases?.total ?? 0}/20)
           </div>
-          <p className="mt-1.5 text-xs leading-relaxed text-slate-400">
+          <p className="mt-1.5 text-xs leading-relaxed text-[var(--text-secondary)]">
             {b?.debug_test_cases?.summary}
           </p>
         </div>

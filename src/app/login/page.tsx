@@ -67,6 +67,7 @@ export default function LoginPage() {
       <div className="absolute right-6 top-6 z-20">
         <ThemeSwitcher />
       </div>
+
       <div className="relative z-10 w-full max-w-md">
         <div className="mb-8 text-center">
           <Link href="/" className="inline-flex items-center gap-2.5">
@@ -77,7 +78,7 @@ export default function LoginPage() {
               PromptBench
             </span>
           </Link>
-          <h1 className="mt-6 text-2xl font-bold text-[var(--text-primary)]">
+          <h1 className="text-balance mt-6 text-2xl font-bold text-[var(--text-primary)]">
             Sign in to your account
           </h1>
           <p className="mt-2 text-sm text-[var(--text-muted)]">
@@ -85,45 +86,45 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <div className="surface-card rounded-2xl p-8">
-          <form onSubmit={handleLogin} className="space-y-5">
+        <div className="surface-card rounded-2xl p-7">
+          <form onSubmit={handleLogin} className="space-y-4">
             {error && (
-              <div className="flex items-start gap-2.5 rounded-lg border border-red-500/30 bg-red-500/10 p-3.5 text-sm text-red-300">
+              <div className="flex items-start gap-2.5 rounded-xl border border-red-500/30 bg-red-500/10 p-3.5 text-sm text-red-500">
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                 <span>{error}</span>
               </div>
             )}
 
             <div>
-              <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-slate-400">
+              <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
                 Email Address
               </label>
               <div className="relative">
-                <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]" />
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@company.com"
-                  className="w-full rounded-lg border border-slate-700 bg-[#0b1120] py-2.5 pl-10 pr-4 text-sm text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full rounded-xl border border-[var(--border-strong)] bg-[var(--surface-2)] py-2.5 pl-10 pr-4 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-[var(--accent)] focus:bg-[var(--surface-1)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-soft)]"
                 />
               </div>
             </div>
 
             <div>
-              <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-slate-400">
+              <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
                 Password
               </label>
               <div className="relative">
-                <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                <Lock className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]" />
                 <input
                   type="password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full rounded-lg border border-slate-700 bg-[#0b1120] py-2.5 pl-10 pr-4 text-sm text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full rounded-xl border border-[var(--border-strong)] bg-[var(--surface-2)] py-2.5 pl-10 pr-4 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-[var(--accent)] focus:bg-[var(--surface-1)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-soft)]"
                 />
               </div>
             </div>
@@ -131,7 +132,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500 disabled:opacity-60"
+              className="btn-tactile flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-[var(--accent-fg)] shadow-sm hover:opacity-95 disabled:opacity-60"
             >
               {loading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -144,8 +145,8 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="mt-6 rounded-xl border border-slate-800 bg-[#0b1120] p-4">
-            <div className="mb-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+          <div className="mt-6 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-2)] p-3.5">
+            <div className="mb-2.5 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
               Demo Credentials (Full JWT Auth)
             </div>
             <div className="grid grid-cols-2 gap-2.5">
@@ -156,13 +157,13 @@ export default function LoginPage() {
                   setPassword("Admin@12345");
                   setError(null);
                 }}
-                className="flex flex-col items-start rounded-lg border border-indigo-500/30 bg-indigo-500/10 p-2.5 text-left transition hover:bg-indigo-500/20"
+                className="btn-tactile flex flex-col items-start rounded-lg border border-[var(--accent-border)] bg-[var(--accent-soft)] p-2.5 text-left hover:opacity-90"
               >
-                <span className="flex items-center gap-1.5 text-xs font-semibold text-indigo-300">
+                <span className="flex items-center gap-1.5 text-xs font-semibold text-[var(--accent)]">
                   <Shield className="h-3.5 w-3.5" />
                   Admin / Evaluator
                 </span>
-                <span className="mt-0.5 truncate text-[10px] text-slate-400">
+                <span className="mt-0.5 truncate text-[10px] text-[var(--text-muted)]">
                   admin@promptbench.ai
                 </span>
               </button>
@@ -173,24 +174,24 @@ export default function LoginPage() {
                   setPassword("Candidate@12345");
                   setError(null);
                 }}
-                className="flex flex-col items-start rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-2.5 text-left transition hover:bg-emerald-500/20"
+                className="btn-tactile flex flex-col items-start rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-2.5 text-left hover:bg-emerald-500/15"
               >
-                <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-300">
+                <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
                   <User className="h-3.5 w-3.5" />
                   Candidate
                 </span>
-                <span className="mt-0.5 truncate text-[10px] text-slate-400">
+                <span className="mt-0.5 truncate text-[10px] text-[var(--text-muted)]">
                   candidate@promptbench.ai
                 </span>
               </button>
             </div>
           </div>
 
-          <div className="mt-5 border-t border-slate-800 pt-5 text-center text-sm text-slate-400">
+          <div className="mt-5 border-t border-[var(--border-subtle)] pt-5 text-center text-sm text-[var(--text-muted)]">
             Don&apos;t have an account?{" "}
             <Link
               href="/register"
-              className="font-medium text-indigo-400 hover:text-indigo-300"
+              className="font-semibold text-[var(--accent)] hover:underline"
             >
               Create an account
             </Link>

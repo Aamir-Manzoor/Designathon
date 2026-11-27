@@ -77,15 +77,15 @@ export default async function AdminSessionReviewPage({
         <div className="flex items-center justify-between">
           <Link
             href="/admin"
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-400 hover:text-white"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)]"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Evaluator Console
           </Link>
-          <div className="font-mono text-xs text-slate-400">
+          <div className="tabular-nums font-mono text-xs text-[var(--text-muted)]">
             Tokens: {formatNumber(session.tokens_used)} /{" "}
             {formatNumber(session.token_budget)} · Saved:{" "}
-            <span className="text-emerald-400">
+            <span className="font-semibold text-emerald-500">
               {formatNumber(session.tokens_saved)}
             </span>
           </div>
@@ -97,47 +97,47 @@ export default async function AdminSessionReviewPage({
             candidateName={`${session.candidate_name} (${session.candidate_email}) — ${session.challenge?.title}`}
           />
         ) : (
-          <div className="rounded-xl border border-slate-800 bg-[#111827] p-6 text-sm text-slate-400">
+          <div className="surface-card rounded-2xl p-6 text-sm text-[var(--text-muted)]">
             Session is still in <strong>{session.phase}</strong> phase and has
             not been scored yet.
           </div>
         )}
 
         {/* Prompt History & Per-Turn Token Telemetry */}
-        <section className="rounded-xl border border-slate-800 bg-[#111827] p-6">
-          <h2 className="flex items-center gap-2 text-base font-semibold text-white">
-            <MessageSquare className="h-4 w-4 text-indigo-400" />
+        <section className="surface-card rounded-2xl p-6">
+          <h2 className="flex items-center gap-2 text-base font-bold text-[var(--text-primary)]">
+            <MessageSquare className="h-4 w-4 text-[var(--accent)]" />
             Prompt &amp; Token Revision Transcript ({turns?.length ?? 0} turns)
           </h2>
           <div className="mt-4 space-y-3">
             {((turns ?? []) as PromptTurn[]).map((t) => (
               <div
                 key={t.id}
-                className="rounded-lg border border-slate-800 bg-[#0b1120] p-4 text-xs"
+                className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-2)] p-4 text-xs"
               >
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border-subtle)] pb-2">
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold text-indigo-300">
+                    <span className="font-semibold text-[var(--accent)]">
                       Turn #{t.turn_number}
                     </span>
-                    <span className="rounded bg-slate-800 px-1.5 py-0.5 uppercase text-[10px] text-slate-300">
+                    <span className="rounded border border-[var(--border-subtle)] bg-[var(--surface-1)] px-1.5 py-0.5 uppercase text-[10px] text-[var(--text-secondary)]">
                       {t.phase}
                     </span>
                   </div>
-                  <div className="font-mono text-[11px] text-slate-400">
+                  <div className="tabular-nums font-mono text-[11px] text-[var(--text-muted)]">
                     Prompt: {t.prompt_tokens} · Completion: {t.completion_tokens}{" "}
                     · Cached: {t.cached_tokens} ·{" "}
-                    <span className="text-emerald-400">
+                    <span className="font-semibold text-emerald-500">
                       Saved: {t.tokens_saved}
                     </span>
                   </div>
                 </div>
-                <p className="mt-2.5 whitespace-pre-wrap text-slate-200">
-                  <strong className="text-slate-400">Candidate:</strong>{" "}
+                <p className="mt-2.5 whitespace-pre-wrap text-[var(--text-primary)]">
+                  <strong className="text-[var(--text-muted)]">Candidate:</strong>{" "}
                   {t.user_prompt}
                 </p>
-                <p className="mt-2 whitespace-pre-wrap text-slate-400">
-                  <strong className="text-emerald-400">AI:</strong>{" "}
+                <p className="mt-2 whitespace-pre-wrap text-[var(--text-secondary)]">
+                  <strong className="text-emerald-500">AI:</strong>{" "}
                   {t.ai_response.slice(0, 500)}
                   {t.ai_response.length > 500 ? "..." : ""}
                 </p>
@@ -148,16 +148,16 @@ export default async function AdminSessionReviewPage({
 
         {/* Final Code & Integrity Log */}
         <div className="grid gap-6 lg:grid-cols-2">
-          <section className="rounded-xl border border-slate-800 bg-[#111827] p-5">
-            <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
-              <Code2 className="h-4 w-4 text-emerald-400" />
+          <section className="surface-card rounded-2xl p-5">
+            <h2 className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
+              <Code2 className="h-4 w-4 text-emerald-500" />
               Final Submitted Code ({revisions?.length ?? 0} revisions)
             </h2>
-            <pre className="mt-3 max-h-80 overflow-auto rounded-lg border border-slate-800 bg-[#090d16] p-3 font-mono text-xs text-slate-200">
+            <pre className="mt-3 max-h-80 overflow-auto rounded-xl border border-white/10 bg-[#0d1117] p-3.5 font-mono text-xs text-slate-200">
               {session.current_code}
             </pre>
             {((revisions ?? []) as CodeRevision[]).length > 0 && (
-              <div className="mt-3 space-y-1 text-[11px] text-slate-400">
+              <div className="mt-3 space-y-1 text-[11px] text-[var(--text-muted)]">
                 {((revisions ?? []) as CodeRevision[]).map((r) => (
                   <div key={r.id}>
                     Rev #{r.revision_number} ({r.source}): {r.note || "Updated"}
@@ -167,26 +167,26 @@ export default async function AdminSessionReviewPage({
             )}
           </section>
 
-          <section className="rounded-xl border border-slate-800 bg-[#111827] p-5">
-            <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
-              <ShieldAlert className="h-4 w-4 text-amber-400" />
+          <section className="surface-card rounded-2xl p-5">
+            <h2 className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
+              <ShieldAlert className="h-4 w-4 text-amber-500" />
               Integrity &amp; Proctoring Log ({integrityEvents?.length ?? 0})
             </h2>
             <div className="mt-3 space-y-2">
               {((integrityEvents ?? []) as IntegrityEvent[]).length === 0 ? (
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-[var(--text-muted)]">
                   No integrity events recorded.
                 </p>
               ) : (
                 ((integrityEvents ?? []) as IntegrityEvent[]).map((ev) => (
                   <div
                     key={ev.id}
-                    className="flex items-center justify-between rounded-lg border border-slate-800 bg-[#0b1120] px-3 py-2 text-xs"
+                    className="flex items-center justify-between rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-2)] px-3 py-2 text-xs"
                   >
-                    <span className="font-mono font-medium text-amber-300">
+                    <span className="font-mono font-semibold text-amber-500">
                       {ev.event_type}
                     </span>
-                    <span className="font-mono text-[11px] text-slate-400">
+                    <span className="font-mono text-[11px] text-[var(--text-muted)]">
                       {JSON.stringify(ev.metadata)}
                     </span>
                   </div>

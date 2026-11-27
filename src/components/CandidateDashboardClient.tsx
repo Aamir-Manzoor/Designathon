@@ -68,10 +68,10 @@ export function CandidateDashboardClient({
   return (
     <div className="mx-auto max-w-7xl px-6 py-8">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-white">
+        <h1 className="text-2xl font-bold text-[var(--text-primary)]">
           AI-Assisted Coding Challenges
         </h1>
-        <p className="mt-1 text-sm text-slate-400">
+        <p className="mt-1 text-sm text-[var(--text-muted)]">
           Select a challenge to start a timed assessment with live AI prompting,
           token-budget guidance, controlled bug injection, and explainable
           scoring.
@@ -79,7 +79,7 @@ export function CandidateDashboardClient({
       </div>
 
       {error && (
-        <div className="mb-6 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+        <div className="mb-6 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-500">
           {error}
         </div>
       )}
@@ -90,44 +90,44 @@ export function CandidateDashboardClient({
           return (
             <div
               key={ch.id}
-              className="flex flex-col justify-between rounded-xl border border-slate-800 bg-[#111827] p-6 transition hover:border-indigo-500/40"
+              className="surface-card flex flex-col justify-between rounded-2xl p-6 transition-colors hover:border-[var(--accent-border)]"
             >
               <div>
                 <div className="flex items-center justify-between">
                   <span
-                    className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                    className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
                       ch.difficulty === "Easy"
-                        ? "bg-emerald-500/15 text-emerald-300"
+                        ? "bg-emerald-500/15 text-emerald-500"
                         : ch.difficulty === "Hard"
-                        ? "bg-red-500/15 text-red-300"
-                        : "bg-amber-500/15 text-amber-300"
+                        ? "bg-red-500/15 text-red-500"
+                        : "bg-amber-500/15 text-amber-500"
                     }`}
                   >
                     {ch.difficulty}
                   </span>
-                  <div className="flex items-center gap-3 text-xs text-slate-400">
+                  <div className="tabular-nums flex items-center gap-3 text-xs text-[var(--text-muted)]">
                     <span className="flex items-center gap-1">
                       <Clock className="h-3.5 w-3.5" />
                       {ch.time_limit_minutes}m
                     </span>
                     <span className="flex items-center gap-1">
-                      <Gauge className="h-3.5 w-3.5 text-indigo-400" />
+                      <Gauge className="h-3.5 w-3.5 text-[var(--accent)]" />
                       {formatNumber(ch.token_budget)} tok
                     </span>
                   </div>
                 </div>
 
-                <h2 className="mt-4 text-lg font-semibold text-white">
+                <h2 className="mt-4 text-lg font-bold text-[var(--text-primary)]">
                   {ch.title}
                 </h2>
-                <p className="mt-2 line-clamp-3 text-xs leading-relaxed text-slate-400">
+                <p className="mt-2 line-clamp-3 text-xs leading-relaxed text-[var(--text-muted)]">
                   {ch.description.replace(/[#`*]/g, "")}
                 </p>
               </div>
 
-              <div className="mt-6 space-y-3 border-t border-slate-800 pt-4">
+              <div className="mt-6 space-y-3 border-t border-[var(--border-subtle)] pt-4">
                 <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1.5 text-xs text-slate-400">
+                  <span className="flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
                     <Code2 className="h-3.5 w-3.5" />
                     Language
                   </span>
@@ -143,10 +143,10 @@ export function CandidateDashboardClient({
                               [ch.id]: l,
                             }))
                           }
-                          className={`rounded-md px-2.5 py-1 text-xs font-medium capitalize transition ${
+                          className={`btn-tactile rounded-lg px-2.5 py-1 text-xs font-semibold capitalize ${
                             lang === l
-                              ? "bg-indigo-600 text-white"
-                              : "bg-slate-800 text-slate-400 hover:text-white"
+                              ? "bg-[var(--accent)] text-[var(--accent-fg)]"
+                              : "border border-[var(--border-subtle)] bg-[var(--surface-2)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                           }`}
                         >
                           {l}
@@ -159,7 +159,7 @@ export function CandidateDashboardClient({
                 <button
                   onClick={() => launchChallenge(ch.id)}
                   disabled={launchingId === ch.id}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500 disabled:opacity-60"
+                  className="btn-tactile flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-[var(--accent-fg)] hover:opacity-95 disabled:opacity-60"
                 >
                   {launchingId === ch.id ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -179,12 +179,12 @@ export function CandidateDashboardClient({
       {/* Previous Candidate Sessions */}
       {sessions.length > 0 && (
         <div className="mt-12">
-          <h2 className="mb-4 text-lg font-semibold text-white">
+          <h2 className="mb-4 text-lg font-bold text-[var(--text-primary)]">
             Your Assessment Sessions
           </h2>
-          <div className="overflow-hidden rounded-xl border border-slate-800 bg-[#111827]">
+          <div className="surface-card overflow-hidden rounded-2xl">
             <table className="w-full text-left text-sm">
-              <thead className="border-b border-slate-800 bg-[#0b1120] text-xs uppercase text-slate-400">
+              <thead className="border-b border-[var(--border-subtle)] bg-[var(--surface-2)] text-xs uppercase text-[var(--text-muted)]">
                 <tr>
                   <th className="px-4 py-3">Challenge</th>
                   <th className="px-4 py-3">Language</th>
@@ -194,27 +194,30 @@ export function CandidateDashboardClient({
                   <th className="px-4 py-3 text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800">
+              <tbody className="divide-y divide-[var(--border-subtle)]">
                 {sessions.map((s) => {
                   const sc = Array.isArray(s.scorecard)
                     ? s.scorecard[0]
                     : s.scorecard;
                   return (
-                    <tr key={s.id} className="hover:bg-slate-800/40">
-                      <td className="px-4 py-3 font-medium text-white">
+                    <tr
+                      key={s.id}
+                      className="transition-colors hover:bg-[var(--surface-2)]/60"
+                    >
+                      <td className="px-4 py-3 font-semibold text-[var(--text-primary)]">
                         {s.challenge?.title || "Coding Challenge"}
                       </td>
-                      <td className="px-4 py-3 capitalize text-slate-300">
+                      <td className="px-4 py-3 capitalize text-[var(--text-secondary)]">
                         {s.language}
                       </td>
                       <td className="px-4 py-3">
                         <span
-                          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
                             s.phase === "submitted"
-                              ? "bg-emerald-500/15 text-emerald-300"
+                              ? "bg-emerald-500/15 text-emerald-500"
                               : s.phase === "debugging"
-                              ? "bg-amber-500/15 text-amber-300"
-                              : "bg-indigo-500/15 text-indigo-300"
+                              ? "bg-amber-500/15 text-amber-500"
+                              : "bg-[var(--accent-soft)] text-[var(--accent)]"
                           }`}
                         >
                           {s.phase === "submitted" ? (
@@ -225,17 +228,19 @@ export function CandidateDashboardClient({
                           {s.phase}
                         </span>
                       </td>
-                      <td className="px-4 py-3 font-mono text-xs text-slate-300">
+                      <td className="tabular-nums px-4 py-3 font-mono text-xs text-[var(--text-secondary)]">
                         {formatNumber(s.tokens_used)} /{" "}
                         {formatNumber(s.token_budget)}
                       </td>
-                      <td className="px-4 py-3 font-mono text-sm font-bold text-white">
-                        {sc ? `${Number(sc.total_score).toFixed(1)} / 100` : "—"}
+                      <td className="tabular-nums px-4 py-3 font-mono text-sm font-bold text-[var(--text-primary)]">
+                        {sc
+                          ? `${Number(sc.total_score).toFixed(1)} / 100`
+                          : "—"}
                       </td>
                       <td className="px-4 py-3 text-right">
                         <Link
                           href={`/assess/${s.id}`}
-                          className="inline-flex items-center gap-1 text-xs font-medium text-indigo-400 hover:text-indigo-300"
+                          className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--accent)] hover:underline"
                         >
                           {s.phase === "submitted"
                             ? "View Scorecard"

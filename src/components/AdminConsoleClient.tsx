@@ -19,11 +19,9 @@ import {
   FileSpreadsheet,
   Users,
   Award,
-  Gauge,
   Sparkles,
   Plus,
   Eye,
-  Clock,
   CheckCircle2,
   Loader2,
   DollarSign,
@@ -133,7 +131,6 @@ export function AdminConsoleClient({
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
 
-  // Configurable Token Budget editor state per challenge
   const [budgetEdits, setBudgetEdits] = useState<
     Record<string, { budget: number; time: number }>
   >(() =>
@@ -146,7 +143,6 @@ export function AdminConsoleClient({
   );
   const [savingBudgetId, setSavingBudgetId] = useState<string | null>(null);
 
-  // Calibration & Concurrency Ops state
   const [calibrating, setCalibrating] = useState(false);
   const [calibrationReport, setCalibrationReport] =
     useState<CalibrationReport | null>(null);
@@ -155,7 +151,6 @@ export function AdminConsoleClient({
   const [concurrencyReport, setConcurrencyReport] =
     useState<ConcurrencyReport | null>(null);
 
-  // New Challenge Form state
   const [title, setTitle] = useState("");
   const [difficulty, setDifficulty] = useState<"Easy" | "Medium" | "Hard">(
     "Medium"
@@ -340,10 +335,10 @@ export function AdminConsoleClient({
     <div className="mx-auto max-w-7xl px-6 py-8">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-2xl font-bold text-white">
+          <h1 className="text-2xl font-bold text-[var(--text-primary)]">
             Admin &amp; Evaluator Console
           </h1>
-          <p className="mt-1 text-sm text-slate-400">
+          <p className="mt-1 text-sm text-[var(--text-muted)]">
             Configure token budgets, analyze correctness vs. AI cost efficiency,
             calibrate rubrics, and export scorecards.
           </p>
@@ -351,7 +346,7 @@ export function AdminConsoleClient({
 
         <a
           href="/api/export/xlsx"
-          className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-500"
+          className="btn-tactile inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-emerald-500"
         >
           <FileSpreadsheet className="h-4 w-4" />
           Export Scorecards (.xlsx)
@@ -366,75 +361,74 @@ export function AdminConsoleClient({
             value: String(normalizedSessions.length),
             sub: `${normalizedSessions.filter((s) => s.is_synthetic).length} synthetic · ${normalizedSessions.filter((s) => !s.is_synthetic).length} live`,
             icon: Users,
-            color: "text-indigo-400",
+            color: "text-[var(--accent)]",
           },
           {
             label: "Average Score",
             value: `${avgScore.toFixed(1)} / 100`,
             sub: "Prompt + Tests + Debug",
             icon: Award,
-            color: "text-emerald-400",
+            color: "text-emerald-500",
           },
           {
             label: "Total AI Cost (Est.)",
             value: `$${totalCostUsd.toFixed(4)}`,
             sub: `Saved $${totalSavedUsd.toFixed(4)} via optimizer`,
             icon: DollarSign,
-            color: "text-amber-400",
+            color: "text-amber-500",
           },
           {
             label: "Total Tokens Saved",
             value: formatNumber(totalSavedTokens),
             sub: "Adaptive context reduction",
             icon: Sparkles,
-            color: "text-cyan-400",
+            color: "text-cyan-500",
           },
         ].map((kpi) => (
-          <div
-            key={kpi.label}
-            className="rounded-xl border border-slate-800 bg-[#111827] p-5"
-          >
-            <div className="flex items-center justify-between text-xs text-slate-400">
+          <div key={kpi.label} className="surface-card rounded-2xl p-5">
+            <div className="flex items-center justify-between text-xs text-[var(--text-muted)]">
               <span>{kpi.label}</span>
               <kpi.icon className={`h-4 w-4 ${kpi.color}`} />
             </div>
-            <div className="mt-2 text-2xl font-bold text-white">
+            <div className="tabular-nums mt-2 font-mono text-2xl font-bold text-[var(--text-primary)]">
               {kpi.value}
             </div>
-            <div className="mt-1 text-[11px] text-slate-500">{kpi.sub}</div>
+            <div className="mt-1 text-[11px] text-[var(--text-muted)]">
+              {kpi.sub}
+            </div>
           </div>
         ))}
       </div>
 
       {/* Tabs */}
-      <div className="mt-8 flex flex-wrap items-center justify-between gap-2 border-b border-slate-800">
+      <div className="mt-8 flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border-subtle)]">
         <div className="flex gap-6 text-sm font-medium">
           <button
             onClick={() => setActiveTab("scorecards")}
-            className={`pb-3 transition ${
+            className={`pb-3 transition-colors ${
               activeTab === "scorecards"
-                ? "border-b-2 border-indigo-500 text-white"
-                : "text-slate-400 hover:text-slate-200"
+                ? "border-b-2 border-[var(--accent)] font-semibold text-[var(--text-primary)]"
+                : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
             }`}
           >
             Scorecards &amp; Cost Analytics ({normalizedSessions.length})
           </button>
           <button
             onClick={() => setActiveTab("challenges")}
-            className={`pb-3 transition ${
+            className={`pb-3 transition-colors ${
               activeTab === "challenges"
-                ? "border-b-2 border-indigo-500 text-white"
-                : "text-slate-400 hover:text-slate-200"
+                ? "border-b-2 border-[var(--accent)] font-semibold text-[var(--text-primary)]"
+                : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
             }`}
           >
             Challenges &amp; Token Budgets ({challenges.length})
           </button>
           <button
             onClick={() => setActiveTab("ops")}
-            className={`pb-3 transition ${
+            className={`pb-3 transition-colors ${
               activeTab === "ops"
-                ? "border-b-2 border-indigo-500 text-white"
-                : "text-slate-400 hover:text-slate-200"
+                ? "border-b-2 border-[var(--accent)] font-semibold text-[var(--text-primary)]"
+                : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
             }`}
           >
             Calibration &amp; Queue Ops
@@ -444,7 +438,7 @@ export function AdminConsoleClient({
         {activeTab === "challenges" && (
           <button
             onClick={() => setShowCreateForm((v) => !v)}
-            className="mb-2 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500"
+            className="btn-tactile mb-2 inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-xs font-semibold text-[var(--accent-fg)] hover:opacity-95"
           >
             <Plus className="h-3.5 w-3.5" />
             New Challenge
@@ -456,32 +450,44 @@ export function AdminConsoleClient({
       {activeTab === "scorecards" && (
         <div className="mt-6 space-y-6">
           <div className="grid gap-6 lg:grid-cols-2">
-            {/* Bar Chart: Score vs Budget % */}
-            <div className="rounded-xl border border-slate-800 bg-[#111827] p-5">
-              <h2 className="text-sm font-semibold text-white">
+            {/* Bar Chart */}
+            <div className="surface-card rounded-2xl p-5">
+              <h2 className="text-sm font-bold text-[var(--text-primary)]">
                 Score (/100) vs. Token Budget Used (%)
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-[var(--text-muted)]">
                 Compare assessment scores against budget burn rate per candidate.
               </p>
               <div className="mt-4 h-56 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={barChartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                    <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} />
-                    <YAxis stroke="#94a3b8" fontSize={11} domain={[0, 100]} />
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="var(--border-subtle)"
+                    />
+                    <XAxis
+                      dataKey="name"
+                      stroke="var(--text-muted)"
+                      fontSize={11}
+                    />
+                    <YAxis
+                      stroke="var(--text-muted)"
+                      fontSize={11}
+                      domain={[0, 100]}
+                    />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: "#0f172a",
-                        border: "1px solid #334155",
-                        borderRadius: "8px",
+                        backgroundColor: "var(--surface-1)",
+                        border: "1px solid var(--border-strong)",
+                        color: "var(--text-primary)",
+                        borderRadius: "10px",
                         fontSize: "12px",
                       }}
                     />
                     <Bar
                       dataKey="score"
                       name="Score (/100)"
-                      fill="#6366f1"
+                      fill="var(--accent)"
                       radius={[4, 4, 0, 0]}
                     />
                     <Bar
@@ -495,24 +501,27 @@ export function AdminConsoleClient({
               </div>
             </div>
 
-            {/* Scatter Chart: Correctness vs Token Efficiency */}
-            <div className="rounded-xl border border-slate-800 bg-[#111827] p-5">
-              <h2 className="text-sm font-semibold text-white">
+            {/* Scatter Chart */}
+            <div className="surface-card rounded-2xl p-5">
+              <h2 className="text-sm font-bold text-[var(--text-primary)]">
                 Correctness vs. AI Token Efficiency (Scatter)
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-[var(--text-muted)]">
                 Top-left quadrant = highest score with lowest token footprint
                 (most cost-efficient engineers).
               </p>
               <div className="mt-4 h-56 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <ScatterChart>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="var(--border-subtle)"
+                    />
                     <XAxis
                       type="number"
                       dataKey="tokens"
                       name="Tokens Used"
-                      stroke="#94a3b8"
+                      stroke="var(--text-muted)"
                       fontSize={11}
                     />
                     <YAxis
@@ -520,7 +529,7 @@ export function AdminConsoleClient({
                       dataKey="score"
                       name="Total Score"
                       domain={[40, 100]}
-                      stroke="#94a3b8"
+                      stroke="var(--text-muted)"
                       fontSize={11}
                     />
                     <ZAxis
@@ -532,16 +541,17 @@ export function AdminConsoleClient({
                     <Tooltip
                       cursor={{ strokeDasharray: "3 3" }}
                       contentStyle={{
-                        backgroundColor: "#0f172a",
-                        border: "1px solid #334155",
-                        borderRadius: "8px",
+                        backgroundColor: "var(--surface-1)",
+                        border: "1px solid var(--border-strong)",
+                        color: "var(--text-primary)",
+                        borderRadius: "10px",
                         fontSize: "12px",
                       }}
                     />
                     <Scatter
                       name="Candidates"
                       data={scatterData}
-                      fill="#22d3ee"
+                      fill="#06b6d4"
                     />
                   </ScatterChart>
                 </ResponsiveContainer>
@@ -550,9 +560,9 @@ export function AdminConsoleClient({
           </div>
 
           {/* Candidate Scorecards Table */}
-          <div className="overflow-x-auto rounded-xl border border-slate-800 bg-[#111827]">
+          <div className="surface-card overflow-x-auto rounded-2xl">
             <table className="w-full text-left text-xs">
-              <thead className="border-b border-slate-800 bg-[#0b1120] uppercase text-slate-400">
+              <thead className="border-b border-[var(--border-subtle)] bg-[var(--surface-2)] uppercase text-[var(--text-muted)]">
                 <tr>
                   <th className="px-4 py-3">Candidate</th>
                   <th className="px-3 py-3 text-center">Prompt (40)</th>
@@ -565,91 +575,96 @@ export function AdminConsoleClient({
                   <th className="px-4 py-3 text-right">Review</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800">
+              <tbody className="divide-y divide-[var(--border-subtle)]">
                 {normalizedSessions.map((s) => {
                   const pct =
                     s.token_budget > 0
                       ? Math.round((s.tokens_used / s.token_budget) * 100)
                       : 0;
                   return (
-                    <tr key={s.id} className="hover:bg-slate-800/40">
+                    <tr
+                      key={s.id}
+                      className="transition-colors hover:bg-[var(--surface-2)]/60"
+                    >
                       <td className="px-4 py-3">
-                        <div className="font-semibold text-white">
+                        <div className="font-semibold text-[var(--text-primary)]">
                           {s.candidate_name}
                         </div>
-                        <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
+                        <div className="flex items-center gap-1.5 text-[11px] text-[var(--text-muted)]">
                           <span>{s.challenge?.title || "—"}</span>
                           {s.is_synthetic && (
-                            <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-300">
+                            <span className="rounded border border-[var(--border-subtle)] bg-[var(--surface-2)] px-1.5 py-0.5 text-[10px] text-[var(--text-muted)]">
                               synthetic
                             </span>
                           )}
                         </div>
                       </td>
-                      <td className="px-3 py-3 text-center font-mono text-slate-200">
+                      <td className="tabular-nums px-3 py-3 text-center font-mono text-[var(--text-secondary)]">
                         {s.sc ? Number(s.sc.prompt_quality_score).toFixed(1) : "—"}
                       </td>
-                      <td className="px-3 py-3 text-center font-mono text-slate-200">
+                      <td className="tabular-nums px-3 py-3 text-center font-mono text-[var(--text-secondary)]">
                         {s.sc
                           ? Number(s.sc.prompt_improvement_score).toFixed(1)
                           : "—"}
                       </td>
-                      <td className="px-3 py-3 text-center font-mono text-slate-200">
+                      <td className="tabular-nums px-3 py-3 text-center font-mono text-[var(--text-secondary)]">
                         {s.sc ? Number(s.sc.test_cases_score).toFixed(1) : "—"}
                       </td>
-                      <td className="px-3 py-3 text-center font-mono text-slate-200">
+                      <td className="tabular-nums px-3 py-3 text-center font-mono text-[var(--text-secondary)]">
                         {s.sc
                           ? Number(s.sc.debug_test_cases_score).toFixed(1)
                           : "—"}
                       </td>
-                      <td className="px-3 py-3 text-center font-mono text-sm font-bold text-white">
+                      <td className="tabular-nums px-3 py-3 text-center font-mono text-sm font-bold">
                         {s.sc ? (
                           <span
                             className={`rounded-md px-2 py-0.5 ${
                               Number(s.sc.total_score) >= 85
-                                ? "bg-emerald-500/20 text-emerald-300"
+                                ? "bg-emerald-500/15 text-emerald-500"
                                 : Number(s.sc.total_score) >= 70
-                                ? "bg-indigo-500/20 text-indigo-300"
-                                : "bg-amber-500/20 text-amber-300"
+                                ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+                                : "bg-amber-500/15 text-amber-500"
                             }`}
                           >
                             {Number(s.sc.total_score).toFixed(1)}
                           </span>
                         ) : (
-                          <span className="text-slate-500">{s.phase}</span>
+                          <span className="text-[var(--text-muted)]">
+                            {s.phase}
+                          </span>
                         )}
                       </td>
-                      <td className="px-4 py-3 font-mono">
-                        <div className="text-slate-200">
+                      <td className="tabular-nums px-4 py-3 font-mono">
+                        <div className="text-[var(--text-primary)]">
                           {formatNumber(s.tokens_used)}{" "}
                           <span
                             className={
                               pct >= 85
-                                ? "text-red-400"
+                                ? "text-red-500"
                                 : pct >= 60
-                                ? "text-amber-400"
-                                : "text-emerald-400"
+                                ? "text-amber-500"
+                                : "text-emerald-500"
                             }
                           >
                             ({pct}%)
                           </span>
                         </div>
-                        <div className="text-[11px] text-emerald-400">
+                        <div className="text-[11px] text-emerald-500">
                           +{formatNumber(s.tokens_saved)} saved
                         </div>
                       </td>
-                      <td className="px-3 py-3 font-mono">
-                        <div className="text-slate-200">
+                      <td className="tabular-nums px-3 py-3 font-mono">
+                        <div className="text-[var(--text-primary)]">
                           ${s.cost.costUsd.toFixed(5)}
                         </div>
-                        <div className="text-[11px] text-cyan-400">
+                        <div className="text-[11px] text-cyan-500">
                           {s.efficiencyIndex} pts/1K tok
                         </div>
                       </td>
                       <td className="px-4 py-3 text-right">
                         <Link
                           href={`/admin/sessions/${s.id}`}
-                          className="inline-flex items-center gap-1 rounded-md border border-slate-700 bg-slate-900 px-2.5 py-1 text-xs font-medium text-indigo-300 transition hover:border-indigo-500 hover:bg-slate-800"
+                          className="btn-tactile inline-flex items-center gap-1 rounded-lg border border-[var(--border-strong)] bg-[var(--surface-2)] px-2.5 py-1 text-xs font-semibold text-[var(--accent)] hover:border-[var(--accent)]"
                         >
                           <Eye className="h-3.5 w-3.5" />
                           Inspect
@@ -670,20 +685,20 @@ export function AdminConsoleClient({
           {showCreateForm && (
             <form
               onSubmit={handleCreateChallenge}
-              className="rounded-xl border border-indigo-500/30 bg-[#111827] p-6"
+              className="surface-card rounded-2xl border-[var(--accent-border)] p-6"
             >
-              <h3 className="text-base font-semibold text-white">
+              <h3 className="text-base font-bold text-[var(--text-primary)]">
                 Create New AI-Assisted Coding Challenge
               </h3>
               {createError && (
-                <div className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-300">
+                <div className="mt-3 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-500">
                   {createError}
                 </div>
               )}
 
               <div className="mt-4 grid gap-4 md:grid-cols-3">
                 <div className="md:col-span-2">
-                  <label className="mb-1 block text-xs text-slate-400">
+                  <label className="mb-1 block text-xs font-medium text-[var(--text-muted)]">
                     Challenge Title
                   </label>
                   <input
@@ -691,11 +706,11 @@ export function AdminConsoleClient({
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="e.g., Distributed Cache Eviction Engine"
-                    className="w-full rounded-lg border border-slate-700 bg-[#0b1120] px-3 py-2 text-sm text-white"
+                    className="w-full rounded-xl border border-[var(--border-strong)] bg-[var(--surface-2)] px-3 py-2 text-sm text-[var(--text-primary)]"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs text-slate-400">
+                  <label className="mb-1 block text-xs font-medium text-[var(--text-muted)]">
                     Difficulty
                   </label>
                   <select
@@ -705,7 +720,7 @@ export function AdminConsoleClient({
                         e.target.value as "Easy" | "Medium" | "Hard"
                       )
                     }
-                    className="w-full rounded-lg border border-slate-700 bg-[#0b1120] px-3 py-2 text-sm text-white"
+                    className="w-full rounded-xl border border-[var(--border-strong)] bg-[var(--surface-2)] px-3 py-2 text-sm text-[var(--text-primary)]"
                   >
                     <option value="Easy">Easy</option>
                     <option value="Medium">Medium</option>
@@ -715,7 +730,7 @@ export function AdminConsoleClient({
               </div>
 
               <div className="mt-4">
-                <label className="mb-1 block text-xs text-slate-400">
+                <label className="mb-1 block text-xs font-medium text-[var(--text-muted)]">
                   Problem Statement (Markdown supported)
                 </label>
                 <textarea
@@ -724,13 +739,13 @@ export function AdminConsoleClient({
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Describe stdin JSON format, expected stdout JSON, and constraints..."
-                  className="w-full rounded-lg border border-slate-700 bg-[#0b1120] p-3 text-sm text-white"
+                  className="w-full rounded-xl border border-[var(--border-strong)] bg-[var(--surface-2)] p-3 text-sm text-[var(--text-primary)]"
                 />
               </div>
 
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="mb-1 block text-xs text-slate-400">
+                  <label className="mb-1 block text-xs font-medium text-[var(--text-muted)]">
                     Time Limit (minutes)
                   </label>
                   <input
@@ -739,11 +754,11 @@ export function AdminConsoleClient({
                     max={180}
                     value={timeLimit}
                     onChange={(e) => setTimeLimit(Number(e.target.value))}
-                    className="w-full rounded-lg border border-slate-700 bg-[#0b1120] px-3 py-2 text-sm text-white"
+                    className="w-full rounded-xl border border-[var(--border-strong)] bg-[var(--surface-2)] px-3 py-2 text-sm text-[var(--text-primary)]"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs text-slate-400">
+                  <label className="mb-1 block text-xs font-medium text-[var(--text-muted)]">
                     Token Budget
                   </label>
                   <input
@@ -753,50 +768,50 @@ export function AdminConsoleClient({
                     step={500}
                     value={tokenBudget}
                     onChange={(e) => setTokenBudget(Number(e.target.value))}
-                    className="w-full rounded-lg border border-slate-700 bg-[#0b1120] px-3 py-2 text-sm text-white"
+                    className="w-full rounded-xl border border-[var(--border-strong)] bg-[var(--surface-2)] px-3 py-2 text-sm text-[var(--text-primary)]"
                   />
                 </div>
               </div>
 
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="mb-1 block text-xs text-slate-400">
+                  <label className="mb-1 block text-xs font-medium text-[var(--text-muted)]">
                     Public Test Input (JSON)
                   </label>
                   <input
                     value={publicInput}
                     onChange={(e) => setPublicInput(e.target.value)}
-                    className="w-full rounded-lg border border-slate-700 bg-[#0b1120] px-3 py-2 font-mono text-xs text-white"
+                    className="w-full rounded-xl border border-[var(--border-strong)] bg-[var(--surface-2)] px-3 py-2 font-mono text-xs text-[var(--text-primary)]"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs text-slate-400">
+                  <label className="mb-1 block text-xs font-medium text-[var(--text-muted)]">
                     Public Expected Output (JSON)
                   </label>
                   <input
                     value={publicOutput}
                     onChange={(e) => setPublicOutput(e.target.value)}
-                    className="w-full rounded-lg border border-slate-700 bg-[#0b1120] px-3 py-2 font-mono text-xs text-white"
+                    className="w-full rounded-xl border border-[var(--border-strong)] bg-[var(--surface-2)] px-3 py-2 font-mono text-xs text-[var(--text-primary)]"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs text-slate-400">
+                  <label className="mb-1 block text-xs font-medium text-[var(--text-muted)]">
                     Debug Test Input (JSON)
                   </label>
                   <input
                     value={debugInput}
                     onChange={(e) => setDebugInput(e.target.value)}
-                    className="w-full rounded-lg border border-slate-700 bg-[#0b1120] px-3 py-2 font-mono text-xs text-white"
+                    className="w-full rounded-xl border border-[var(--border-strong)] bg-[var(--surface-2)] px-3 py-2 font-mono text-xs text-[var(--text-primary)]"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs text-slate-400">
+                  <label className="mb-1 block text-xs font-medium text-[var(--text-muted)]">
                     Debug Expected Output (JSON)
                   </label>
                   <input
                     value={debugOutput}
                     onChange={(e) => setDebugOutput(e.target.value)}
-                    className="w-full rounded-lg border border-slate-700 bg-[#0b1120] px-3 py-2 font-mono text-xs text-white"
+                    className="w-full rounded-xl border border-[var(--border-strong)] bg-[var(--surface-2)] px-3 py-2 font-mono text-xs text-[var(--text-primary)]"
                   />
                 </div>
               </div>
@@ -805,14 +820,14 @@ export function AdminConsoleClient({
                 <button
                   type="button"
                   onClick={() => setShowCreateForm(false)}
-                  className="rounded-lg border border-slate-700 px-4 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800"
+                  className="btn-tactile rounded-xl border border-[var(--border-strong)] px-4 py-2 text-xs font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-2)]"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={creating}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-500 disabled:opacity-60"
+                  className="btn-tactile inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent)] px-4 py-2 text-xs font-semibold text-[var(--accent-fg)] hover:opacity-95 disabled:opacity-60"
                 >
                   {creating && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                   Save Challenge
@@ -828,32 +843,28 @@ export function AdminConsoleClient({
                 time: c.time_limit_minutes,
               };
               return (
-                <div
-                  key={c.id}
-                  className="rounded-xl border border-slate-800 bg-[#111827] p-5"
-                >
+                <div key={c.id} className="surface-card rounded-2xl p-5">
                   <div className="flex items-center justify-between">
-                    <span className="rounded-full bg-indigo-500/15 px-2.5 py-0.5 text-xs font-medium text-indigo-300">
+                    <span className="rounded-full bg-[var(--accent-soft)] px-2.5 py-0.5 text-xs font-semibold text-[var(--accent)]">
                       {c.difficulty}
                     </span>
-                    <span className="flex items-center gap-1 text-xs text-emerald-400">
+                    <span className="flex items-center gap-1 text-xs font-medium text-emerald-500">
                       <CheckCircle2 className="h-3.5 w-3.5" />
                       Active · {c.test_cases?.length ?? 0} tests
                     </span>
                   </div>
-                  <h3 className="mt-3 text-base font-semibold text-white">
+                  <h3 className="mt-3 text-base font-bold text-[var(--text-primary)]">
                     {c.title}
                   </h3>
 
-                  {/* Live Configurable Token Budget & Time Limit */}
-                  <div className="mt-4 space-y-2.5 border-t border-slate-800 pt-3">
-                    <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                      <SlidersHorizontal className="h-3 w-3 text-indigo-400" />
+                  <div className="mt-4 space-y-2.5 border-t border-[var(--border-subtle)] pt-3">
+                    <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+                      <SlidersHorizontal className="h-3 w-3 text-[var(--accent)]" />
                       Configure Limits
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <label className="block text-[10px] text-slate-400">
+                        <label className="block text-[10px] text-[var(--text-muted)]">
                           Token Budget
                         </label>
                         <input
@@ -870,11 +881,11 @@ export function AdminConsoleClient({
                               },
                             }))
                           }
-                          className="mt-0.5 w-full rounded border border-slate-700 bg-[#0b1120] px-2 py-1 font-mono text-xs text-white"
+                          className="tabular-nums mt-0.5 w-full rounded-lg border border-[var(--border-strong)] bg-[var(--surface-2)] px-2 py-1 font-mono text-xs text-[var(--text-primary)]"
                         />
                       </div>
                       <div>
-                        <label className="block text-[10px] text-slate-400">
+                        <label className="block text-[10px] text-[var(--text-muted)]">
                           Time (min)
                         </label>
                         <input
@@ -891,14 +902,14 @@ export function AdminConsoleClient({
                               },
                             }))
                           }
-                          className="mt-0.5 w-full rounded border border-slate-700 bg-[#0b1120] px-2 py-1 font-mono text-xs text-white"
+                          className="tabular-nums mt-0.5 w-full rounded-lg border border-[var(--border-strong)] bg-[var(--surface-2)] px-2 py-1 font-mono text-xs text-[var(--text-primary)]"
                         />
                       </div>
                     </div>
                     <button
                       onClick={() => handleSaveChallengeBudget(c.id)}
                       disabled={savingBudgetId === c.id}
-                      className="inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-indigo-500/40 bg-indigo-500/15 py-1.5 text-xs font-semibold text-indigo-300 transition hover:bg-indigo-500/25 disabled:opacity-60"
+                      className="btn-tactile inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-[var(--accent-border)] bg-[var(--accent-soft)] py-1.5 text-xs font-semibold text-[var(--accent)] hover:opacity-90 disabled:opacity-60"
                     >
                       {savingBudgetId === c.id ? (
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -919,14 +930,14 @@ export function AdminConsoleClient({
       {activeTab === "ops" && (
         <div className="mt-6 grid gap-6 lg:grid-cols-2">
           {/* Calibrated Rubric Check */}
-          <div className="rounded-xl border border-slate-800 bg-[#111827] p-6">
-            <div className="flex items-center justify-between">
+          <div className="surface-card rounded-2xl p-6">
+            <div className="flex items-center justify-between gap-2">
               <div>
-                <h2 className="flex items-center gap-2 text-base font-semibold text-white">
-                  <ShieldCheck className="h-4 w-4 text-emerald-400" />
+                <h2 className="flex items-center gap-2 text-base font-bold text-[var(--text-primary)]">
+                  <ShieldCheck className="h-4 w-4 text-emerald-500" />
                   Calibrated Rubric Verification
                 </h2>
-                <p className="mt-1 text-xs text-slate-400">
+                <p className="mt-1 text-xs text-[var(--text-muted)]">
                   Evaluates 3 gold-standard benchmark anchors to verify monotonic
                   ranking and score-drift tolerance.
                 </p>
@@ -934,7 +945,7 @@ export function AdminConsoleClient({
               <button
                 onClick={handleRunCalibration}
                 disabled={calibrating}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-indigo-500 disabled:opacity-60"
+                className="btn-tactile inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-[var(--accent)] px-3.5 py-2 text-xs font-semibold text-[var(--accent-fg)] hover:opacity-95 disabled:opacity-60"
               >
                 {calibrating ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -947,13 +958,15 @@ export function AdminConsoleClient({
 
             {calibrationReport && (
               <div className="mt-5 space-y-3">
-                <div className="flex items-center justify-between rounded-lg border border-slate-800 bg-[#0b1120] px-3.5 py-2.5 text-xs">
-                  <span className="text-slate-400">Calibration Status</span>
+                <div className="flex items-center justify-between rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-2)] px-3.5 py-2.5 text-xs">
+                  <span className="text-[var(--text-muted)]">
+                    Calibration Status
+                  </span>
                   <span
                     className={`rounded-full px-2.5 py-0.5 font-semibold ${
                       calibrationReport.status === "CALIBRATED"
-                        ? "bg-emerald-500/20 text-emerald-300"
-                        : "bg-amber-500/20 text-amber-300"
+                        ? "bg-emerald-500/15 text-emerald-500"
+                        : "bg-amber-500/15 text-amber-500"
                     }`}
                   >
                     {calibrationReport.status}
@@ -963,22 +976,22 @@ export function AdminConsoleClient({
                 {calibrationReport.anchors.map((a) => (
                   <div
                     key={a.label}
-                    className="rounded-lg border border-slate-800 bg-[#0b1120] p-3 text-xs"
+                    className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-2)] p-3 text-xs"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold text-white">
+                      <span className="font-semibold text-[var(--text-primary)]">
                         {a.label}
                       </span>
                       <span
-                        className={`font-mono font-bold ${
-                          a.in_range ? "text-emerald-300" : "text-amber-300"
+                        className={`tabular-nums font-mono font-bold ${
+                          a.in_range ? "text-emerald-500" : "text-amber-500"
                         }`}
                       >
                         {a.total_score.toFixed(1)} / 100 (target{" "}
                         {a.expected_range[0]}–{a.expected_range[1]})
                       </span>
                     </div>
-                    <div className="mt-1 font-mono text-[11px] text-slate-400">
+                    <div className="tabular-nums mt-1 font-mono text-[11px] text-[var(--text-muted)]">
                       PQ: {a.prompt_quality} · PI: {a.prompt_improvement} ·
                       Tests: {a.test_cases} · Debug: {a.debug_tests}
                     </div>
@@ -989,23 +1002,23 @@ export function AdminConsoleClient({
           </div>
 
           {/* Queue-Based Execution & Concurrency Stress Test */}
-          <div className="rounded-xl border border-slate-800 bg-[#111827] p-6">
+          <div className="surface-card rounded-2xl p-6">
             <div className="flex items-center justify-between gap-2">
               <div>
-                <h2 className="flex items-center gap-2 text-base font-semibold text-white">
-                  <Activity className="h-4 w-4 text-cyan-400" />
+                <h2 className="flex items-center gap-2 text-base font-bold text-[var(--text-primary)]">
+                  <Activity className="h-4 w-4 text-cyan-500" />
                   Queue Execution &amp; Concurrency Test
                 </h2>
-                <p className="mt-1 text-xs text-slate-400">
+                <p className="mt-1 text-xs text-[var(--text-muted)]">
                   Dispatches parallel sandbox jobs through the bounded FIFO
                   execution queue (max 3 workers + auto-retry).
                 </p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex shrink-0 items-center gap-2">
                 <select
                   value={concurrencyCount}
                   onChange={(e) => setConcurrencyCount(Number(e.target.value))}
-                  className="rounded-lg border border-slate-700 bg-[#0b1120] px-2 py-1.5 text-xs text-white"
+                  className="rounded-lg border border-[var(--border-strong)] bg-[var(--surface-2)] px-2 py-1.5 text-xs text-[var(--text-primary)]"
                 >
                   <option value={4}>4 jobs</option>
                   <option value={6}>6 jobs</option>
@@ -1014,7 +1027,7 @@ export function AdminConsoleClient({
                 <button
                   onClick={handleRunConcurrencyTest}
                   disabled={testingConcurrency}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-cyan-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-cyan-500 disabled:opacity-60"
+                  className="btn-tactile inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-cyan-500 disabled:opacity-60"
                 >
                   {testingConcurrency ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -1029,25 +1042,27 @@ export function AdminConsoleClient({
             {concurrencyReport && (
               <div className="mt-5 space-y-3">
                 <div className="grid grid-cols-3 gap-2 text-center">
-                  <div className="rounded-lg border border-slate-800 bg-[#0b1120] p-2.5">
-                    <div className="text-[10px] text-slate-400">Completed</div>
-                    <div className="font-mono text-sm font-bold text-emerald-300">
+                  <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-2)] p-2.5">
+                    <div className="text-[10px] text-[var(--text-muted)]">
+                      Completed
+                    </div>
+                    <div className="tabular-nums font-mono text-sm font-bold text-emerald-500">
                       {concurrencyReport.passed}/{concurrencyReport.dispatched}
                     </div>
                   </div>
-                  <div className="rounded-lg border border-slate-800 bg-[#0b1120] p-2.5">
-                    <div className="text-[10px] text-slate-400">
+                  <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-2)] p-2.5">
+                    <div className="text-[10px] text-[var(--text-muted)]">
                       Max Queue Wait
                     </div>
-                    <div className="font-mono text-sm font-bold text-cyan-300">
+                    <div className="tabular-nums font-mono text-sm font-bold text-cyan-500">
                       {concurrencyReport.max_queue_wait_ms}ms
                     </div>
                   </div>
-                  <div className="rounded-lg border border-slate-800 bg-[#0b1120] p-2.5">
-                    <div className="text-[10px] text-slate-400">
+                  <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-2)] p-2.5">
+                    <div className="text-[10px] text-[var(--text-muted)]">
                       P95 Latency
                     </div>
-                    <div className="font-mono text-sm font-bold text-indigo-300">
+                    <div className="tabular-nums font-mono text-sm font-bold text-[var(--accent)]">
                       {concurrencyReport.p95_latency_ms}ms
                     </div>
                   </div>
@@ -1057,17 +1072,19 @@ export function AdminConsoleClient({
                   {concurrencyReport.jobs.map((j) => (
                     <div
                       key={j.job_id}
-                      className="flex items-center justify-between rounded-md border border-slate-800 bg-[#0b1120] px-3 py-1.5 font-mono text-[11px]"
+                      className="tabular-nums flex items-center justify-between rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-2)] px-3 py-1.5 font-mono text-[11px]"
                     >
-                      <span className="text-slate-300">
+                      <span className="text-[var(--text-primary)]">
                         #{j.worker_index} · {j.job_id}
                       </span>
-                      <span className="text-slate-400">
+                      <span className="text-[var(--text-muted)]">
                         wait:{j.queue_wait_ms}ms · run:{j.runtime_ms}ms
                       </span>
                       <span
                         className={
-                          j.passed ? "text-emerald-400" : "text-red-400"
+                          j.passed
+                            ? "font-semibold text-emerald-500"
+                            : "font-semibold text-red-500"
                         }
                       >
                         {j.passed ? "PASS" : "FAIL"}
