@@ -40,62 +40,80 @@ export function LandingShowcase({
 }) {
   const [previewTab, setPreviewTab] = useState<PreviewTab>("ide");
   const rootRef = useRef<HTMLDivElement>(null);
+  const scrollBarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const prefersReducedMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)"
-    ).matches;
-    if (prefersReducedMotion || !rootRef.current) return;
+    if (!rootRef.current) return;
 
     const ctx = gsap.context(() => {
-      // 1. Hero staggered entrance (GPU transforms + opacity only)
-      gsap.from(".hero-stagger", {
-        y: 26,
-        opacity: 0,
-        duration: 0.75,
-        stagger: 0.1,
-        ease: "power3.out",
-        clearProps: "transform",
-      });
+      // 1. Live Scroll Progress Bar scrubbed across top of viewport
+      if (scrollBarRef.current) {
+        gsap.to(scrollBarRef.current, {
+          scaleX: 1,
+          ease: "none",
+          scrollTrigger: {
+            trigger: rootRef.current,
+            start: "top top",
+            end: "bottom bottom",
+            scrub: 0.25,
+          },
+        });
+      }
 
-      // 2. Hero interactive showcase entrance
-      gsap.from(".hero-showcase", {
+      // 2. Hero staggered entrance
+      gsap.from(".hero-stagger", {
         y: 36,
-        scale: 0.985,
         opacity: 0,
         duration: 0.85,
-        delay: 0.35,
+        stagger: 0.12,
         ease: "power3.out",
         clearProps: "transform",
       });
 
-      // 3. Scroll-triggered 5-Stage Workflow cards
-      gsap.from(".workflow-card", {
-        y: 28,
-        opacity: 0,
-        duration: 0.65,
-        stagger: 0.08,
-        ease: "power2.out",
-        clearProps: "transform",
-        scrollTrigger: {
-          trigger: ".workflow-section",
-          start: "top 82%",
-          once: true,
-        },
-      });
+      // 3. Hero showcase scrubbed parallax lift on scroll
+      gsap.fromTo(
+        ".hero-showcase",
+        { y: 42, scale: 0.96, opacity: 0 },
+        {
+          y: 0,
+          scale: 1,
+          opacity: 1,
+          duration: 0.95,
+          delay: 0.25,
+          ease: "power3.out",
+          clearProps: "transform",
+        }
+      );
 
-      // 4. Scroll-triggered Bento Grid cards
-      gsap.from(".bento-card", {
-        y: 30,
+      // 4. Scroll-triggered 5-Stage Workflow cards (scrubbed & replayable feel)
+      gsap.from(".workflow-card", {
+        y: 44,
+        scale: 0.95,
         opacity: 0,
         duration: 0.7,
         stagger: 0.1,
-        ease: "power2.out",
+        ease: "power3.out",
+        clearProps: "transform",
+        scrollTrigger: {
+          trigger: ".workflow-section",
+          start: "top 88%",
+          toggleActions: "play none none reverse",
+        },
+      });
+
+      // 5. Scroll-triggered Bento Grid cards
+      gsap.from(".bento-card", {
+        y: 50,
+        scale: 0.96,
+        opacity: 0,
+        duration: 0.75,
+        stagger: 0.12,
+        ease: "power3.out",
         clearProps: "transform",
         scrollTrigger: {
           trigger: ".bento-section",
-          start: "top 82%",
-          once: true,
+          start: "top 88%",
+          toggleActions: "play none none reverse",
         },
       });
     }, rootRef);
@@ -108,6 +126,12 @@ export function LandingShowcase({
       ref={rootRef}
       className="relative min-h-screen overflow-x-clip bg-[var(--bg-canvas)] text-[var(--text-primary)]"
     >
+      {/* Top GSAP Scroll-Scrubbed Progress Bar */}
+      <div
+        ref={scrollBarRef}
+        aria-hidden
+        className="fixed inset-x-0 top-0 z-50 h-1 origin-left scale-x-0 bg-gradient-to-r from-[var(--accent)] via-emerald-400 to-cyan-400"
+      />
       {/* Cursify-style GPU cursor spotlight & magnetic ring */}
       <CursorSpotlight />
 

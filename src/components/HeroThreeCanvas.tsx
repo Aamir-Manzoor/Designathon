@@ -12,17 +12,12 @@ export function HeroThreeCanvas() {
     const container = containerRef.current;
     if (!container) return;
 
-    const prefersReducedMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)"
-    ).matches;
-    if (prefersReducedMotion) return;
-
     const width = container.clientWidth || window.innerWidth;
-    const height = container.clientHeight || 680;
+    const height = container.clientHeight || 760;
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(55, width / height, 0.1, 100);
-    camera.position.z = 24;
+    const camera = new THREE.PerspectiveCamera(55, width / height, 0.1, 120);
+    camera.position.z = 22;
 
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
@@ -40,10 +35,10 @@ export function HeroThreeCanvas() {
         : theme === "obsidian"
         ? 0x6e7bff
         : 0x10b981;
-    const secondaryHex = theme === "light" ? 0x059669 : 0x06b6d4;
+    const secondaryHex = theme === "light" ? 0x059669 : 0x22d3ee;
 
-    // 1. Floating 3D Token Nodes (Points)
-    const nodeCount = 72;
+    // 1. Vivid Floating 3D Token Nodes (Points)
+    const nodeCount = 110;
     const positions = new Float32Array(nodeCount * 3);
     const colors = new Float32Array(nodeCount * 3);
     const velocities: Array<{ x: number; y: number; z: number }> = [];
@@ -52,20 +47,19 @@ export function HeroThreeCanvas() {
     const c2 = new THREE.Color(secondaryHex);
 
     for (let i = 0; i < nodeCount; i++) {
-      positions[i * 3] = (Math.random() - 0.5) * 34;
-      positions[i * 3 + 1] = (Math.random() - 0.5) * 18;
-      positions[i * 3 + 2] = (Math.random() - 0.5) * 14;
+      positions[i * 3] = (Math.random() - 0.5) * 38;
+      positions[i * 3 + 1] = (Math.random() - 0.5) * 20;
+      positions[i * 3 + 2] = (Math.random() - 0.5) * 16;
 
-      const mix = Math.random();
-      const col = c1.clone().lerp(c2, mix);
+      const col = c1.clone().lerp(c2, Math.random());
       colors[i * 3] = col.r;
       colors[i * 3 + 1] = col.g;
       colors[i * 3 + 2] = col.b;
 
       velocities.push({
-        x: (Math.random() - 0.5) * 0.012,
-        y: (Math.random() - 0.5) * 0.01,
-        z: (Math.random() - 0.5) * 0.008,
+        x: (Math.random() - 0.5) * 0.022,
+        y: (Math.random() - 0.5) * 0.018,
+        z: (Math.random() - 0.5) * 0.014,
       });
     }
 
@@ -74,17 +68,17 @@ export function HeroThreeCanvas() {
     pointGeo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
 
     const pointMat = new THREE.PointsMaterial({
-      size: theme === "light" ? 0.22 : 0.2,
+      size: theme === "light" ? 0.34 : 0.32,
       vertexColors: true,
       transparent: true,
-      opacity: theme === "light" ? 0.55 : 0.78,
+      opacity: theme === "light" ? 0.75 : 0.92,
     });
 
     const points = new THREE.Points(pointGeo, pointMat);
     scene.add(points);
 
-    // 2. Subtle Neural Constellation Connections (Lines)
-    const maxSegments = 180;
+    // 2. Neural Constellation Connections (Lines)
+    const maxSegments = 260;
     const linePositions = new Float32Array(maxSegments * 2 * 3);
     const lineGeo = new THREE.BufferGeometry();
     lineGeo.setAttribute(
@@ -94,22 +88,33 @@ export function HeroThreeCanvas() {
     const lineMat = new THREE.LineBasicMaterial({
       color: accentHex,
       transparent: true,
-      opacity: theme === "light" ? 0.14 : 0.18,
+      opacity: theme === "light" ? 0.25 : 0.32,
     });
     const lines = new THREE.LineSegments(lineGeo, lineMat);
     scene.add(lines);
 
-    // 3. Subtle wireframe icosahedron core floating in background
-    const wireGeo = new THREE.IcosahedronGeometry(5.5, 1);
+    // 3. Rotating 3D Torus Knot + Wireframe Icosahedron Core
+    const wireGeo = new THREE.IcosahedronGeometry(6.2, 1);
     const wireMat = new THREE.MeshBasicMaterial({
       color: accentHex,
       wireframe: true,
       transparent: true,
-      opacity: theme === "light" ? 0.08 : 0.09,
+      opacity: theme === "light" ? 0.16 : 0.2,
     });
     const wireMesh = new THREE.Mesh(wireGeo, wireMat);
-    wireMesh.position.set(0, 1.2, -5);
+    wireMesh.position.set(0, 0.5, -4);
     scene.add(wireMesh);
+
+    const ringGeo = new THREE.TorusGeometry(9.5, 0.06, 12, 96);
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: secondaryHex,
+      transparent: true,
+      opacity: theme === "light" ? 0.25 : 0.32,
+    });
+    const orbitRing = new THREE.Mesh(ringGeo, ringMat);
+    orbitRing.rotation.x = Math.PI / 3;
+    orbitRing.position.set(0, 0.5, -5);
+    scene.add(orbitRing);
 
     let mouseX = 0;
     let mouseY = 0;
@@ -122,7 +127,7 @@ export function HeroThreeCanvas() {
     function onResize() {
       if (!container) return;
       const w = container.clientWidth || window.innerWidth;
-      const h = container.clientHeight || 680;
+      const h = container.clientHeight || 760;
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
@@ -145,17 +150,16 @@ export function HeroThreeCanvas() {
         arr[i * 3 + 1] += velocities[i].y;
         arr[i * 3 + 2] += velocities[i].z;
 
-        if (Math.abs(arr[i * 3]) > 18) velocities[i].x *= -1;
+        if (Math.abs(arr[i * 3]) > 19) velocities[i].x *= -1;
         if (Math.abs(arr[i * 3 + 1]) > 10) velocities[i].y *= -1;
         if (Math.abs(arr[i * 3 + 2]) > 8) velocities[i].z *= -1;
       }
       posAttr.needsUpdate = true;
 
-      // Rebuild nearby edges
       let seg = 0;
       const lineAttr = lineGeo.getAttribute("position") as THREE.BufferAttribute;
       const lArr = lineAttr.array as Float32Array;
-      const thresholdSq = 24;
+      const thresholdSq = 28;
 
       for (let i = 0; i < nodeCount && seg < maxSegments; i++) {
         const ix = arr[i * 3];
@@ -180,11 +184,13 @@ export function HeroThreeCanvas() {
       lineGeo.setDrawRange(0, seg * 2);
       lineAttr.needsUpdate = true;
 
-      // Smooth mouse parallax + gentle rotation
-      scene.rotation.y += (mouseX * 0.16 - scene.rotation.y) * 0.04;
-      scene.rotation.x += (mouseY * 0.08 - scene.rotation.x) * 0.04;
-      wireMesh.rotation.y += 0.002;
-      wireMesh.rotation.x += 0.001;
+      // Responsive parallax & smooth orbital motion
+      scene.rotation.y += (mouseX * 0.28 - scene.rotation.y) * 0.05;
+      scene.rotation.x += (mouseY * 0.14 - scene.rotation.x) * 0.05;
+      wireMesh.rotation.y += 0.005;
+      wireMesh.rotation.x += 0.003;
+      orbitRing.rotation.z -= 0.006;
+      orbitRing.rotation.y += 0.002;
 
       renderer.render(scene, camera);
     }
@@ -201,6 +207,8 @@ export function HeroThreeCanvas() {
       lineMat.dispose();
       wireGeo.dispose();
       wireMat.dispose();
+      ringGeo.dispose();
+      ringMat.dispose();
       renderer.dispose();
       if (renderer.domElement.parentNode === container) {
         container.removeChild(renderer.domElement);
@@ -212,7 +220,7 @@ export function HeroThreeCanvas() {
     <div
       ref={containerRef}
       aria-hidden
-      className="pointer-events-none absolute inset-x-0 top-0 h-[720px] overflow-hidden opacity-90 [mask-image:radial-gradient(ellipse_85%_75%_at_50%_30%,#000_50%,transparent_100%)]"
+      className="pointer-events-none absolute inset-x-0 top-0 h-[780px] overflow-hidden [mask-image:radial-gradient(ellipse_90%_80%_at_50%_30%,#000_60%,transparent_100%)]"
     />
   );
 }
