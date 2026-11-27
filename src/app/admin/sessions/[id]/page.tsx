@@ -89,6 +89,20 @@ export default async function AdminSessionReviewPage({
             Back to {viewerRole === "admin" ? "Admin Console" : "Review Queue"}
           </Link>
           <div className="flex flex-wrap items-center gap-4">
+            <div className="font-mono text-xs text-[var(--text-muted)]">
+              Date:{" "}
+              <span className="text-[var(--text-primary)]">
+                {new Date(
+                  session.submitted_at || session.started_at
+                ).toLocaleString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                  hour: "numeric",
+                  minute: "2-digit",
+                })}
+              </span>
+            </div>
             <div className="tabular-nums font-mono text-xs text-[var(--text-muted)]">
               Tokens: {formatNumber(session.tokens_used)} /{" "}
               {formatNumber(session.token_budget)} · Saved:{" "}
@@ -123,6 +137,9 @@ export default async function AdminSessionReviewPage({
               initialNotes={(scorecard as Scorecard).evaluator_notes}
               initialDecision={
                 (scorecard as Scorecard).evaluator_decision ?? null
+              }
+              initialReviewedAt={
+                (scorecard as Scorecard).evaluator_reviewed_at ?? null
               }
             />
           </>

@@ -119,6 +119,57 @@ export async function POST(
     })
   );
 
+  // Practice Test Mode: evaluate code pass/fail immediately for candidate only (no Evaluator queue, no emails)
+  if (session.is_practice) {
+    const practicePassed =
+      p2Exec.totalCount > 0 && p2Exec.passedCount === p2Exec.totalCount;
+    const practiceNote = practicePassed
+      ? `Practice Test Passed — all ${p2Exec.passedCount}/${p2Exec.totalCount} test cases passed.`
+      : `Practice Test Submitted — ${p2Exec.passedCount}/${p2Exec.totalCount} test cases passed.`;
+
+    const { data: practiceSc } = await supabase
+      .from("scorecards")
+      .upsert(
+        {
+          session_id: session.id,
+          prompt_quality_score: 0,
+          prompt_improvement_score: 0,
+          test_cases_score: 0,
+          debug_test_cases_score: 0,
+          total_score: 0,
+          rubric_breakdown: {
+            prompt_quality: { total: 0, max: 40, summary: "Practice session", criteria: [] },
+            prompt_improvement: { total: 0, max: 10, summary: "Practice session", cited_turns: [] },
+            test_cases: {
+              total: 0,
+              max: 30,
+              passed: p2Exec.passedCount,
+              total_tests: p2Exec.totalCount,
+              summary: practiceNote,
+            },
+            debug_test_cases: { total: 0, max: 20, passed: 0, total_tests: 0, summary: "" },
+            token_efficiency_summary: "Practice session",
+            overall_verdict: practiceNote,
+          },
+          evaluator_decision: practicePassed ? "passed" : "rejected",
+          evaluator_notes: practiceNote,
+          evaluator_reviewed_at: submittedAt,
+          score_released: true,
+          released_at: submittedAt,
+        },
+        { onConflict: "session_id" }
+      )
+      .select("*")
+      .single();
+
+    return NextResponse.json({
+      scorecard: practiceSc ?? null,
+      score_released: true,
+      practice_passed: practicePassed,
+      final_run: p2Exec,
+    });
+  }
+
   const p1Results =
     phase1Code.trim() === finalCode.trim()
       ? p2Exec.results.filter(

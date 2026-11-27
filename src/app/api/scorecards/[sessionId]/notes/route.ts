@@ -52,6 +52,23 @@ export async function PATCH(
     );
   }
 
+  // Enforce single-submission lock: once Evaluator feedback has been submitted, it becomes read-only
+  const { data: existing } = await supabase
+    .from("scorecards")
+    .select("evaluator_decision, evaluator_notes, evaluator_reviewed_at")
+    .eq("session_id", sessionId)
+    .maybeSingle();
+
+  if (existing?.evaluator_decision && existing?.evaluator_notes?.trim()) {
+    return NextResponse.json(
+      {
+        error:
+          "Evaluator feedback has already been submitted and is locked in view-only mode.",
+      },
+      { status: 403 }
+    );
+  }
+
   const { data, error } = await supabase
     .from("scorecards")
     .update({

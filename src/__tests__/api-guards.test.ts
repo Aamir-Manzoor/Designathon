@@ -18,13 +18,18 @@ import {
   PATCH as patchApplication,
   DELETE as deleteApplication,
 } from "@/app/api/applications/[id]/route";
+import { POST as postForgotPassword } from "@/app/api/auth/forgot-password/route";
+import { POST as postResetPassword } from "@/app/api/auth/reset-password/route";
 
 describe("Enterprise Workflow & Security API Guards", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("requires Evaluator to choose Pass/Reject and provide feedback before submitting", async () => {
+  it("requires Evaluator to choose Pass/Reject and provide feedback, and locks to one-time submission", async () => {
+    let existingDecision: "passed" | "rejected" | null = null;
+    let existingNotes: string | null = null;
+
     mockSupabase = {
       auth: { getUser: async () => ({ data: { user: { id: "eval-1" } } }) },
       from: (table: string) => {
@@ -38,17 +43,37 @@ describe("Enterprise Workflow & Security API Guards", () => {
           };
         }
         return {
-          update: () => ({
+          select: () => ({
+            eq: () => ({
+              maybeSingle: async () => ({
+                data: {
+                  evaluator_decision: existingDecision,
+                  evaluator_notes: existingNotes,
+                  evaluator_reviewed_at: existingDecision
+                    ? new Date().toISOString()
+                    : null,
+                },
+              }),
+            }),
+          }),
+          update: (payload: {
+            evaluator_decision: "passed" | "rejected";
+            evaluator_notes: string;
+          }) => ({
             eq: () => ({
               select: () => ({
-                single: async () => ({
-                  data: {
-                    session_id: "sess-1",
-                    evaluator_decision: "passed",
-                    evaluator_notes: "Strong decomposition and clean debug fix.",
-                  },
-                  error: null,
-                }),
+                single: async () => {
+                  existingDecision = payload.evaluator_decision;
+                  existingNotes = payload.evaluator_notes;
+                  return {
+                    data: {
+                      session_id: "sess-1",
+                      evaluator_decision: existingDecision,
+                      evaluator_notes: existingNotes,
+                    },
+                    error: null,
+                  };
+                },
               }),
             }),
           }),
@@ -66,7 +91,7 @@ describe("Enterprise Workflow & Security API Guards", () => {
     });
     expect(badRes.status).toBe(400);
 
-    // Valid Pass + feedback -> 200
+    // First valid Pass + feedback -> 200
     const okReq = new Request("http://localhost/api/scorecards/sess-1/notes", {
       method: "PATCH",
       body: JSON.stringify({
@@ -78,6 +103,22 @@ describe("Enterprise Workflow & Security API Guards", () => {
       params: Promise.resolve({ sessionId: "sess-1" }),
     });
     expect(okRes.status).toBe(200);
+
+    // Second submission attempt -> 403 locked (view-only)
+    const secondReq = new Request(
+      "http://localhost/api/scorecards/sess-1/notes",
+      {
+        method: "PATCH",
+        body: JSON.stringify({
+          evaluator_decision: "rejected",
+          evaluator_notes: "Trying to overwrite feedback.",
+        }),
+      }
+    );
+    const secondRes = await patchNotes(secondReq, {
+      params: Promise.resolve({ sessionId: "sess-1" }),
+    });
+    expect(secondRes.status).toBe(403);
   });
 
   it("blocks Admin report release until Evaluator submits Pass/Reject + feedback, and omits numeric scores from candidate email", async () => {
@@ -296,5 +337,37 @@ describe("Enterprise Workflow & Security API Guards", () => {
     );
     expect(delRes.status).toBe(200);
     expect(deletedId).toBe("app-1");
+  });
+
+  it("handles Forgot Password and Reset Password flows securely", async () => {
+    mockSupabase = {
+      rpc: async (fn: string) => {
+        if (fn === "create_password_reset_token") {
+          return { data: "Evaluator Jane", error: null };
+        }
+        if (fn === "consume_password_reset_token") {
+          return { data: true, error: null };
+        }
+        return { data: null, error: null };
+      },
+    };
+
+    const forgotRes = await postForgotPassword(
+      new Request("http://localhost/api/auth/forgot-password", {
+        method: "POST",
+        headers: { origin: "https://promptbench-beta.vercel.app" },
+        body: JSON.stringify({ email: "jane@company.com" }),
+      })
+    );
+    expect(forgotRes.status).toBe(200);
+    expect(mockDispatchEmail).toHaveBeenCalledTimes(1);
+
+    const resetRes = await postResetPassword(
+      new Request("http://localhost/api/auth/reset-password", {
+        method: "POST",
+        body: JSON.stringify({ token: "valid-token", password: "NewPassword123" }),
+      })
+    );
+    expect(resetRes.status).toBe(200);
   });
 });

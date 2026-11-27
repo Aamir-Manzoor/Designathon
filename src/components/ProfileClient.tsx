@@ -162,7 +162,7 @@ export function ProfileClient({
     .toUpperCase();
 
   return (
-    <div className="mx-auto max-w-[1600px] px-6 py-8">
+    <div className="mx-auto max-w-[1600px] px-4 py-7 sm:px-6 sm:py-8">
       <div className="mb-5">
         <Link
           href={
@@ -352,10 +352,11 @@ export function ProfileClient({
             </div>
           ) : (
             <div className="surface-card overflow-x-auto rounded-2xl">
-              <table className="w-full min-w-[680px] text-left text-sm">
+              <table className="w-full min-w-[780px] text-left text-sm">
                 <thead className="border-b border-[var(--border-subtle)] bg-[var(--surface-2)] text-xs uppercase text-[var(--text-muted)]">
                   <tr>
                     <th className="px-4 py-3">Assessment</th>
+                    <th className="px-4 py-3">Date &amp; Time</th>
                     <th className="px-4 py-3">Type</th>
                     <th className="px-4 py-3">Language</th>
                     <th className="px-4 py-3">Status</th>
@@ -383,6 +384,15 @@ export function ProfileClient({
                             : s.phase === "submitted"
                             ? s.challenge?.title || "Official Assessment"
                             : "Official Timed Assessment"}
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-[var(--text-muted)]">
+                          {new Date(s.started_at).toLocaleString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                            hour: "numeric",
+                            minute: "2-digit",
+                          })}
                         </td>
                         <td className="px-4 py-3">
                           <span
@@ -421,7 +431,23 @@ export function ProfileClient({
                           {formatNumber(s.token_budget)}
                         </td>
                         <td className="px-4 py-3 text-xs font-bold">
-                          {sc ? (
+                          {isPractice ? (
+                            s.phase === "submitted" ? (
+                              <span
+                                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+                                  sc?.evaluator_decision === "passed"
+                                    ? "bg-emerald-500/15 text-emerald-500"
+                                    : "bg-amber-500/15 text-amber-500"
+                                }`}
+                              >
+                                {sc?.evaluator_decision === "passed"
+                                  ? "Test Passed"
+                                  : "Test Submitted"}
+                              </span>
+                            ) : (
+                              "—"
+                            )
+                          ) : sc ? (
                             isReleased ? (
                               <span
                                 className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${

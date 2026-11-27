@@ -14,6 +14,7 @@ import {
   UserCheck,
   XCircle,
   Trash2,
+  Search,
 } from "lucide-react";
 
 export interface ApplicantRow {
@@ -84,6 +85,8 @@ export function ApplicantsInvitesPanel({
   const [actionId, setActionId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
+  const [appSearch, setAppSearch] = useState("");
+  const [appStatusFilter, setAppStatusFilter] = useState("all");
 
   async function handleRejectInvite(appId: string) {
     setActionId(appId);
@@ -356,7 +359,44 @@ export function ApplicantsInvitesPanel({
           </div>
         ) : (
           <div className="mt-5 space-y-4">
-            {applications.map((app) => {
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="relative sm:col-span-2">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--text-muted)]" />
+                <input
+                  type="text"
+                  value={appSearch}
+                  onChange={(e) => setAppSearch(e.target.value)}
+                  placeholder="Search applicant name, email, or track..."
+                  className="w-full rounded-xl border border-[var(--border-strong)] bg-[var(--surface-2)] py-2 pl-9 pr-3 text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none"
+                />
+              </div>
+              <select
+                value={appStatusFilter}
+                onChange={(e) => setAppStatusFilter(e.target.value)}
+                className="rounded-xl border border-[var(--border-strong)] bg-[var(--surface-2)] px-3 py-2 text-xs text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+              >
+                <option value="all">All Invitation Statuses</option>
+                <option value="pending">Pending</option>
+                <option value="invited">Invited</option>
+                <option value="registered">Registered</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </div>
+
+            {applications
+              .filter((a) => {
+                if (appStatusFilter !== "all" && a.status !== appStatusFilter) {
+                  return false;
+                }
+                if (appSearch.trim()) {
+                  const q = appSearch.trim().toLowerCase();
+                  return `${a.full_name} ${a.email} ${a.track}`
+                    .toLowerCase()
+                    .includes(q);
+                }
+                return true;
+              })
+              .map((app) => {
               const assigned = selectedChallenges[app.id] || [];
               const inviteUrl =
                 app.invite_token && typeof window !== "undefined"

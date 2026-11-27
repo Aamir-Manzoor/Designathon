@@ -33,7 +33,7 @@ export default async function ProfilePage() {
     .order("started_at", { ascending: false });
 
   const { data: sessions } = isAdminOrEvaluator
-    ? await sessionsQuery
+    ? await sessionsQuery.eq("is_practice", false)
     : await sessionsQuery.eq("user_id", user.id);
 
   const rows = sessions ?? [];

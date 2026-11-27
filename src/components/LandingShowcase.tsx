@@ -169,10 +169,8 @@ export function LandingShowcase({
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="hidden sm:block">
-              <ThemeSwitcher />
-            </div>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <ThemeSwitcher />
             {signedInRole ? (
               <Link
                 href={
@@ -650,25 +648,22 @@ export function LandingShowcase({
             </p>
           </div>
 
-          <div className="grid gap-3 md:grid-cols-5">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
             {[
               { step: "01", title: "Configure", desc: "Set problem, languages, test suites, rubric & token budget." },
               { step: "02", title: "Prompt AI", desc: "Prompt-faithful code generation with live efficiency hints." },
               { step: "03", title: "Run & Refine", desc: "Execute isolated tests and iteratively improve prompts." },
               { step: "04", title: "Debug Bug", desc: "Reproducible bug injected after pass; diagnose & fix." },
               { step: "05", title: "Score & Export", desc: "100-pt explainable scorecard + 3-sheet .xlsx analytics." },
-            ].map((item, idx) => (
+            ].map((item) => (
               <div
                 key={item.step}
-                className="workflow-card surface-card relative rounded-2xl p-5 transition-transform duration-200 hover:-translate-y-1"
+                className="workflow-card surface-card relative rounded-2xl p-5"
               >
-                <div className="flex items-center justify-between">
+                <div className="flex items-center">
                   <span className="font-mono text-xs font-bold text-[var(--accent)]">
                     {item.step}
                   </span>
-                  {idx < 4 && (
-                    <ChevronRight className="hidden h-4 w-4 text-[var(--text-muted)] md:block" />
-                  )}
                 </div>
                 <h3 className="mt-3 text-sm font-bold text-[var(--text-primary)]">
                   {item.title}

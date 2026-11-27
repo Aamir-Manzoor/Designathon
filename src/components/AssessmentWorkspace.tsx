@@ -121,6 +121,9 @@ export function AssessmentWorkspace({
   const [expandedPane, setExpandedPane] = useState<
     "none" | "left" | "center" | "right"
   >("none");
+  const [mobilePane, setMobilePane] = useState<"left" | "center" | "right">(
+    "center"
+  );
   const [showExitModal, setShowExitModal] = useState(false);
 
   // Internal editor-only clipboard tracking (allows copy/paste inside Monaco, blocks external paste)
@@ -574,9 +577,70 @@ export function AssessmentWorkspace({
   }
 
   if (session.phase === "submitted") {
+    const isPractice = Boolean(session.is_practice);
     const isReleased = Boolean(scorecard?.score_released);
     const isPassed = scorecard?.evaluator_decision === "passed";
     const isRejected = scorecard?.evaluator_decision === "rejected";
+
+    if (isPractice) {
+      return (
+        <div className="min-h-screen bg-[var(--bg-canvas)] px-4 py-8 text-[var(--text-primary)] sm:px-6">
+          <div className="mx-auto max-w-2xl">
+            <div className="mb-6">
+              <Link
+                href="/dashboard"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to Candidate Portal
+              </Link>
+            </div>
+            <div className="surface-card rounded-2xl p-8 text-center sm:p-10">
+              <div
+                className={`mx-auto flex h-16 w-16 items-center justify-center rounded-2xl ring-1 ${
+                  isPassed
+                    ? "bg-emerald-500/15 text-emerald-500 ring-emerald-500/30"
+                    : "bg-amber-500/15 text-amber-500 ring-amber-500/30"
+                }`}
+              >
+                {isPassed ? (
+                  <CheckCircle2 className="h-8 w-8" />
+                ) : (
+                  <XCircle className="h-8 w-8" />
+                )}
+              </div>
+              <span
+                className={`mt-5 inline-flex items-center gap-1.5 rounded-full px-4 py-1 text-xs font-bold uppercase tracking-wider ${
+                  isPassed
+                    ? "bg-emerald-500/15 text-emerald-500"
+                    : "bg-amber-500/15 text-amber-500"
+                }`}
+              >
+                {isPassed ? "Test Passed" : "Test Submitted"}
+              </span>
+              <h1 className="mt-3 text-2xl font-extrabold text-[var(--text-primary)]">
+                {isPassed
+                  ? "Practice Test Submitted — Test Passed!"
+                  : "Practice Test Submitted"}
+              </h1>
+              <p className="mt-2 text-sm text-[var(--text-muted)]">
+                {scorecard?.evaluator_notes ||
+                  "Your practice sandbox run has been completed."}
+              </p>
+              <div className="mt-7 flex flex-wrap justify-center gap-3">
+                <Link
+                  href="/dashboard"
+                  className="btn-tactile inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-6 py-2.5 text-sm font-semibold text-[var(--accent-fg)]"
+                >
+                  Return to Candidate Portal
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="min-h-screen bg-[var(--bg-canvas)] px-4 py-8 text-[var(--text-primary)] sm:px-6">
         <div className="mx-auto max-w-[1600px]">
@@ -989,6 +1053,28 @@ export function AssessmentWorkspace({
         </div>
       )}
 
+      {/* Mobile / Tablet Quick Pane Switcher (< lg) */}
+      <div className="grid shrink-0 grid-cols-3 border-b border-[var(--border-subtle)] bg-[var(--surface-2)] p-1 text-xs font-semibold lg:hidden">
+        {[
+          { id: "left" as const, label: "Question & Tests" },
+          { id: "center" as const, label: "Code Editor" },
+          { id: "right" as const, label: "AI & Tokens" },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setMobilePane(tab.id)}
+            className={`rounded-lg py-2 text-center transition-colors ${
+              mobilePane === tab.id
+                ? "bg-[var(--accent)] text-[var(--accent-fg)] shadow-sm"
+                : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
       {/* Main Collapsible 3-Pane IDE */}
       <div className="flex min-h-0 flex-1 flex-col lg:grid lg:grid-cols-12">
         {/* LEFT PANE */}
@@ -997,7 +1083,9 @@ export function AssessmentWorkspace({
           onCopy={(e) => e.preventDefault()}
           onCut={(e) => e.preventDefault()}
           onContextMenu={(e) => e.preventDefault()}
-          className={`${leftSpan} flex min-h-0 min-w-0 select-none flex-col border-b border-[var(--border-subtle)] bg-[var(--surface-1)] lg:border-b-0 lg:border-r`}
+          className={`${
+            mobilePane === "left" ? "flex" : "hidden lg:flex"
+          } ${leftSpan} min-h-0 min-w-0 flex-1 select-none flex-col border-b border-[var(--border-subtle)] bg-[var(--surface-1)] lg:border-b-0 lg:border-r`}
         >
           <div className="flex items-center border-b border-[var(--border-subtle)] text-xs font-medium">
             <button
@@ -1119,7 +1207,11 @@ export function AssessmentWorkspace({
 
         {/* CENTER PANE */}
         {visibleCenter && (
-        <section className={`${centerSpan} flex min-h-[520px] min-w-0 flex-col border-b border-[var(--border-subtle)] lg:min-h-0 lg:border-b-0 lg:border-r`}>
+        <section
+          className={`${
+            mobilePane === "center" ? "flex" : "hidden lg:flex"
+          } ${centerSpan} min-h-[520px] min-w-0 flex-1 flex-col border-b border-[var(--border-subtle)] lg:min-h-0 lg:border-b-0 lg:border-r`}
+        >
           <div className="flex items-center justify-between border-b border-[var(--border-subtle)] bg-[var(--surface-2)] px-3 py-2">
             <span className="font-mono text-xs text-[var(--text-secondary)]">
               solution.{session.language === "python" ? "py" : "js"}
@@ -1309,7 +1401,11 @@ export function AssessmentWorkspace({
 
         {/* RIGHT PANE: Token Meter + Multi-Provider AI Chat + Compression */}
         {visibleRight && (
-        <aside className={`${rightSpan} flex min-h-[480px] min-w-0 flex-col bg-[var(--surface-1)] lg:min-h-0`}>
+        <aside
+          className={`${
+            mobilePane === "right" ? "flex" : "hidden lg:flex"
+          } ${rightSpan} min-h-[480px] min-w-0 flex-1 flex-col bg-[var(--surface-1)] lg:min-h-0`}
+        >
           <TokenBudgetMeter
             tokensUsed={session.tokens_used}
             tokenBudget={session.token_budget}

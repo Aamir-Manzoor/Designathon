@@ -32,6 +32,7 @@ import {
   ArrowLeft,
   UserCheck,
   ShieldAlert,
+  Search,
 } from "lucide-react";
 import { estimateSessionCostUsd } from "@/lib/engines/ai-provider";
 import { formatNumber } from "@/lib/utils";
@@ -152,6 +153,11 @@ export function AdminConsoleClient({
   const [activeTab, setActiveTab] = useState<
     "scorecards" | "applicants" | "challenges" | "ops"
   >("scorecards");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [evaluatorFilter, setEvaluatorFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [sourceFilter, setSourceFilter] = useState("all");
+  const [dateFilter, setDateFilter] = useState("all");
   const [selectedSessionIds, setSelectedSessionIds] = useState<string[]>([]);
   const [targetEvaluatorId, setTargetEvaluatorId] = useState<string>(
     evaluators[0]?.id || ""
@@ -203,6 +209,56 @@ export function AdminConsoleClient({
         ? Number((totalScore / (s.tokens_used / 1000)).toFixed(1))
         : 0;
     return { ...s, sc, cost, efficiencyIndex };
+  });
+
+  const filteredSessions = normalizedSessions.filter((s) => {
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      const hay = `${s.candidate_name} ${s.candidate_email} ${
+        s.challenge?.title || ""
+      }`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    if (evaluatorFilter === "unassigned" && s.assigned_evaluator_id) {
+      return false;
+    }
+    if (
+      evaluatorFilter !== "all" &&
+      evaluatorFilter !== "unassigned" &&
+      s.assigned_evaluator_id !== evaluatorFilter
+    ) {
+      return false;
+    }
+    if (statusFilter === "passed" && s.sc?.evaluator_decision !== "passed") {
+      return false;
+    }
+    if (statusFilter === "rejected" && s.sc?.evaluator_decision !== "rejected") {
+      return false;
+    }
+    if (
+      statusFilter === "awaiting_evaluator" &&
+      (!s.sc || Boolean(s.sc.evaluator_decision))
+    ) {
+      return false;
+    }
+    if (statusFilter === "released" && !s.sc?.score_released) {
+      return false;
+    }
+    if (statusFilter === "in_progress" && s.sc) {
+      return false;
+    }
+    if (sourceFilter === "live" && s.is_synthetic) return false;
+    if (sourceFilter === "benchmark" && !s.is_synthetic) return false;
+
+    if (dateFilter !== "all") {
+      const startedMs = new Date(s.started_at).getTime();
+      const ageMs = Date.now() - startedMs;
+      if (dateFilter === "today" && ageMs > 24 * 60 * 60 * 1000) return false;
+      if (dateFilter === "7d" && ageMs > 7 * 24 * 60 * 60 * 1000) return false;
+      if (dateFilter === "30d" && ageMs > 30 * 24 * 60 * 60 * 1000) return false;
+    }
+
+    return true;
   });
 
   const scoredSessions = normalizedSessions.filter((s) => s.sc);
@@ -397,7 +453,7 @@ export function AdminConsoleClient({
   }
 
   return (
-    <div className="mx-auto max-w-[1600px] px-6 py-7">
+    <div className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6 sm:py-7">
       <div className="mb-4">
         <Link
           href="/"
@@ -497,7 +553,7 @@ export function AdminConsoleClient({
       {/* Pill-Styled Segmented Tabs (Admin sees all 3; Evaluator sees Review Queue only) */}
       {isAdmin && (
       <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
-        <div className="inline-flex flex-wrap gap-1 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-1)] p-1">
+        <div className="flex w-full overflow-x-auto rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-1)] p-1 sm:w-auto sm:inline-flex">
           <button
             onClick={() => setActiveTab("scorecards")}
             className={`btn-tactile rounded-lg px-4 py-2 text-xs font-semibold ${
@@ -749,9 +805,101 @@ export function AdminConsoleClient({
             </div>
           )}
 
+          {/* Search & Multi-Filter Toolbar */}
+          <div className="surface-card rounded-2xl p-4">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6">
+              <div className="relative sm:col-span-2">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--text-muted)]" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search candidate, email, or challenge..."
+                  className="w-full rounded-xl border border-[var(--border-strong)] bg-[var(--surface-2)] py-2 pl-9 pr-3 text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-[var(--accent)] focus:bg-[var(--surface-1)] focus:outline-none"
+                />
+              </div>
+
+              {isAdmin && (
+                <select
+                  value={evaluatorFilter}
+                  onChange={(e) => setEvaluatorFilter(e.target.value)}
+                  className="rounded-xl border border-[var(--border-strong)] bg-[var(--surface-2)] px-3 py-2 text-xs text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+                >
+                  <option value="all">All Evaluators</option>
+                  <option value="unassigned">Unassigned Only</option>
+                  {evaluators.map((ev) => (
+                    <option key={ev.id} value={ev.id}>
+                      {ev.full_name}
+                    </option>
+                  ))}
+                </select>
+              )}
+
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="rounded-xl border border-[var(--border-strong)] bg-[var(--surface-2)] px-3 py-2 text-xs text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+              >
+                <option value="all">All Statuses</option>
+                <option value="awaiting_evaluator">Awaiting Evaluator</option>
+                <option value="passed">Passed</option>
+                <option value="rejected">Rejected</option>
+                <option value="released">Report Released</option>
+                <option value="in_progress">In Progress</option>
+              </select>
+
+              <select
+                value={sourceFilter}
+                onChange={(e) => setSourceFilter(e.target.value)}
+                className="rounded-xl border border-[var(--border-strong)] bg-[var(--surface-2)] px-3 py-2 text-xs text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+              >
+                <option value="all">All Candidates</option>
+                <option value="live">Live Candidates</option>
+                <option value="benchmark">Benchmark Cohort</option>
+              </select>
+
+              <select
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value)}
+                className="rounded-xl border border-[var(--border-strong)] bg-[var(--surface-2)] px-3 py-2 text-xs text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+              >
+                <option value="all">All Dates</option>
+                <option value="today">Last 24 Hours</option>
+                <option value="7d">Last 7 Days</option>
+                <option value="30d">Last 30 Days</option>
+              </select>
+            </div>
+
+            <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 text-[11px] text-[var(--text-muted)]">
+              <span>
+                Showing <strong className="text-[var(--text-primary)]">{filteredSessions.length}</strong> of{" "}
+                {normalizedSessions.length} candidate assessments
+              </span>
+              {(searchQuery ||
+                evaluatorFilter !== "all" ||
+                statusFilter !== "all" ||
+                sourceFilter !== "all" ||
+                dateFilter !== "all") && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setEvaluatorFilter("all");
+                    setStatusFilter("all");
+                    setSourceFilter("all");
+                    setDateFilter("all");
+                  }}
+                  className="font-semibold text-[var(--accent)] hover:underline"
+                >
+                  Reset Filters
+                </button>
+              )}
+            </div>
+          </div>
+
           {/* Candidate Scorecards Table */}
           <div className="surface-card overflow-x-auto rounded-2xl">
-            <table className="w-full text-left text-xs">
+            <table className="w-full min-w-[1100px] text-left text-xs">
               <thead className="border-b border-[var(--border-subtle)] bg-[var(--surface-2)] uppercase text-[var(--text-muted)]">
                 <tr>
                   {isAdmin && (
@@ -760,14 +908,15 @@ export function AdminConsoleClient({
                         type="checkbox"
                         aria-label="Select all candidates"
                         checked={
-                          normalizedSessions.length > 0 &&
-                          selectedSessionIds.length ===
-                            normalizedSessions.length
+                          filteredSessions.length > 0 &&
+                          filteredSessions.every((s) =>
+                            selectedSessionIds.includes(s.id)
+                          )
                         }
                         onChange={(e) =>
                           setSelectedSessionIds(
                             e.target.checked
-                              ? normalizedSessions.map((s) => s.id)
+                              ? filteredSessions.map((s) => s.id)
                               : []
                           )
                         }
@@ -776,6 +925,7 @@ export function AdminConsoleClient({
                     </th>
                   )}
                   <th className="px-4 py-3">Candidate</th>
+                  <th className="px-3 py-3">Date &amp; Time</th>
                   {isAdmin && <th className="px-3 py-3">Assigned Evaluator</th>}
                   <th className="px-3 py-3 text-center">Prompt (40)</th>
                   <th className="px-3 py-3 text-center">Improv (10)</th>
@@ -789,7 +939,7 @@ export function AdminConsoleClient({
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--border-subtle)]">
-                {normalizedSessions.map((s) => {
+                {filteredSessions.map((s) => {
                   const pct =
                     s.token_budget > 0
                       ? Math.round((s.tokens_used / s.token_budget) * 100)
@@ -830,6 +980,21 @@ export function AdminConsoleClient({
                               benchmark
                             </span>
                           )}
+                        </div>
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-3 font-mono text-[11px] text-[var(--text-muted)]">
+                        <div>
+                          {new Date(s.started_at).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                        </div>
+                        <div className="text-[10px]">
+                          {new Date(s.started_at).toLocaleTimeString("en-US", {
+                            hour: "numeric",
+                            minute: "2-digit",
+                          })}
                         </div>
                       </td>
                       {isAdmin && (

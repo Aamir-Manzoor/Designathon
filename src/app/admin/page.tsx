@@ -39,6 +39,7 @@ export default async function AdminPage() {
           scorecard:scorecards(*)
         `
       )
+      .eq("is_practice", false)
       .order("started_at", { ascending: false }),
     viewerRole === "admin"
       ? supabase

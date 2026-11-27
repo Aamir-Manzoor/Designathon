@@ -37,15 +37,17 @@ export async function GET() {
         scorecard:scorecards(*)
       `
       )
+      .eq("is_practice", false)
       .order("started_at", { ascending: false }),
     supabase
       .from("prompt_turns")
       .select(
         `
         *,
-        session:candidate_sessions(candidate_name, candidate_email)
+        session:candidate_sessions!inner(candidate_name, candidate_email, is_practice)
       `
       )
+      .eq("session.is_practice", false)
       .order("created_at", { ascending: true }),
   ]);
 
