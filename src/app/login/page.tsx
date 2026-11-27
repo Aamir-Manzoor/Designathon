@@ -12,8 +12,6 @@ import {
   ArrowRight,
   AlertCircle,
   Loader2,
-  Shield,
-  User,
 } from "lucide-react";
 
 export default function LoginPage() {
@@ -157,66 +155,7 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="mt-6 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-2)] p-3.5">
-            <div className="mb-2.5 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-              Demo Credentials (Full JWT Auth)
-            </div>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setEmail("admin@promptbench.ai");
-                  setPassword("Admin@12345");
-                  setError(null);
-                }}
-                className="btn-tactile flex min-w-0 flex-col items-start overflow-hidden rounded-lg border border-[var(--accent-border)] bg-[var(--accent-soft)] p-2.5 text-left hover:opacity-90"
-              >
-                <span className="flex items-center gap-1 text-xs font-semibold text-[var(--accent)]">
-                  <Shield className="h-3.5 w-3.5 shrink-0" />
-                  <span className="truncate">Admin</span>
-                </span>
-                <span className="mt-0.5 block w-full truncate text-[10px] text-[var(--text-muted)]">
-                  admin@promptbench.ai
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setEmail("evaluator@promptbench.ai");
-                  setPassword("Evaluator@12345");
-                  setError(null);
-                }}
-                className="btn-tactile flex min-w-0 flex-col items-start overflow-hidden rounded-lg border border-cyan-500/30 bg-cyan-500/10 p-2.5 text-left hover:bg-cyan-500/15"
-              >
-                <span className="flex items-center gap-1 text-xs font-semibold text-cyan-500">
-                  <Shield className="h-3.5 w-3.5 shrink-0" />
-                  <span className="truncate">Evaluator</span>
-                </span>
-                <span className="mt-0.5 block w-full truncate text-[10px] text-[var(--text-muted)]">
-                  evaluator@promptbench.ai
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setEmail("candidate@promptbench.ai");
-                  setPassword("Candidate@12345");
-                  setError(null);
-                }}
-                className="btn-tactile flex min-w-0 flex-col items-start overflow-hidden rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-2.5 text-left hover:bg-emerald-500/15"
-              >
-                <span className="flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                  <User className="h-3.5 w-3.5 shrink-0" />
-                  <span className="truncate">Candidate</span>
-                </span>
-                <span className="mt-0.5 block w-full truncate text-[10px] text-[var(--text-muted)]">
-                  candidate@promptbench.ai
-                </span>
-              </button>
-            </div>
-          </div>
-
-          <div className="mt-5 border-t border-[var(--border-subtle)] pt-5 text-center text-sm text-[var(--text-muted)]">
+          <div className="mt-6 border-t border-[var(--border-subtle)] pt-5 text-center text-sm text-[var(--text-muted)]">
             Don&apos;t have an account?{" "}
             <Link
               href="/register"
