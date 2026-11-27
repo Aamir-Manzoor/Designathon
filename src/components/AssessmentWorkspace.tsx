@@ -116,6 +116,12 @@ export function AssessmentWorkspace({
   const [leftTab, setLeftTab] = useState<"problem" | "revisions">("problem");
   const [showLeftPane, setShowLeftPane] = useState(true);
   const [showRightPane, setShowRightPane] = useState(true);
+  const [timeExpired, setTimeExpired] = useState<boolean>(
+    () =>
+      initialSession.phase !== "submitted" &&
+      new Date(initialSession.expires_at).getTime() <= Date.now()
+  );
+  const autoSubmittedRef = useRef(false);
   const [secondsLeft, setSecondsLeft] = useState<number>(() =>
     Math.max(
       0,
@@ -180,14 +186,34 @@ export function AssessmentWorkspace({
     turns,
   ]);
 
-  // Countdown timer
+  // Countdown timer with automatic close + auto-submit at 00:00
   useEffect(() => {
     if (session.phase === "submitted") return;
+    if (secondsLeft <= 0) {
+      setTimeExpired(true);
+      if (!autoSubmittedRef.current) {
+        autoSubmittedRef.current = true;
+        fetch(`/api/sessions/${session.id}/evaluate`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code }),
+        })
+          .then((r) => r.json())
+          .then((data) => {
+            if (data?.scorecard) {
+              setScorecard(data.scorecard);
+              setSession((prev) => ({ ...prev, phase: "submitted" }));
+            }
+          })
+          .catch(() => {});
+      }
+      return;
+    }
     const interval = setInterval(() => {
       setSecondsLeft((prev) => Math.max(0, prev - 1));
     }, 1000);
     return () => clearInterval(interval);
-  }, [session.phase]);
+  }, [session.phase, secondsLeft, session.id, code]);
 
   // Debounced autosave with automatic retry on transient failure
   useEffect(() => {
@@ -446,6 +472,42 @@ export function AssessmentWorkspace({
     } finally {
       setSubmitting(false);
     }
+  }
+
+  // Hard Time's Up Screen (locks & closes workspace when timer hits 00:00)
+  if (timeExpired && session.phase !== "submitted") {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[var(--bg-canvas)] px-6 py-10 text-[var(--text-primary)]">
+        <div className="surface-card w-full max-w-xl rounded-2xl p-10 text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-500 ring-1 ring-amber-500/30">
+            <Clock className="h-8 w-8" />
+          </div>
+          <h1 className="mt-5 text-2xl font-extrabold text-[var(--text-primary)]">
+            Time&apos;s Up — Assessment Closed
+          </h1>
+          <p className="mt-3 text-sm leading-relaxed text-[var(--text-muted)]">
+            Your allotted time for{" "}
+            <strong className="text-[var(--text-primary)]">
+              {challenge.title}
+            </strong>{" "}
+            has ended. Your latest autosaved code and prompt history are being
+            submitted automatically for evaluation.
+          </p>
+          <div className="mt-6 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-2)] p-4 text-xs text-[var(--text-secondary)]">
+            Your official score report will be released soon by the Assessment
+            Admin after Evaluator review.
+          </div>
+          <div className="mt-7">
+            <Link
+              href="/dashboard"
+              className="btn-tactile inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-6 py-2.5 text-sm font-semibold text-[var(--accent-fg)]"
+            >
+              Return to Candidate Portal
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (session.phase === "submitted" && scorecard) {
