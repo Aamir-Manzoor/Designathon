@@ -27,7 +27,7 @@ export default async function ProfilePage() {
       `
         id, phase, is_practice, language, tokens_used, tokens_saved, token_budget, started_at,
         challenge:challenges(title, difficulty),
-        scorecard:scorecards(total_score, score_released, evaluator_reviewed_at)
+        scorecard:scorecards(total_score, score_released, evaluator_reviewed_at, evaluator_decision)
       `
     )
     .order("started_at", { ascending: false });

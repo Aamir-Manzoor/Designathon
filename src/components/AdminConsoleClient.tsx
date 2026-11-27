@@ -63,6 +63,8 @@ interface AdminSessionRow {
         debug_test_cases_score: number;
         total_score: number;
         score_released?: boolean;
+        evaluator_decision?: "passed" | "rejected" | null;
+        evaluator_notes?: string | null;
       }>
     | {
         prompt_quality_score: number;
@@ -71,6 +73,8 @@ interface AdminSessionRow {
         debug_test_cases_score: number;
         total_score: number;
         score_released?: boolean;
+        evaluator_decision?: "passed" | "rejected" | null;
+        evaluator_notes?: string | null;
       }
     | null;
 }
@@ -910,6 +914,11 @@ export function AdminConsoleClient({
                             <ReleaseScoreButton
                               sessionId={s.id}
                               initialReleased={Boolean(s.sc.score_released)}
+                              evaluatorReady={Boolean(
+                                s.sc.evaluator_decision &&
+                                  s.sc.evaluator_notes?.trim()
+                              )}
+                              evaluatorDecision={s.sc.evaluator_decision ?? null}
                               compact
                             />
                           ) : (

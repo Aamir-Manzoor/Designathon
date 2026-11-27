@@ -39,6 +39,30 @@ export async function POST(
     return NextResponse.json({ error: "Session not found" }, { status: 404 });
   }
 
+  const { data: existingScorecard } = await supabase
+    .from("scorecards")
+    .select("*")
+    .eq("session_id", sessionId)
+    .single();
+
+  if (!existingScorecard) {
+    return NextResponse.json({ error: "Scorecard not found" }, { status: 404 });
+  }
+
+  // Gate Admin release strictly behind Evaluator decision + feedback submission
+  if (
+    !existingScorecard.evaluator_decision ||
+    !existingScorecard.evaluator_notes?.trim()
+  ) {
+    return NextResponse.json(
+      {
+        error:
+          "Cannot release report yet. An Evaluator must first submit a Pass/Reject decision and feedback.",
+      },
+      { status: 400 }
+    );
+  }
+
   const { data: scorecard, error } = await supabase
     .from("scorecards")
     .update({
@@ -64,18 +88,16 @@ export async function POST(
   const challengeTitle =
     (session.challenge as unknown as { title?: string } | null)?.title ||
     "Coding Assessment";
+  const decisionLabel =
+    scorecard.evaluator_decision === "passed" ? "Passed" : "Not Selected";
 
   const { deliveryStatus } = await dispatchEmailNotification({
     supabase,
     recipientEmail: session.candidate_email,
     recipientName: session.candidate_name,
     emailType: "score_released",
-    subject: `Your PromptBench Score Report is Ready — ${challengeTitle}`,
-    body: `Hi ${session.candidate_name},\n\nYour evaluation for "${challengeTitle}" has been reviewed and your explainable 100-point score report (${Number(
-      scorecard.total_score
-    ).toFixed(
-      1
-    )}/100) has been released.\n\nSign in to view your full rubric breakdown and token analytics:\n${reportUrl}`,
+    subject: `Your PromptBench Assessment Feedback is Ready — ${challengeTitle}`,
+    body: `Hi ${session.candidate_name},\n\nYour assessment for "${challengeTitle}" has been reviewed by our evaluation team.\n\nResult: ${decisionLabel}\n\nEvaluator Feedback:\n${scorecard.evaluator_notes}\n\nSign in to view your official feedback report in your Profile:\n${reportUrl}`,
     actionUrl: reportUrl,
   });
 

@@ -100,6 +100,13 @@ export default async function AdminSessionReviewPage({
               <ReleaseScoreButton
                 sessionId={session.id}
                 initialReleased={Boolean((scorecard as Scorecard).score_released)}
+                evaluatorReady={Boolean(
+                  (scorecard as Scorecard).evaluator_decision &&
+                    (scorecard as Scorecard).evaluator_notes?.trim()
+                )}
+                evaluatorDecision={
+                  (scorecard as Scorecard).evaluator_decision ?? null
+                }
               />
             )}
           </div>
@@ -114,8 +121,9 @@ export default async function AdminSessionReviewPage({
             <EvaluatorNotesCard
               sessionId={session.id}
               initialNotes={(scorecard as Scorecard).evaluator_notes}
-              initialScore={Number((scorecard as Scorecard).total_score)}
-              initialReleased={Boolean((scorecard as Scorecard).score_released)}
+              initialDecision={
+                (scorecard as Scorecard).evaluator_decision ?? null
+              }
             />
           </>
         ) : (

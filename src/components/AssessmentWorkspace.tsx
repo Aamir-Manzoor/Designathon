@@ -512,38 +512,107 @@ export function AssessmentWorkspace({
 
   if (session.phase === "submitted" && scorecard) {
     const isReleased = Boolean(scorecard.score_released);
+    const isPassed = scorecard.evaluator_decision === "passed";
+    const isRejected = scorecard.evaluator_decision === "rejected";
     return (
-      <div className="min-h-screen bg-[var(--bg-canvas)] px-6 py-8 text-[var(--text-primary)]">
+      <div className="min-h-screen bg-[var(--bg-canvas)] px-4 py-8 text-[var(--text-primary)] sm:px-6">
         <div className="mx-auto max-w-[1600px]">
-          <div className="mb-6 flex items-center justify-between">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
             <Link
-              href="/dashboard"
+              href="/profile"
               className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)]"
             >
               <ArrowLeft className="h-4 w-4" />
-              Back to Challenges
+              Back to Profile &amp; Assessment Status
             </Link>
             <div className="flex items-center gap-3">
               <ThemeSwitcher compact />
               <span
                 className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${
                   isReleased
-                    ? "bg-emerald-500/15 text-emerald-500 ring-emerald-500/30"
+                    ? isRejected
+                      ? "bg-red-500/15 text-red-500 ring-red-500/30"
+                      : "bg-emerald-500/15 text-emerald-500 ring-emerald-500/30"
                     : "bg-amber-500/15 text-amber-500 ring-amber-500/30"
                 }`}
               >
                 {isReleased
-                  ? "Official Score Report Released"
+                  ? isPassed
+                    ? "Outcome Released · Passed"
+                    : isRejected
+                    ? "Outcome Released · Not Selected"
+                    : "Feedback Released"
                   : "Submitted · Under Evaluator Review"}
               </span>
             </div>
           </div>
 
           {isReleased ? (
-            <ScorecardView
-              scorecard={scorecard}
-              candidateName={`${session.candidate_name} — ${challenge.title}`}
-            />
+            <div className="surface-card mx-auto mt-10 max-w-2xl rounded-2xl p-8 sm:p-10">
+              <div className="text-center">
+                <div
+                  className={`mx-auto flex h-16 w-16 items-center justify-center rounded-2xl ring-1 ${
+                    isRejected
+                      ? "bg-red-500/15 text-red-500 ring-red-500/30"
+                      : "bg-emerald-500/15 text-emerald-500 ring-emerald-500/30"
+                  }`}
+                >
+                  {isRejected ? (
+                    <XCircle className="h-8 w-8" />
+                  ) : (
+                    <CheckCircle2 className="h-8 w-8" />
+                  )}
+                </div>
+
+                <span
+                  className={`mt-5 inline-flex items-center gap-1.5 rounded-full px-4 py-1 text-xs font-bold uppercase tracking-wider ${
+                    isRejected
+                      ? "bg-red-500/15 text-red-500"
+                      : "bg-emerald-500/15 text-emerald-500"
+                  }`}
+                >
+                  {isPassed
+                    ? "Passed"
+                    : isRejected
+                    ? "Not Selected"
+                    : "Reviewed"}
+                </span>
+
+                <h1 className="mt-3 text-2xl font-extrabold text-[var(--text-primary)]">
+                  {isPassed
+                    ? "Congratulations — You Passed the Assessment!"
+                    : isRejected
+                    ? "Assessment Review Complete"
+                    : "Your Evaluator Feedback is Ready"}
+                </h1>
+                <p className="mt-2 text-sm text-[var(--text-muted)]">
+                  Here is your Evaluator&apos;s feedback for{" "}
+                  <strong className="text-[var(--text-primary)]">
+                    {challenge.title}
+                  </strong>
+                  .
+                </p>
+              </div>
+
+              <div className="mt-6 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-2)] p-5">
+                <div className="text-xs font-semibold uppercase tracking-wider text-[var(--accent)]">
+                  Evaluator Feedback
+                </div>
+                <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-[var(--text-primary)]">
+                  {scorecard.evaluator_notes?.trim() ||
+                    "Thank you for completing the assessment. Our hiring team will follow up with next steps."}
+                </p>
+              </div>
+
+              <div className="mt-7 flex justify-center">
+                <Link
+                  href="/profile"
+                  className="btn-tactile inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-6 py-2.5 text-sm font-semibold text-[var(--accent-fg)]"
+                >
+                  Return to Profile
+                </Link>
+              </div>
+            </div>
           ) : (
             <div className="surface-card mx-auto mt-10 max-w-2xl rounded-2xl p-10 text-center">
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-500 ring-1 ring-emerald-500/30">
@@ -568,10 +637,11 @@ export function AssessmentWorkspace({
                 <strong className="text-[var(--accent)]">
                   What happens next?
                 </strong>{" "}
-                An assigned Evaluator will review your submission, and your
-                official 100-point score report will be released soon by the
-                Assessment Admin. A confirmation email has been queued for{" "}
-                <span className="font-mono">{session.candidate_email}</span>.
+                An assigned Evaluator will review your submission and submit
+                their decision and feedback. Once released by the Admin, you
+                will receive an email at{" "}
+                <span className="font-mono">{session.candidate_email}</span> and
+                can view your feedback in your Profile.
               </div>
               <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
                 <Link

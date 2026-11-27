@@ -214,6 +214,7 @@ export interface Scorecard {
   total_score: number;
   rubric_breakdown: ScorecardBreakdown;
   evaluator_notes: string | null;
+  evaluator_decision?: "passed" | "rejected" | null;
   score_released?: boolean;
   released_at?: string | null;
   evaluator_reviewed_at?: string | null;

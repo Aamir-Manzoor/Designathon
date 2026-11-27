@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { dispatchEmailNotification } from "@/lib/engines/mailer";
 
 export async function PATCH(
   request: Request,
@@ -31,34 +30,35 @@ export async function PATCH(
 
   const body = (await request.json()) as {
     evaluator_notes?: string;
-    total_score?: number;
-    submit_and_notify?: boolean;
+    evaluator_decision?: "passed" | "rejected" | null;
   };
   const notes = (body.evaluator_notes ?? "").trim();
-  const submitAndNotify = Boolean(body.submit_and_notify);
+  const decision =
+    body.evaluator_decision === "passed" || body.evaluator_decision === "rejected"
+      ? body.evaluator_decision
+      : null;
 
-  const updates: Record<string, unknown> = {
-    evaluator_notes: notes,
-    evaluator_reviewed_at: new Date().toISOString(),
-  };
-
-  if (
-    typeof body.total_score === "number" &&
-    !Number.isNaN(body.total_score) &&
-    body.total_score >= 0 &&
-    body.total_score <= 100
-  ) {
-    updates.total_score = Math.round(body.total_score * 10) / 10;
+  if (!decision) {
+    return NextResponse.json(
+      { error: "Please select Pass or Reject before submitting evaluation." },
+      { status: 400 }
+    );
   }
 
-  if (submitAndNotify) {
-    updates.score_released = true;
-    updates.released_at = new Date().toISOString();
+  if (notes.length < 5) {
+    return NextResponse.json(
+      { error: "Please enter written evaluator feedback for the candidate." },
+      { status: 400 }
+    );
   }
 
   const { data, error } = await supabase
     .from("scorecards")
-    .update(updates)
+    .update({
+      evaluator_notes: notes,
+      evaluator_decision: decision,
+      evaluator_reviewed_at: new Date().toISOString(),
+    })
     .eq("session_id", sessionId)
     .select("*")
     .single();
@@ -70,44 +70,5 @@ export async function PATCH(
     );
   }
 
-  let deliveryStatus: string | null = null;
-  if (submitAndNotify) {
-    const { data: session } = await supabase
-      .from("candidate_sessions")
-      .select("id, candidate_name, candidate_email, challenge:challenges(title)")
-      .eq("id", sessionId)
-      .single();
-
-    if (session) {
-      const origin =
-        request.headers.get("origin") ||
-        process.env.NEXT_PUBLIC_APP_URL ||
-        "http://localhost:3001";
-      const reportUrl = `${origin}/assess/${sessionId}`;
-      const challengeTitle =
-        (session.challenge as unknown as { title?: string } | null)?.title ||
-        "Coding Assessment";
-
-      const result = await dispatchEmailNotification({
-        supabase,
-        recipientEmail: session.candidate_email,
-        recipientName: session.candidate_name,
-        emailType: "score_released",
-        subject: `Your PromptBench Score Report is Ready — ${challengeTitle}`,
-        body: `Hi ${session.candidate_name},\n\nYour Evaluator has completed reviewing your submission for "${challengeTitle}" and finalized your score (${Number(
-          data.total_score
-        ).toFixed(1)}/100).\n\n${
-          notes ? `Evaluator Feedback:\n${notes}\n\n` : ""
-        }Sign in and visit your Profile or open your report directly:\n${reportUrl}`,
-        actionUrl: reportUrl,
-      });
-      deliveryStatus = result.deliveryStatus;
-    }
-  }
-
-  return NextResponse.json({
-    scorecard: data,
-    notified: submitAndNotify,
-    delivery_status: deliveryStatus,
-  });
+  return NextResponse.json({ scorecard: data });
 }

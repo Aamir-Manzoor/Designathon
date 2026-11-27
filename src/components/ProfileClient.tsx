@@ -43,11 +43,13 @@ interface CandidateSessionRow {
         total_score: number;
         score_released?: boolean;
         evaluator_reviewed_at?: string | null;
+        evaluator_decision?: "passed" | "rejected" | null;
       }>
     | {
         total_score: number;
         score_released?: boolean;
         evaluator_reviewed_at?: string | null;
+        evaluator_decision?: "passed" | "rejected" | null;
       }
     | null;
 }
@@ -265,9 +267,31 @@ export function ProfileClient({
           },
           {
             label:
-              profile.role === "admin" ? "Cohort Avg Score" : "Average Score",
+              profile.role === "admin"
+                ? "Cohort Avg Score"
+                : profile.role === "evaluator"
+                ? "Batch Avg Score"
+                : "Official Outcome",
             value:
-              stats.avgScore > 0 ? `${stats.avgScore.toFixed(1)} / 100` : "—",
+              profile.role === "candidate"
+                ? (() => {
+                    const official = sessions.find(
+                      (s) => !s.is_practice && s.phase === "submitted"
+                    );
+                    if (!official) return "Not Submitted";
+                    const sc = Array.isArray(official.scorecard)
+                      ? official.scorecard[0]
+                      : official.scorecard;
+                    if (!sc || !sc.score_released) return "Under Review";
+                    return sc.evaluator_decision === "passed"
+                      ? "Passed"
+                      : sc.evaluator_decision === "rejected"
+                      ? "Not Selected"
+                      : "Reviewed";
+                  })()
+                : stats.avgScore > 0
+                ? `${stats.avgScore.toFixed(1)} / 100`
+                : "—",
             icon: Award,
             color: "text-emerald-500",
           },
@@ -336,7 +360,7 @@ export function ProfileClient({
                     <th className="px-4 py-3">Language</th>
                     <th className="px-4 py-3">Status</th>
                     <th className="px-4 py-3">Tokens Used</th>
-                    <th className="px-4 py-3">Score Status</th>
+                    <th className="px-4 py-3">Outcome</th>
                     <th className="px-4 py-3 text-right">Action</th>
                   </tr>
                 </thead>
@@ -396,16 +420,26 @@ export function ProfileClient({
                           {formatNumber(s.tokens_used)} /{" "}
                           {formatNumber(s.token_budget)}
                         </td>
-                        <td className="tabular-nums px-4 py-3 font-mono text-xs font-bold">
+                        <td className="px-4 py-3 text-xs font-bold">
                           {sc ? (
                             isReleased ? (
-                              <span className="text-emerald-500">
-                                {Number(sc.total_score).toFixed(1)} / 100
+                              <span
+                                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+                                  sc.evaluator_decision === "rejected"
+                                    ? "bg-red-500/15 text-red-500"
+                                    : "bg-emerald-500/15 text-emerald-500"
+                                }`}
+                              >
+                                {sc.evaluator_decision === "passed"
+                                  ? "Passed"
+                                  : sc.evaluator_decision === "rejected"
+                                  ? "Not Selected"
+                                  : "Feedback Ready"}
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2.5 py-0.5 font-sans text-[11px] font-semibold text-amber-500">
+                              <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2.5 py-0.5 text-[11px] font-semibold text-amber-500">
                                 <Lock className="h-3 w-3" />
-                                Under Evaluator Review
+                                Under Review
                               </span>
                             )
                           ) : (
@@ -418,7 +452,7 @@ export function ProfileClient({
                               href={`/assess/${s.id}`}
                               className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--accent)] hover:underline"
                             >
-                              {isReleased ? "View Score Report" : "View Status"}
+                              {isReleased ? "View Feedback" : "View Status"}
                               <ArrowRight className="h-3.5 w-3.5" />
                             </Link>
                           ) : isPractice ? (

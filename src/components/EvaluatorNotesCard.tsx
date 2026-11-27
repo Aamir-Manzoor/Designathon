@@ -4,97 +4,103 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ClipboardCheck,
-  Save,
-  Send,
   CheckCircle2,
+  XCircle,
   Loader2,
+  Send,
 } from "lucide-react";
 
 export function EvaluatorNotesCard({
   sessionId,
   initialNotes,
-  initialScore,
-  initialReleased = false,
+  initialDecision = null,
 }: {
   sessionId: string;
   initialNotes: string | null;
-  initialScore?: number;
-  initialReleased?: boolean;
+  initialDecision?: "passed" | "rejected" | null;
 }) {
   const router = useRouter();
   const [notes, setNotes] = useState(initialNotes || "");
-  const [scoreInput, setScoreInput] = useState(
-    typeof initialScore === "number" ? String(initialScore) : ""
+  const [decision, setDecision] = useState<"passed" | "rejected" | null>(
+    initialDecision
   );
-  const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [released, setReleased] = useState(initialReleased);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function saveEvaluation(submitAndNotify: boolean) {
+  async function handleSubmitEvaluation(e: React.FormEvent) {
+    e.preventDefault();
     setError(null);
     setStatusMsg(null);
-    if (submitAndNotify) setSubmitting(true);
-    else setSaving(true);
 
-    const parsedScore =
-      scoreInput.trim() !== "" ? Number(scoreInput.trim()) : undefined;
-    if (
-      parsedScore !== undefined &&
-      (Number.isNaN(parsedScore) || parsedScore < 0 || parsedScore > 100)
-    ) {
-      setError("Final score must be a number between 0 and 100.");
-      setSaving(false);
-      setSubmitting(false);
+    if (!decision) {
+      setError("Please select Pass or Reject before submitting.");
+      return;
+    }
+    if (notes.trim().length < 5) {
+      setError("Please provide written evaluator feedback for the candidate.");
       return;
     }
 
+    setSubmitting(true);
     try {
       const res = await fetch(`/api/scorecards/${sessionId}/notes`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          evaluator_notes: notes,
-          total_score: parsedScore,
-          submit_and_notify: submitAndNotify,
+          evaluator_notes: notes.trim(),
+          evaluator_decision: decision,
         }),
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "Could not save evaluation");
+        setError(data.error || "Could not submit evaluation");
       } else {
-        if (submitAndNotify) {
-          setReleased(true);
-          setStatusMsg(
-            `Evaluation submitted & candidate notified via email (${
-              data.delivery_status || "dispatched"
-            }).`
-          );
-          router.refresh();
-        } else {
-          setStatusMsg("Draft review notes saved to scorecard.");
-        }
+        setStatusMsg(
+          `Evaluation submitted (${
+            decision === "passed" ? "Passed" : "Rejected"
+          }). Admin can now release the feedback report to the candidate.`
+        );
+        router.refresh();
       }
     } catch {
-      setError("Network error saving evaluation");
+      setError("Network error submitting evaluation");
     } finally {
-      setSaving(false);
       setSubmitting(false);
     }
   }
 
   return (
-    <div className="surface-card rounded-2xl p-6">
+    <form
+      onSubmit={handleSubmitEvaluation}
+      className="surface-card rounded-2xl p-6"
+    >
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="flex items-center gap-2 text-base font-bold text-[var(--text-primary)]">
-          <ClipboardCheck className="h-4 w-4 text-[var(--accent)]" />
-          Evaluator Score &amp; Review Sign-Off
-        </h2>
-        {released && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-xs font-semibold text-emerald-500">
-            <CheckCircle2 className="h-3.5 w-3.5" />
-            Evaluated &amp; Candidate Notified
+        <div>
+          <h2 className="flex items-center gap-2 text-base font-bold text-[var(--text-primary)]">
+            <ClipboardCheck className="h-4 w-4 text-[var(--accent)]" />
+            Evaluator Decision &amp; Candidate Feedback
+          </h2>
+          <p className="mt-0.5 text-xs text-[var(--text-muted)]">
+            Select Pass or Reject and write feedback. The candidate will ONLY
+            see your decision and feedback (never numeric scores) once the Admin
+            releases the report.
+          </p>
+        </div>
+        {decision && (
+          <span
+            className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${
+              decision === "passed"
+                ? "bg-emerald-500/15 text-emerald-500"
+                : "bg-red-500/15 text-red-500"
+            }`}
+          >
+            {decision === "passed" ? (
+              <CheckCircle2 className="h-3.5 w-3.5" />
+            ) : (
+              <XCircle className="h-3.5 w-3.5" />
+            )}
+            {decision === "passed" ? "Passed" : "Rejected"}
           </span>
         )}
       </div>
@@ -112,65 +118,62 @@ export function EvaluatorNotesCard({
         </div>
       )}
 
-      <div className="mt-4 grid gap-4 sm:grid-cols-4">
-        <div className="sm:col-span-1">
-          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-            Final Score (/ 100)
-          </label>
-          <input
-            type="number"
-            min={0}
-            max={100}
-            step={0.1}
-            value={scoreInput}
-            onChange={(e) => setScoreInput(e.target.value)}
-            className="tabular-nums w-full rounded-xl border border-[var(--border-strong)] bg-[var(--surface-2)] px-3.5 py-2.5 font-mono text-sm font-bold text-[var(--text-primary)] focus:border-[var(--accent)] focus:bg-[var(--surface-1)] focus:outline-none"
-          />
-        </div>
-        <div className="sm:col-span-3">
-          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-            Evaluator Review Notes
-          </label>
-          <textarea
-            rows={3}
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Add qualitative review feedback, hiring recommendation, or notes on prompt discipline and debugging..."
-            className="w-full rounded-xl border border-[var(--border-strong)] bg-[var(--surface-2)] p-3 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-[var(--accent)] focus:bg-[var(--surface-1)] focus:outline-none"
-          />
-        </div>
-      </div>
-
-      <div className="mt-4 flex flex-wrap justify-end gap-2.5">
+      {/* Pass / Reject Selector */}
+      <div className="mt-4 flex flex-wrap gap-3">
         <button
           type="button"
-          onClick={() => saveEvaluation(false)}
-          disabled={saving || submitting}
-          className="btn-tactile inline-flex items-center gap-1.5 rounded-xl border border-[var(--border-strong)] bg-[var(--surface-2)] px-4 py-2 text-xs font-semibold text-[var(--text-primary)] hover:border-[var(--accent)] disabled:opacity-60"
+          onClick={() => setDecision("passed")}
+          className={`btn-tactile inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-bold transition-colors ${
+            decision === "passed"
+              ? "border-emerald-500 bg-emerald-600 text-white shadow-sm"
+              : "border-[var(--border-strong)] bg-[var(--surface-2)] text-[var(--text-secondary)] hover:border-emerald-500/60"
+          }`}
         >
-          {saving ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          ) : (
-            <Save className="h-3.5 w-3.5" />
-          )}
-          Save Draft Notes
+          <CheckCircle2 className="h-4 w-4" />
+          Pass Candidate
         </button>
         <button
           type="button"
-          onClick={() => saveEvaluation(true)}
-          disabled={saving || submitting}
-          className="btn-tactile inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-500 disabled:opacity-60"
+          onClick={() => setDecision("rejected")}
+          className={`btn-tactile inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-bold transition-colors ${
+            decision === "rejected"
+              ? "border-red-500 bg-red-600 text-white shadow-sm"
+              : "border-[var(--border-strong)] bg-[var(--surface-2)] text-[var(--text-secondary)] hover:border-red-500/60"
+          }`}
+        >
+          <XCircle className="h-4 w-4" />
+          Reject Candidate
+        </button>
+      </div>
+
+      <div className="mt-4">
+        <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+          Candidate-Facing Evaluator Feedback
+        </label>
+        <textarea
+          rows={3}
+          required
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Write clear, constructive feedback on prompt clarity, problem-solving, and debugging (this message will be shown to the candidate when Admin releases the report)..."
+          className="w-full rounded-xl border border-[var(--border-strong)] bg-[var(--surface-2)] p-3 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-[var(--accent)] focus:bg-[var(--surface-1)] focus:outline-none"
+        />
+      </div>
+
+      <div className="mt-4 flex justify-end">
+        <button
+          type="submit"
+          disabled={submitting || !decision}
+          className="btn-tactile inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent)] px-5 py-2.5 text-xs font-semibold text-[var(--accent-fg)] hover:opacity-95 disabled:opacity-50"
         >
           {submitting ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
           ) : (
             <Send className="h-3.5 w-3.5" />
           )}
-          {released
-            ? "Update Score & Re-Email Candidate"
-            : "Submit Score & Email Candidate"}
+          Submit Evaluation to Admin
         </button>
       </div>
-    </div>
+    </form>
   );
 }
