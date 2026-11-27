@@ -497,12 +497,12 @@ export function AssessmentWorkspace({
             Your official score report will be released soon by the Assessment
             Admin after Evaluator review.
           </div>
-          <div className="mt-7">
+          <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
             <Link
-              href="/dashboard"
+              href="/profile"
               className="btn-tactile inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-6 py-2.5 text-sm font-semibold text-[var(--accent-fg)]"
             >
-              Return to Candidate Portal
+              View Profile &amp; Assessment Status
             </Link>
           </div>
         </div>
@@ -573,12 +573,12 @@ export function AssessmentWorkspace({
                 Assessment Admin. A confirmation email has been queued for{" "}
                 <span className="font-mono">{session.candidate_email}</span>.
               </div>
-              <div className="mt-7">
+              <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
                 <Link
-                  href="/dashboard"
+                  href="/profile"
                   className="btn-tactile inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-6 py-2.5 text-sm font-semibold text-[var(--accent-fg)]"
                 >
-                  Return to Candidate Dashboard
+                  View Profile &amp; Assessment Status
                 </Link>
               </div>
             </div>
@@ -716,7 +716,7 @@ export function AssessmentWorkspace({
             ) : (
               <Send className="h-3.5 w-3.5" />
             )}
-            Submit &amp; Score
+            {submitting ? "Submitting..." : "Submit"}
           </button>
 
           <button

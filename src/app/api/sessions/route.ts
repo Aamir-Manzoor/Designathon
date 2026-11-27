@@ -43,6 +43,7 @@ export async function POST(request: Request) {
   const body = (await request.json()) as {
     challenge_id?: string;
     language?: SupportedLanguage;
+    is_practice?: boolean;
   };
 
   if (!body.challenge_id) {
@@ -54,6 +55,7 @@ export async function POST(request: Request) {
 
   const language: SupportedLanguage =
     body.language === "javascript" ? "javascript" : "python";
+  const isPractice = Boolean(body.is_practice);
 
   const [{ data: profile }, { data: challenge, error: chError }] =
     await Promise.all([
@@ -67,6 +69,40 @@ export async function POST(request: Request) {
 
   if (chError || !challenge) {
     return NextResponse.json({ error: "Challenge not found" }, { status: 404 });
+  }
+
+  // Enforce single-attempt lock for candidates on official exams (practice sessions remain allowed)
+  if (!isPractice && profile?.role === "candidate") {
+    const { data: existingOfficial } = await supabase
+      .from("candidate_sessions")
+      .select("id, phase")
+      .eq("user_id", user.id)
+      .eq("is_practice", false)
+      .eq("phase", "submitted")
+      .limit(1);
+
+    if (existingOfficial && existingOfficial.length > 0) {
+      return NextResponse.json(
+        {
+          error:
+            "Exam already submitted. You cannot start the official assessment again — visit your Profile to view your assessment status.",
+        },
+        { status: 403 }
+      );
+    }
+  }
+
+  // Inherit pre-assigned evaluator from candidate_applications if Admin assigned one
+  let assignedEvaluatorId: string | null = null;
+  if (!isPractice) {
+    const { data: appMatch } = await supabase
+      .from("candidate_applications")
+      .select("assigned_evaluator_id")
+      .or(`user_id.eq.${user.id},email.ilike.${profile?.email || user.email || ""}`)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    assignedEvaluatorId = appMatch?.assigned_evaluator_id ?? null;
   }
 
   const starterCode =
@@ -83,6 +119,8 @@ export async function POST(request: Request) {
       candidate_name: profile?.full_name || user.email?.split("@")[0] || "Candidate",
       candidate_email: profile?.email || user.email || "",
       is_synthetic: false,
+      is_practice: isPractice,
+      assigned_evaluator_id: assignedEvaluatorId,
       language,
       phase: "coding",
       current_code: starterCode,

@@ -942,6 +942,7 @@ export function AdminConsoleClient({
         <ApplicantsInvitesPanel
           applications={applications}
           challenges={challenges}
+          evaluators={evaluators}
           emails={emails}
         />
       )}

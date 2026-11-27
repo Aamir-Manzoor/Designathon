@@ -20,10 +20,17 @@ export default async function ProfilePage() {
   const isAdminOrEvaluator =
     profile?.role === "admin" || profile?.role === "evaluator";
 
-  // Admins see all sessions; Evaluators see their assigned batch (via RLS); Candidates see their own
+  // Admins see all sessions; Evaluators see their assigned batch (via RLS); Candidates see their own full history
   const sessionsQuery = supabase
     .from("candidate_sessions")
-    .select("tokens_used, tokens_saved, scorecard:scorecards(total_score)");
+    .select(
+      `
+        id, phase, is_practice, language, tokens_used, tokens_saved, token_budget, started_at,
+        challenge:challenges(title, difficulty),
+        scorecard:scorecards(total_score, score_released, evaluator_reviewed_at)
+      `
+    )
+    .order("started_at", { ascending: false });
 
   const { data: sessions } = isAdminOrEvaluator
     ? await sessionsQuery
@@ -66,7 +73,11 @@ export default async function ProfilePage() {
         userEmail={safeProfile.email}
         role={safeProfile.role}
       />
-      <ProfileClient profile={safeProfile} stats={stats} />
+      <ProfileClient
+        profile={safeProfile}
+        stats={stats}
+        sessions={safeProfile.role === "candidate" ? (rows as never[]) : []}
+      />
     </div>
   );
 }

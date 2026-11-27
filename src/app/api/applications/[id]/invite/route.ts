@@ -32,11 +32,17 @@ export async function POST(
 
   const body = (await request.json()) as {
     assigned_challenge_ids?: string[];
+    assigned_evaluator_id?: string | null;
   };
 
   const challengeIds = Array.isArray(body.assigned_challenge_ids)
     ? body.assigned_challenge_ids.filter(Boolean)
     : [];
+  const assignedEvaluatorId =
+    typeof body.assigned_evaluator_id === "string" &&
+    body.assigned_evaluator_id.trim().length > 0
+      ? body.assigned_evaluator_id.trim()
+      : null;
 
   if (challengeIds.length === 0) {
     return NextResponse.json(
@@ -72,6 +78,7 @@ export async function POST(
       status: appRow.status === "registered" ? "registered" : "invited",
       invite_token: inviteToken,
       assigned_challenge_ids: challengeIds,
+      assigned_evaluator_id: assignedEvaluatorId,
       invited_at: new Date().toISOString(),
     })
     .eq("id", id)

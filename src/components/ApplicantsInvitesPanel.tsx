@@ -10,6 +10,8 @@ import {
   UserPlus,
   Loader2,
   ExternalLink,
+  Shuffle,
+  UserCheck,
 } from "lucide-react";
 
 export interface ApplicantRow {
@@ -22,6 +24,7 @@ export interface ApplicantRow {
   status: "pending" | "invited" | "registered";
   invite_token: string | null;
   assigned_challenge_ids: string[];
+  assigned_evaluator_id?: string | null;
   invited_at: string | null;
   created_at: string;
 }
@@ -41,10 +44,12 @@ export interface EmailNotificationRow {
 export function ApplicantsInvitesPanel({
   applications,
   challenges,
+  evaluators = [],
   emails,
 }: {
   applications: ApplicantRow[];
   challenges: Array<{ id: string; title: string; difficulty: string }>;
+  evaluators?: Array<{ id: string; full_name: string; email: string }>;
   emails: EmailNotificationRow[];
 }) {
   const router = useRouter();
@@ -59,6 +64,16 @@ export function ApplicantsInvitesPanel({
           : challenges[0]
           ? [challenges[0].id]
           : [],
+      ])
+    )
+  );
+  const [selectedEvaluators, setSelectedEvaluators] = useState<
+    Record<string, string>
+  >(() =>
+    Object.fromEntries(
+      applications.map((a) => [
+        a.id,
+        a.assigned_evaluator_id || evaluators[0]?.id || "",
       ])
     )
   );
@@ -78,6 +93,36 @@ export function ApplicantsInvitesPanel({
     });
   }
 
+  function assignRandomChallenge(appId: string) {
+    if (challenges.length === 0) return;
+    const pool = challenges.map((c) => c.id);
+    const randomId = pool[Math.floor(Math.random() * pool.length)];
+    setSelectedChallenges((prev) => ({
+      ...prev,
+      [appId]: [randomId],
+    }));
+    const picked = challenges.find((c) => c.id === randomId);
+    setStatusMsg(
+      `Randomly selected "${picked?.title || "Challenge"}" (${
+        picked?.difficulty || ""
+      }). Click Approve & Send Access Link to save.`
+    );
+  }
+
+  function assignRandomToAll() {
+    if (challenges.length === 0) return;
+    const next: Record<string, string[]> = {};
+    applications.forEach((a) => {
+      const randomId =
+        challenges[Math.floor(Math.random() * challenges.length)].id;
+      next[a.id] = [randomId];
+    });
+    setSelectedChallenges(next);
+    setStatusMsg(
+      `Assigned a random hidden challenge to all ${applications.length} applicant(s). Click Approve & Send on each to dispatch.`
+    );
+  }
+
   async function handleSendInvite(appId: string) {
     const ids = selectedChallenges[appId] || [];
     if (ids.length === 0) {
@@ -90,14 +135,17 @@ export function ApplicantsInvitesPanel({
       const res = await fetch(`/api/applications/${appId}/invite`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ assigned_challenge_ids: ids }),
+        body: JSON.stringify({
+          assigned_challenge_ids: ids,
+          assigned_evaluator_id: selectedEvaluators[appId] || null,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
         setStatusMsg(data.error || "Could not send invite");
       } else {
         setStatusMsg(
-          `Access link generated and logged to Email Outbox (${data.delivery_status}).`
+          `Access link, challenge(s), and evaluator saved & emailed (${data.delivery_status}).`
         );
         router.refresh();
       }
@@ -128,15 +176,27 @@ export function ApplicantsInvitesPanel({
               their personal registration access link.
             </p>
           </div>
-          <a
-            href="/apply"
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-strong)] bg-[var(--surface-2)] px-3 py-1.5 text-xs font-semibold text-[var(--accent)] hover:border-[var(--accent)]"
-          >
-            Open Public /apply Form
-            <ExternalLink className="h-3.5 w-3.5" />
-          </a>
+          <div className="flex flex-wrap items-center gap-2">
+            {applications.length > 0 && challenges.length > 0 && (
+              <button
+                type="button"
+                onClick={assignRandomToAll}
+                className="btn-tactile inline-flex items-center gap-1.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-xs font-semibold text-cyan-500 hover:bg-cyan-500/20"
+              >
+                <Shuffle className="h-3.5 w-3.5" />
+                Assign Random Challenges to All
+              </button>
+            )}
+            <a
+              href="/apply"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-strong)] bg-[var(--surface-2)] px-3 py-1.5 text-xs font-semibold text-[var(--accent)] hover:border-[var(--accent)]"
+            >
+              Open Public /apply Form
+              <ExternalLink className="h-3.5 w-3.5" />
+            </a>
+          </div>
         </div>
 
         {statusMsg && (
@@ -228,10 +288,46 @@ export function ApplicantsInvitesPanel({
                     </div>
                   </div>
 
-                  {/* Challenge Assignment Checkboxes */}
+                  {/* Challenge & Evaluator Assignment */}
                   <div className="mt-3 border-t border-[var(--border-subtle)] pt-3">
-                    <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-                      Assign Challenges ({assigned.length} selected)
+                    <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                      <div className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+                        Assign Sealed Challenges ({assigned.length} of{" "}
+                        {challenges.length} selected)
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => assignRandomChallenge(app.id)}
+                          className="btn-tactile inline-flex items-center gap-1 rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-1 text-[11px] font-semibold text-cyan-500 hover:bg-cyan-500/20"
+                        >
+                          <Shuffle className="h-3 w-3" />
+                          Pick Random Challenge
+                        </button>
+                        {evaluators.length > 0 && (
+                          <label className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[var(--text-muted)]">
+                            <UserCheck className="h-3.5 w-3.5 text-[var(--accent)]" />
+                            Evaluator:
+                            <select
+                              value={selectedEvaluators[app.id] || ""}
+                              onChange={(e) =>
+                                setSelectedEvaluators((prev) => ({
+                                  ...prev,
+                                  [app.id]: e.target.value,
+                                }))
+                              }
+                              className="rounded-lg border border-[var(--border-strong)] bg-[var(--surface-1)] px-2 py-1 text-xs font-medium text-[var(--text-primary)]"
+                            >
+                              <option value="">Unassigned</option>
+                              {evaluators.map((ev) => (
+                                <option key={ev.id} value={ev.id}>
+                                  {ev.full_name}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                        )}
+                      </div>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {challenges.map((ch) => {
@@ -251,7 +347,10 @@ export function ApplicantsInvitesPanel({
                               onChange={() => toggleChallenge(app.id, ch.id)}
                               className="h-3.5 w-3.5 accent-[var(--accent)]"
                             />
-                            {ch.title}
+                            <span>{ch.title}</span>
+                            <span className="text-[10px] opacity-70">
+                              ({ch.difficulty})
+                            </span>
                           </label>
                         );
                       })}
@@ -271,9 +370,8 @@ export function ApplicantsInvitesPanel({
           Email Notifications Outbox ({emails.length})
         </h2>
         <p className="mt-1 text-xs text-[var(--text-muted)]">
-          Every invite link, submission confirmation, and score-release email is
-          logged here (and sent live via Resend when{" "}
-          <code className="font-mono">RESEND_API_KEY</code> is configured).
+          Every invite link, submission confirmation, and evaluator score-release
+          email is dispatched via Gmail SMTP and archived here.
         </p>
 
         {emails.length === 0 ? (

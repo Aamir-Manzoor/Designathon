@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { ThemeSwitcher } from "./ThemeProvider";
 import {
   ArrowLeft,
+  ArrowRight,
   User,
   Shield,
   Mail,
@@ -21,10 +22,35 @@ import {
   Gauge,
   Sparkles,
   Calendar,
+  Bug,
+  ClipboardList,
 } from "lucide-react";
 import { formatNumber } from "@/lib/utils";
 
 import type { UserRole } from "@/types/assessment";
+
+interface CandidateSessionRow {
+  id: string;
+  phase: string;
+  is_practice?: boolean;
+  language: string;
+  tokens_used: number;
+  token_budget: number;
+  started_at: string;
+  challenge: { title: string; difficulty: string } | null;
+  scorecard:
+    | Array<{
+        total_score: number;
+        score_released?: boolean;
+        evaluator_reviewed_at?: string | null;
+      }>
+    | {
+        total_score: number;
+        score_released?: boolean;
+        evaluator_reviewed_at?: string | null;
+      }
+    | null;
+}
 
 interface ProfileClientProps {
   profile: {
@@ -40,6 +66,7 @@ interface ProfileClientProps {
     totalTokensUsed: number;
     totalTokensSaved: number;
   };
+  sessions?: CandidateSessionRow[];
 }
 
 function maskEmail(email: string): string {
@@ -51,7 +78,11 @@ function maskEmail(email: string): string {
   }@${domain}`;
 }
 
-export function ProfileClient({ profile, stats }: ProfileClientProps) {
+export function ProfileClient({
+  profile,
+  stats,
+  sessions = [],
+}: ProfileClientProps) {
   const router = useRouter();
   const [fullName, setFullName] = useState(profile.full_name || "");
   const [showEmail, setShowEmail] = useState(false);
@@ -270,6 +301,150 @@ export function ProfileClient({ profile, stats }: ProfileClientProps) {
           </div>
         ))}
       </div>
+
+      {/* Candidate Assessment History & Status (moved from Start Test page) */}
+      {profile.role === "candidate" && (
+        <div className="mt-8">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <h2 className="flex items-center gap-2 text-lg font-bold text-[var(--text-primary)]">
+              <ClipboardList className="h-5 w-5 text-[var(--accent)]" />
+              Assessment History &amp; Score Status
+            </h2>
+            <span className="text-xs text-[var(--text-muted)]">
+              Official tests are single-attempt · Practice sandboxes can be resumed
+            </span>
+          </div>
+
+          {sessions.length === 0 ? (
+            <div className="surface-card rounded-2xl p-8 text-center text-xs text-[var(--text-muted)]">
+              You have not started any assessments yet. Visit the{" "}
+              <Link
+                href="/dashboard"
+                className="font-semibold text-[var(--accent)] hover:underline"
+              >
+                Candidate Assessment Portal
+              </Link>{" "}
+              to begin.
+            </div>
+          ) : (
+            <div className="surface-card overflow-x-auto rounded-2xl">
+              <table className="w-full min-w-[680px] text-left text-sm">
+                <thead className="border-b border-[var(--border-subtle)] bg-[var(--surface-2)] text-xs uppercase text-[var(--text-muted)]">
+                  <tr>
+                    <th className="px-4 py-3">Assessment</th>
+                    <th className="px-4 py-3">Type</th>
+                    <th className="px-4 py-3">Language</th>
+                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3">Tokens Used</th>
+                    <th className="px-4 py-3">Score Status</th>
+                    <th className="px-4 py-3 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--border-subtle)]">
+                  {sessions.map((s) => {
+                    const sc = Array.isArray(s.scorecard)
+                      ? s.scorecard[0]
+                      : s.scorecard;
+                    const isReleased = sc ? Boolean(sc.score_released) : false;
+                    const isPractice = Boolean(s.is_practice);
+
+                    return (
+                      <tr
+                        key={s.id}
+                        className="transition-colors hover:bg-[var(--surface-2)]/60"
+                      >
+                        <td className="px-4 py-3 font-semibold text-[var(--text-primary)]">
+                          {isPractice
+                            ? s.challenge?.title || "Practice Sandbox"
+                            : s.phase === "submitted"
+                            ? s.challenge?.title || "Official Assessment"
+                            : "Official Timed Assessment"}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+                              isPractice
+                                ? "bg-cyan-500/15 text-cyan-500"
+                                : "bg-[var(--accent-soft)] text-[var(--accent)]"
+                            }`}
+                          >
+                            {isPractice ? "Practice" : "Official Exam"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 capitalize text-[var(--text-secondary)]">
+                          {s.language}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                              s.phase === "submitted"
+                                ? "bg-emerald-500/15 text-emerald-500"
+                                : s.phase === "debugging"
+                                ? "bg-amber-500/15 text-amber-500"
+                                : "bg-[var(--accent-soft)] text-[var(--accent)]"
+                            }`}
+                          >
+                            {s.phase === "submitted" ? (
+                              <CheckCircle2 className="h-3 w-3" />
+                            ) : s.phase === "debugging" ? (
+                              <Bug className="h-3 w-3" />
+                            ) : null}
+                            {s.phase === "submitted" ? "Submitted" : s.phase}
+                          </span>
+                        </td>
+                        <td className="tabular-nums px-4 py-3 font-mono text-xs text-[var(--text-secondary)]">
+                          {formatNumber(s.tokens_used)} /{" "}
+                          {formatNumber(s.token_budget)}
+                        </td>
+                        <td className="tabular-nums px-4 py-3 font-mono text-xs font-bold">
+                          {sc ? (
+                            isReleased ? (
+                              <span className="text-emerald-500">
+                                {Number(sc.total_score).toFixed(1)} / 100
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2.5 py-0.5 font-sans text-[11px] font-semibold text-amber-500">
+                                <Lock className="h-3 w-3" />
+                                Under Evaluator Review
+                              </span>
+                            )
+                          ) : (
+                            "—"
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          {s.phase === "submitted" ? (
+                            <Link
+                              href={`/assess/${s.id}`}
+                              className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--accent)] hover:underline"
+                            >
+                              {isReleased ? "View Score Report" : "View Status"}
+                              <ArrowRight className="h-3.5 w-3.5" />
+                            </Link>
+                          ) : isPractice ? (
+                            <Link
+                              href={`/assess/${s.id}`}
+                              className="inline-flex items-center gap-1 text-xs font-semibold text-cyan-500 hover:underline"
+                            >
+                              Resume Practice
+                              <ArrowRight className="h-3.5 w-3.5" />
+                            </Link>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-xs font-medium text-[var(--text-muted)]">
+                              <Lock className="h-3 w-3" />
+                              No Resume
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Settings Forms */}
       <div className="mt-6 grid gap-6 lg:grid-cols-2">

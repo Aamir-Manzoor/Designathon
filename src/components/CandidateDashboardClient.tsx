@@ -23,6 +23,7 @@ import { formatNumber } from "@/lib/utils";
 interface SessionSummary {
   id: string;
   phase: string;
+  is_practice?: boolean;
   language: string;
   tokens_used: number;
   token_budget: number;
@@ -55,11 +56,24 @@ export function CandidateDashboardClient({
 
   // Pick the next assigned/official challenge without revealing its title or statement before start
   const primaryChallenge = challenges[0] || null;
-  // Optional warm-up challenge (uses the Easy challenge if available, marked as practice)
+  // Optional warm-up challenge (uses an Easy challenge if available, marked as practice)
   const practiceChallenge =
-    challenges.find((c) => c.difficulty === "Easy") || challenges[challenges.length - 1] || null;
+    challenges.find((c) => c.difficulty === "Easy") ||
+    challenges[challenges.length - 1] ||
+    null;
 
-  async function launchChallenge(challengeId: string) {
+  // Single-attempt lock: once an official exam is submitted, candidate cannot start it again
+  const submittedOfficialSession = sessions.find(
+    (s) => !s.is_practice && s.phase === "submitted"
+  );
+  const hasSubmittedOfficial = Boolean(submittedOfficialSession);
+
+  // Resume is ONLY allowed for Practice tests, never for Official tests
+  const activePracticeSession = sessions.find(
+    (s) => Boolean(s.is_practice) && s.phase !== "submitted"
+  );
+
+  async function launchChallenge(challengeId: string, isPractice: boolean) {
     setError(null);
     setLaunching(true);
 
@@ -70,6 +84,7 @@ export function CandidateDashboardClient({
         body: JSON.stringify({
           challenge_id: challengeId,
           language: selectedLang,
+          is_practice: isPractice,
         }),
       });
       const data = await res.json();
@@ -236,7 +251,7 @@ export function CandidateDashboardClient({
             <button
               type="button"
               disabled={!agreedRules || launching}
-              onClick={() => launchChallenge(primaryChallenge.id)}
+              onClick={() => launchChallenge(primaryChallenge.id, false)}
               className="btn-tactile inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-6 py-2.5 text-sm font-semibold text-[var(--accent-fg)] shadow-sm hover:opacity-95 disabled:opacity-50"
             >
               {launching ? (
@@ -253,14 +268,21 @@ export function CandidateDashboardClient({
   }
 
   return (
-    <div className="mx-auto max-w-[1600px] px-6 py-7">
-      <div className="mb-4">
+    <div className="mx-auto max-w-[1600px] px-4 py-7 sm:px-6">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <Link
           href="/"
           className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)]"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           Back to Home
+        </Link>
+        <Link
+          href="/profile"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--accent)] hover:underline"
+        >
+          View Profile &amp; Assessment Status
+          <ArrowRight className="h-3.5 w-3.5" />
         </Link>
       </div>
 
@@ -270,7 +292,11 @@ export function CandidateDashboardClient({
         </h1>
         <p className="mt-1 text-sm text-[var(--text-muted)]">
           Actual assessment questions remain sealed until you read the
-          instructions and start your timed test.
+          instructions and start your timed test. Check your{" "}
+          <Link href="/profile" className="font-semibold text-[var(--accent)] hover:underline">
+            Profile
+          </Link>{" "}
+          for assessment history and score status.
         </p>
       </div>
 
@@ -283,61 +309,92 @@ export function CandidateDashboardClient({
       {/* Sealed Official Assessment + Practice Warm-Up */}
       <div className="grid gap-6 lg:grid-cols-12">
         {/* Official Sealed Assessment Card */}
-        <div className="surface-card flex flex-col justify-between rounded-2xl border-[var(--accent-border)] p-7 lg:col-span-7">
-          <div>
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-soft)] px-3 py-1 text-xs font-semibold text-[var(--accent)] ring-1 ring-[var(--accent-border)]">
-                <Lock className="h-3.5 w-3.5" />
-                Official Timed Assessment
-                {isAssignedScoped && assignedTrack ? ` · ${assignedTrack}` : ""}
+        <div className="surface-card flex flex-col justify-between rounded-2xl border-[var(--accent-border)] p-6 sm:p-7 lg:col-span-7">
+          {hasSubmittedOfficial ? (
+            <div>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-semibold text-emerald-500 ring-1 ring-emerald-500/30">
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                Exam Submitted
               </span>
-              {primaryChallenge && (
-                <div className="tabular-nums flex items-center gap-3 text-xs text-[var(--text-muted)]">
-                  <span className="flex items-center gap-1">
-                    <Clock className="h-3.5 w-3.5 text-[var(--accent)]" />
-                    {primaryChallenge.time_limit_minutes} min
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Gauge className="h-3.5 w-3.5 text-emerald-500" />
-                    {formatNumber(primaryChallenge.token_budget)} token budget
-                  </span>
-                </div>
-              )}
+              <h2 className="mt-4 text-2xl font-extrabold text-[var(--text-primary)]">
+                Your Official Assessment is Complete
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed text-[var(--text-muted)]">
+                You have already submitted your official timed assessment.
+                Re-attempts are disabled to maintain exam integrity. Once your
+                assigned Evaluator submits your score, you will receive an email
+                notification and your full report will appear in your Profile.
+              </p>
+              <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-[var(--border-subtle)] pt-5">
+                <Link
+                  href="/profile"
+                  className="btn-tactile inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-6 py-3 text-sm font-semibold text-[var(--accent-fg)] shadow-sm hover:opacity-95"
+                >
+                  View Profile &amp; Assessment Status
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
             </div>
+          ) : (
+            <>
+              <div>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-soft)] px-3 py-1 text-xs font-semibold text-[var(--accent)] ring-1 ring-[var(--accent-border)]">
+                    <Lock className="h-3.5 w-3.5" />
+                    Official Timed Assessment
+                    {isAssignedScoped && assignedTrack
+                      ? ` · ${assignedTrack}`
+                      : ""}
+                  </span>
+                  {primaryChallenge && (
+                    <div className="tabular-nums flex items-center gap-3 text-xs text-[var(--text-muted)]">
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-3.5 w-3.5 text-[var(--accent)]" />
+                        {primaryChallenge.time_limit_minutes} min
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Gauge className="h-3.5 w-3.5 text-emerald-500" />
+                        {formatNumber(primaryChallenge.token_budget)} token budget
+                      </span>
+                    </div>
+                  )}
+                </div>
 
-            <h2 className="mt-4 text-2xl font-extrabold text-[var(--text-primary)]">
-              AI-Assisted Coding &amp; Debugging Evaluation
-            </h2>
-            <p className="mt-2 text-sm leading-relaxed text-[var(--text-muted)]">
-              Includes {challenges.length} sealed challenge module(s) covering
-              prompt-driven code generation, automated test validation,
-              controlled bug debugging, and token-budget optimization. Problem
-              details unlock only after you confirm the instructions.
-            </p>
-          </div>
+                <h2 className="mt-4 text-2xl font-extrabold text-[var(--text-primary)]">
+                  AI-Assisted Coding &amp; Debugging Evaluation
+                </h2>
+                <p className="mt-2 text-sm leading-relaxed text-[var(--text-muted)]">
+                  Single-attempt timed evaluation covering prompt-driven code
+                  generation, automated test validation, controlled bug
+                  debugging, and token-budget optimization. Problem details
+                  unlock only after you confirm the instructions.
+                </p>
+              </div>
 
-          <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border-subtle)] pt-5">
-            <span className="text-xs text-[var(--text-muted)]">
-              Languages supported: <strong>Python 3</strong>,{" "}
-              <strong>JavaScript (Node.js)</strong>
-            </span>
-            <button
-              type="button"
-              disabled={!primaryChallenge}
-              onClick={() => {
-                setShowInstructions(true);
-                setAgreedRules(false);
-              }}
-              className="btn-tactile inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-6 py-3 text-sm font-semibold text-[var(--accent-fg)] shadow-sm hover:opacity-95 disabled:opacity-50"
-            >
-              <Play className="h-4 w-4" />
-              Review Instructions &amp; Start Test
-            </button>
-          </div>
+              <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border-subtle)] pt-5">
+                <span className="text-xs text-[var(--text-muted)]">
+                  Languages supported: <strong>Python 3</strong>,{" "}
+                  <strong>JavaScript (Node.js)</strong>
+                </span>
+                <button
+                  type="button"
+                  disabled={!primaryChallenge}
+                  onClick={() => {
+                    setShowInstructions(true);
+                    setAgreedRules(false);
+                  }}
+                  className="btn-tactile inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-6 py-3 text-sm font-semibold text-[var(--accent-fg)] shadow-sm hover:opacity-95 disabled:opacity-50"
+                >
+                  <Play className="h-4 w-4" />
+                  Review Instructions &amp; Start Test
+                </button>
+              </div>
+            </>
+          )}
         </div>
 
-        {/* Practice / Warm-up Card */}
-        <div className="surface-card flex flex-col justify-between rounded-2xl p-7 lg:col-span-5">
+        {/* Practice / Warm-up Card (only practice tests support Resume) */}
+        <div className="surface-card flex flex-col justify-between rounded-2xl p-6 sm:p-7 lg:col-span-5">
           <div>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-cyan-500/15 px-3 py-1 text-xs font-semibold text-cyan-500">
               <BookOpen className="h-3.5 w-3.5" />
@@ -348,17 +405,26 @@ export function CandidateDashboardClient({
             </h3>
             <p className="mt-2 text-xs leading-relaxed text-[var(--text-muted)]">
               Try out the Monaco editor, test runner, Live Token Budget Meter,
-              and prompt compression on a short warm-up exercise before starting
-              your official timed test.
+              and prompt compression on an ungraded warm-up exercise. Practice
+              sessions can be resumed anytime.
             </p>
           </div>
 
-          <div className="mt-6 border-t border-[var(--border-subtle)] pt-5">
+          <div className="mt-6 flex flex-col gap-2.5 border-t border-[var(--border-subtle)] pt-5">
+            {activePracticeSession && (
+              <Link
+                href={`/assess/${activePracticeSession.id}`}
+                className="btn-tactile flex w-full items-center justify-center gap-2 rounded-xl bg-cyan-500/15 px-4 py-2.5 text-xs font-semibold text-cyan-500 ring-1 ring-cyan-500/30 hover:bg-cyan-500/20"
+              >
+                Resume Practice Sandbox
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            )}
             <button
               type="button"
               disabled={!practiceChallenge || launching}
               onClick={() =>
-                practiceChallenge && launchChallenge(practiceChallenge.id)
+                practiceChallenge && launchChallenge(practiceChallenge.id, true)
               }
               className="btn-tactile flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--border-strong)] bg-[var(--surface-2)] px-4 py-2.5 text-xs font-semibold text-[var(--text-primary)] hover:border-[var(--accent)] disabled:opacity-50"
             >
@@ -367,106 +433,13 @@ export function CandidateDashboardClient({
               ) : (
                 <Sparkles className="h-4 w-4 text-cyan-500" />
               )}
-              Launch Practice Sandbox
+              {activePracticeSession
+                ? "Start New Practice Sandbox"
+                : "Launch Practice Sandbox"}
             </button>
           </div>
         </div>
       </div>
-
-      {/* Previous Candidate Sessions */}
-      {sessions.length > 0 && (
-        <div className="mt-12">
-          <h2 className="mb-4 text-lg font-bold text-[var(--text-primary)]">
-            Your Assessment History
-          </h2>
-          <div className="surface-card overflow-x-auto rounded-2xl">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-[var(--border-subtle)] bg-[var(--surface-2)] text-xs uppercase text-[var(--text-muted)]">
-                <tr>
-                  <th className="px-4 py-3">Assessment</th>
-                  <th className="px-4 py-3">Language</th>
-                  <th className="px-4 py-3">Phase</th>
-                  <th className="px-4 py-3">Tokens Used</th>
-                  <th className="px-4 py-3">Score Status</th>
-                  <th className="px-4 py-3 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--border-subtle)]">
-                {sessions.map((s) => {
-                  const sc = Array.isArray(s.scorecard)
-                    ? s.scorecard[0]
-                    : s.scorecard;
-                  const isReleased = sc ? Boolean(sc.score_released) : false;
-                  return (
-                    <tr
-                      key={s.id}
-                      className="transition-colors hover:bg-[var(--surface-2)]/60"
-                    >
-                      <td className="px-4 py-3 font-semibold text-[var(--text-primary)]">
-                        {s.challenge?.title || "Coding Assessment"}
-                      </td>
-                      <td className="px-4 py-3 capitalize text-[var(--text-secondary)]">
-                        {s.language}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                            s.phase === "submitted"
-                              ? "bg-emerald-500/15 text-emerald-500"
-                              : s.phase === "debugging"
-                              ? "bg-amber-500/15 text-amber-500"
-                              : "bg-[var(--accent-soft)] text-[var(--accent)]"
-                          }`}
-                        >
-                          {s.phase === "submitted" ? (
-                            <CheckCircle2 className="h-3 w-3" />
-                          ) : s.phase === "debugging" ? (
-                            <Bug className="h-3 w-3" />
-                          ) : null}
-                          {s.phase}
-                        </span>
-                      </td>
-                      <td className="tabular-nums px-4 py-3 font-mono text-xs text-[var(--text-secondary)]">
-                        {formatNumber(s.tokens_used)} /{" "}
-                        {formatNumber(s.token_budget)}
-                      </td>
-                      <td className="tabular-nums px-4 py-3 font-mono text-xs font-bold">
-                        {sc ? (
-                          isReleased ? (
-                            <span className="text-emerald-500">
-                              {Number(sc.total_score).toFixed(1)} / 100
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2.5 py-0.5 font-sans text-[11px] font-semibold text-amber-500">
-                              <Lock className="h-3 w-3" />
-                              Pending Admin Release
-                            </span>
-                          )
-                        ) : (
-                          "—"
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <Link
-                          href={`/assess/${s.id}`}
-                          className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--accent)] hover:underline"
-                        >
-                          {s.phase === "submitted"
-                            ? isReleased
-                              ? "View Score Report"
-                              : "View Status"
-                            : "Resume"}
-                          <ArrowRight className="h-3.5 w-3.5" />
-                        </Link>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

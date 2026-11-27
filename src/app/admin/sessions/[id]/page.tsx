@@ -114,6 +114,8 @@ export default async function AdminSessionReviewPage({
             <EvaluatorNotesCard
               sessionId={session.id}
               initialNotes={(scorecard as Scorecard).evaluator_notes}
+              initialScore={Number((scorecard as Scorecard).total_score)}
+              initialReleased={Boolean((scorecard as Scorecard).score_released)}
             />
           </>
         ) : (

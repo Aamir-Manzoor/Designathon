@@ -28,7 +28,7 @@ export default async function DashboardPage() {
       .from("candidate_sessions")
       .select(
         `
-          id, phase, language, tokens_used, token_budget, started_at,
+          id, phase, is_practice, language, tokens_used, token_budget, started_at,
           challenge:challenges(title, difficulty),
           scorecard:scorecards(total_score, score_released)
         `
