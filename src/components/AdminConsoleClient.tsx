@@ -370,7 +370,7 @@ export function AdminConsoleClient({
           {
             label: "Evaluated Candidates",
             value: String(normalizedSessions.length),
-            sub: `${normalizedSessions.filter((s) => s.is_synthetic).length} synthetic · ${normalizedSessions.filter((s) => !s.is_synthetic).length} live`,
+            sub: `${normalizedSessions.filter((s) => s.is_synthetic).length} benchmark · ${normalizedSessions.filter((s) => !s.is_synthetic).length} live`,
             icon: Users,
             iconBg: "bg-[var(--accent-soft)] border-[var(--accent-border)]",
             color: "text-[var(--accent)]",
@@ -615,7 +615,7 @@ export function AdminConsoleClient({
                           <span>{s.challenge?.title || "—"}</span>
                           {s.is_synthetic && (
                             <span className="rounded border border-[var(--border-subtle)] bg-[var(--surface-2)] px-1.5 py-0.5 text-[10px] text-[var(--text-muted)]">
-                              synthetic
+                              benchmark
                             </span>
                           )}
                         </div>

@@ -103,7 +103,7 @@ export async function GET() {
       email: s.candidate_email,
       challenge: s.challenge?.title || "—",
       language: s.language,
-      type: s.is_synthetic ? "Synthetic" : "Live",
+      type: s.is_synthetic ? "Benchmark" : "Live",
       pq: sc ? Number(sc.prompt_quality_score) : 0,
       pi: sc ? Number(sc.prompt_improvement_score) : 0,
       tc: sc ? Number(sc.test_cases_score) : 0,

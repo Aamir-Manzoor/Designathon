@@ -234,14 +234,14 @@ export function LandingShowcase({
               href="/login"
               className="btn-tactile inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-6 py-3.5 text-sm font-semibold text-[var(--accent-fg)] shadow-lg hover:opacity-95"
             >
-              Try Demo Accounts (Admin &amp; Candidate)
+              Launch Assessment Workspace
               <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
               href="/register"
               className="btn-tactile inline-flex items-center gap-2 rounded-xl border border-[var(--border-strong)] bg-[var(--surface-1)] px-6 py-3.5 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-2)]"
             >
-              Create New Account
+              Create Account
             </Link>
           </div>
 
@@ -769,7 +769,7 @@ export function LandingShowcase({
                 Evaluator Console &amp; Cost-vs-Correctness Analytics
               </div>
               <span className="rounded-full border border-[var(--border-subtle)] bg-[var(--surface-2)] px-2.5 py-0.5 font-mono text-[10px] text-[var(--text-muted)]">
-                5 Synthetic Candidates Pre-Loaded
+                Benchmark Cohort Analytics
               </span>
             </div>
             <h3 className="mt-2 text-xl font-bold">
@@ -786,7 +786,7 @@ export function LandingShowcase({
           </div>
         </section>
 
-        {/* PRE-LOADED SYNTHETIC COHORT SPOTLIGHT */}
+        {/* BENCHMARK COHORT SPOTLIGHT */}
         <section className="mt-20">
           <div className="mb-6 flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
             <div>
@@ -794,14 +794,14 @@ export function LandingShowcase({
                 Correctness vs. Token Efficiency
               </p>
               <h2 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">
-                5 Synthetic Candidate Scorecards Pre-Loaded
+                Benchmark Candidate Scorecards
               </h2>
             </div>
             <Link
               href="/login"
               className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--accent)] hover:underline"
             >
-              Inspect full cohort &amp; export .xlsx in Admin Console
+              Inspect full cohort &amp; export .xlsx in Evaluator Console
               <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>
@@ -810,11 +810,11 @@ export function LandingShowcase({
             <table className="w-full text-left text-xs">
               <thead className="border-b border-[var(--border-subtle)] bg-[var(--surface-2)] uppercase text-[var(--text-muted)]">
                 <tr>
-                  <th className="px-5 py-3.5">Candidate Persona</th>
+                  <th className="px-5 py-3.5">Candidate</th>
                   <th className="px-4 py-3.5 text-center">Score (/100)</th>
                   <th className="px-4 py-3.5">Token Burn (of 6,000)</th>
                   <th className="px-4 py-3.5">Tokens Saved</th>
-                  <th className="px-5 py-3.5">Key Takeaway</th>
+                  <th className="px-5 py-3.5">Evaluation Insight</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--border-subtle)]">
