@@ -22,7 +22,11 @@ import { ThemeSwitcher } from "./ThemeProvider";
 
 type PreviewTab = "ide" | "bug" | "scorecard";
 
-export function LandingShowcase() {
+export function LandingShowcase({
+  signedInRole = null,
+}: {
+  signedInRole?: "admin" | "candidate" | null;
+}) {
   const [previewTab, setPreviewTab] = useState<PreviewTab>("ide");
 
   return (
@@ -62,19 +66,33 @@ export function LandingShowcase() {
             <div className="hidden sm:block">
               <ThemeSwitcher />
             </div>
-            <Link
-              href="/login"
-              className="btn-tactile rounded-lg px-3.5 py-2 text-xs font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-2)] hover:text-[var(--text-primary)]"
-            >
-              Sign In
-            </Link>
-            <Link
-              href="/register"
-              className="btn-tactile inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-4 py-2 text-xs font-semibold text-[var(--accent-fg)] shadow-sm hover:opacity-95"
-            >
-              Launch Portal
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
+            {signedInRole ? (
+              <Link
+                href={signedInRole === "admin" ? "/admin" : "/dashboard"}
+                className="btn-tactile inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-4 py-2 text-xs font-semibold text-[var(--accent-fg)] shadow-sm hover:opacity-95"
+              >
+                {signedInRole === "admin"
+                  ? "Open Evaluator Console"
+                  : "Open Challenges"}
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="btn-tactile rounded-lg px-3.5 py-2 text-xs font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-2)] hover:text-[var(--text-primary)]"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/register"
+                  className="btn-tactile inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-4 py-2 text-xs font-semibold text-[var(--accent-fg)] shadow-sm hover:opacity-95"
+                >
+                  Launch Portal
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>

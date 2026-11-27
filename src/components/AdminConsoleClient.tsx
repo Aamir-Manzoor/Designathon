@@ -29,6 +29,7 @@ import {
   ShieldCheck,
   Activity,
   Save,
+  ArrowLeft,
 } from "lucide-react";
 import { estimateSessionCostUsd } from "@/lib/engines/ai-provider";
 import { formatNumber } from "@/lib/utils";
@@ -332,10 +333,20 @@ export function AdminConsoleClient({
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-6 py-8">
+    <div className="mx-auto max-w-[1600px] px-6 py-7">
+      <div className="mb-4">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)]"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Back to Home
+        </Link>
+      </div>
+
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--text-primary)]">
+          <h1 className="text-2xl font-extrabold tracking-tight text-[var(--text-primary)] sm:text-3xl">
             Admin &amp; Evaluator Console
           </h1>
           <p className="mt-1 text-sm text-[var(--text-muted)]">
@@ -353,14 +364,15 @@ export function AdminConsoleClient({
         </a>
       </div>
 
-      {/* KPI Cards */}
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Expanded KPI Cards */}
+      <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {[
           {
             label: "Evaluated Candidates",
             value: String(normalizedSessions.length),
             sub: `${normalizedSessions.filter((s) => s.is_synthetic).length} synthetic · ${normalizedSessions.filter((s) => !s.is_synthetic).length} live`,
             icon: Users,
+            iconBg: "bg-[var(--accent-soft)] border-[var(--accent-border)]",
             color: "text-[var(--accent)]",
           },
           {
@@ -368,6 +380,7 @@ export function AdminConsoleClient({
             value: `${avgScore.toFixed(1)} / 100`,
             sub: "Prompt + Tests + Debug",
             icon: Award,
+            iconBg: "bg-emerald-500/15 border-emerald-500/30",
             color: "text-emerald-500",
           },
           {
@@ -375,6 +388,7 @@ export function AdminConsoleClient({
             value: `$${totalCostUsd.toFixed(4)}`,
             sub: `Saved $${totalSavedUsd.toFixed(4)} via optimizer`,
             icon: DollarSign,
+            iconBg: "bg-amber-500/15 border-amber-500/30",
             color: "text-amber-500",
           },
           {
@@ -382,32 +396,39 @@ export function AdminConsoleClient({
             value: formatNumber(totalSavedTokens),
             sub: "Adaptive context reduction",
             icon: Sparkles,
+            iconBg: "bg-cyan-500/15 border-cyan-500/30",
             color: "text-cyan-500",
           },
         ].map((kpi) => (
-          <div key={kpi.label} className="surface-card rounded-2xl p-5">
-            <div className="flex items-center justify-between text-xs text-[var(--text-muted)]">
-              <span>{kpi.label}</span>
-              <kpi.icon className={`h-4 w-4 ${kpi.color}`} />
+          <div key={kpi.label} className="surface-card rounded-2xl p-6">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+                {kpi.label}
+              </span>
+              <div
+                className={`flex h-9 w-9 items-center justify-center rounded-xl border ${kpi.iconBg}`}
+              >
+                <kpi.icon className={`h-4 w-4 ${kpi.color}`} />
+              </div>
             </div>
-            <div className="tabular-nums mt-2 font-mono text-2xl font-bold text-[var(--text-primary)]">
+            <div className="tabular-nums mt-3 font-mono text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
               {kpi.value}
             </div>
-            <div className="mt-1 text-[11px] text-[var(--text-muted)]">
+            <div className="mt-1.5 text-xs text-[var(--text-muted)]">
               {kpi.sub}
             </div>
           </div>
         ))}
       </div>
 
-      {/* Tabs */}
-      <div className="mt-8 flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border-subtle)]">
-        <div className="flex gap-6 text-sm font-medium">
+      {/* Pill-Styled Segmented Tabs */}
+      <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
+        <div className="inline-flex flex-wrap gap-1 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-1)] p-1">
           <button
             onClick={() => setActiveTab("scorecards")}
-            className={`pb-3 transition-colors ${
+            className={`btn-tactile rounded-lg px-4 py-2 text-xs font-semibold ${
               activeTab === "scorecards"
-                ? "border-b-2 border-[var(--accent)] font-semibold text-[var(--text-primary)]"
+                ? "bg-[var(--accent)] text-[var(--accent-fg)] shadow-sm"
                 : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
             }`}
           >
@@ -415,9 +436,9 @@ export function AdminConsoleClient({
           </button>
           <button
             onClick={() => setActiveTab("challenges")}
-            className={`pb-3 transition-colors ${
+            className={`btn-tactile rounded-lg px-4 py-2 text-xs font-semibold ${
               activeTab === "challenges"
-                ? "border-b-2 border-[var(--accent)] font-semibold text-[var(--text-primary)]"
+                ? "bg-[var(--accent)] text-[var(--accent-fg)] shadow-sm"
                 : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
             }`}
           >
@@ -425,9 +446,9 @@ export function AdminConsoleClient({
           </button>
           <button
             onClick={() => setActiveTab("ops")}
-            className={`pb-3 transition-colors ${
+            className={`btn-tactile rounded-lg px-4 py-2 text-xs font-semibold ${
               activeTab === "ops"
-                ? "border-b-2 border-[var(--accent)] font-semibold text-[var(--text-primary)]"
+                ? "bg-[var(--accent)] text-[var(--accent-fg)] shadow-sm"
                 : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
             }`}
           >
@@ -438,7 +459,7 @@ export function AdminConsoleClient({
         {activeTab === "challenges" && (
           <button
             onClick={() => setShowCreateForm((v) => !v)}
-            className="btn-tactile mb-2 inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-xs font-semibold text-[var(--accent-fg)] hover:opacity-95"
+            className="btn-tactile inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent)] px-4 py-2 text-xs font-semibold text-[var(--accent-fg)] hover:opacity-95"
           >
             <Plus className="h-3.5 w-3.5" />
             New Challenge
@@ -458,7 +479,7 @@ export function AdminConsoleClient({
               <p className="text-xs text-[var(--text-muted)]">
                 Compare assessment scores against budget burn rate per candidate.
               </p>
-              <div className="mt-4 h-56 w-full">
+              <div className="mt-4 h-72 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={barChartData}>
                     <CartesianGrid
@@ -510,7 +531,7 @@ export function AdminConsoleClient({
                 Top-left quadrant = highest score with lowest token footprint
                 (most cost-efficient engineers).
               </p>
-              <div className="mt-4 h-56 w-full">
+              <div className="mt-4 h-72 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <ScatterChart>
                     <CartesianGrid

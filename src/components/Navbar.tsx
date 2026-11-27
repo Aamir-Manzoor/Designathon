@@ -25,8 +25,9 @@ export function Navbar({ userName, userEmail, role }: NavbarProps) {
       <div className="mx-auto flex max-w-[1600px] items-center justify-between px-6 py-3">
         <div className="flex items-center gap-6">
           <Link
-            href={role === "admin" ? "/admin" : "/dashboard"}
-            className="flex items-center gap-2.5"
+            href="/"
+            className="flex items-center gap-2.5 transition-opacity hover:opacity-85"
+            title="Back to Landing Page"
           >
             <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--accent-border)] bg-[var(--accent-soft)]">
               <Cpu className="h-4 w-4 text-[var(--accent)]" />

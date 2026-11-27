@@ -12,6 +12,7 @@ import {
   Bug,
   Loader2,
   ArrowRight,
+  ArrowLeft,
 } from "lucide-react";
 import type { Challenge, SupportedLanguage } from "@/types/assessment";
 import { formatNumber } from "@/lib/utils";
@@ -66,9 +67,18 @@ export function CandidateDashboardClient({
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-6 py-8">
+    <div className="mx-auto max-w-[1600px] px-6 py-7">
+      <div className="mb-4">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)]"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Back to Home
+        </Link>
+      </div>
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-[var(--text-primary)]">
+        <h1 className="text-2xl font-extrabold tracking-tight text-[var(--text-primary)] sm:text-3xl">
           AI-Assisted Coding Challenges
         </h1>
         <p className="mt-1 text-sm text-[var(--text-muted)]">

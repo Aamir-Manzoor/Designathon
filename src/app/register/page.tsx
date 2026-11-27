@@ -73,6 +73,14 @@ export default function RegisterPage() {
         aria-hidden
         className="pointer-events-none absolute inset-0 bg-dot-grid [mask-image:radial-gradient(ellipse_60%_60%_at_50%_30%,#000_35%,transparent_100%)]"
       />
+      <div className="absolute left-6 top-6 z-20">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-1)] px-3 py-1.5 text-xs font-medium text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)]"
+        >
+          ← Back to Home
+        </Link>
+      </div>
       <div className="absolute right-6 top-6 z-20">
         <ThemeSwitcher />
       </div>
