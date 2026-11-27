@@ -9,7 +9,7 @@ export function getGeminiClient(): GoogleGenAI | null {
 }
 
 export function getGeminiModel(): string {
-  return process.env.GEMINI_MODEL?.trim() || "gemini-2.5-flash";
+  return process.env.GEMINI_MODEL?.trim() || "gemini-3.8-flash";
 }
 
 export function extractCodeFromMarkdown(
