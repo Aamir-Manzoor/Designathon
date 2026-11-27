@@ -34,7 +34,7 @@ export interface EmailNotificationRow {
   subject: string;
   body: string;
   action_url: string | null;
-  delivery_status: "sent_resend" | "logged_outbox";
+  delivery_status: "sent_smtp" | "sent_resend" | "logged_outbox";
   created_at: string;
 }
 
