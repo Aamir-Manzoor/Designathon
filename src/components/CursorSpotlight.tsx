@@ -4,11 +4,11 @@ import { useEffect, useRef } from "react";
 import gsap from "gsap";
 
 /**
- * Cursify-inspired smooth ambient cursor spotlight + trailing ring + inner dot.
- * Uses gsap.quickTo() on GPU transforms (x, y) for silky 60fps tracking.
+ * Ultra-lightweight Cursify-style magnetic ring + dot cursor.
+ * Only animates tiny 32px GPU transform layers (zero large fullscreen repaints)
+ * and only triggers scale tweens on actual interactive state changes.
  */
 export function CursorSpotlight() {
-  const glowRef = useRef<HTMLDivElement>(null);
   const ringRef = useRef<HTMLDivElement>(null);
   const dotRef = useRef<HTMLDivElement>(null);
 
@@ -16,30 +16,25 @@ export function CursorSpotlight() {
     const isFinePointer = window.matchMedia("(pointer: fine)").matches;
     if (!isFinePointer) return;
 
-    const glow = glowRef.current;
     const ring = ringRef.current;
     const dot = dotRef.current;
-    if (!glow || !ring || !dot) return;
+    if (!ring || !dot) return;
 
-    gsap.set([glow, ring, dot], { xPercent: -50, yPercent: -50, opacity: 0 });
+    gsap.set([ring, dot], { xPercent: -50, yPercent: -50, opacity: 0 });
 
-    const glowX = gsap.quickTo(glow, "x", { duration: 0.45, ease: "power3.out" });
-    const glowY = gsap.quickTo(glow, "y", { duration: 0.45, ease: "power3.out" });
-    const ringX = gsap.quickTo(ring, "x", { duration: 0.16, ease: "power3.out" });
-    const ringY = gsap.quickTo(ring, "y", { duration: 0.16, ease: "power3.out" });
-    const dotX = gsap.quickTo(dot, "x", { duration: 0.05, ease: "power2.out" });
-    const dotY = gsap.quickTo(dot, "y", { duration: 0.05, ease: "power2.out" });
+    const ringX = gsap.quickTo(ring, "x", { duration: 0.14, ease: "power3.out" });
+    const ringY = gsap.quickTo(ring, "y", { duration: 0.14, ease: "power3.out" });
+    const dotX = gsap.quickTo(dot, "x", { duration: 0.04, ease: "power2.out" });
+    const dotY = gsap.quickTo(dot, "y", { duration: 0.04, ease: "power2.out" });
 
     let visible = false;
+    let isHovered = false;
 
     function onMove(e: MouseEvent) {
       if (!visible) {
         visible = true;
-        gsap.to(glow, { opacity: 1, duration: 0.3 });
         gsap.to([ring, dot], { opacity: 1, duration: 0.2 });
       }
-      glowX(e.clientX);
-      glowY(e.clientY);
       ringX(e.clientX);
       ringY(e.clientY);
       dotX(e.clientX);
@@ -48,16 +43,19 @@ export function CursorSpotlight() {
 
     function onLeave() {
       visible = false;
-      gsap.to([glow, ring, dot], { opacity: 0, duration: 0.25 });
+      gsap.to([ring, dot], { opacity: 0, duration: 0.2 });
     }
 
     function onOverInteractive(e: MouseEvent) {
       const target = e.target as HTMLElement | null;
-      if (target?.closest("a, button")) {
-        gsap.to(ring, { scale: 1.85, duration: 0.22, ease: "back.out(2)" });
-      } else {
-        gsap.to(ring, { scale: 1, duration: 0.2, ease: "power2.out" });
-      }
+      const nextHovered = Boolean(target?.closest("a, button"));
+      if (nextHovered === isHovered) return;
+      isHovered = nextHovered;
+      gsap.to(ring, {
+        scale: isHovered ? 1.75 : 1,
+        duration: 0.18,
+        ease: "power2.out",
+      });
     }
 
     window.addEventListener("mousemove", onMove, { passive: true });
@@ -73,16 +71,6 @@ export function CursorSpotlight() {
 
   return (
     <>
-      {/* Zero-blur pure radial gradient spotlight (compositor-only, 0ms paint lag) */}
-      <div
-        ref={glowRef}
-        aria-hidden
-        className="pointer-events-none fixed left-0 top-0 z-30 hidden h-[320px] w-[320px] rounded-full will-change-transform md:block"
-        style={{
-          background:
-            "radial-gradient(circle, var(--glow-a) 0%, transparent 68%)",
-        }}
-      />
       <div
         ref={ringRef}
         aria-hidden

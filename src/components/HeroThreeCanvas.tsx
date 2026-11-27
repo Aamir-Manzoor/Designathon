@@ -4,6 +4,11 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { useTheme } from "./ThemeProvider";
 
+/**
+ * Ultra-lightweight Three.js 3D Neural Constellation:
+ * Geometry & edges are computed ONCE at mount (zero per-frame buffer uploads),
+ * DPR is capped at 1, no CSS mask-image compositing, and pauses off-screen.
+ */
 export function HeroThreeCanvas() {
   const containerRef = useRef<HTMLDivElement>(null);
   const { theme } = useTheme();
@@ -13,10 +18,10 @@ export function HeroThreeCanvas() {
     if (!container) return;
 
     const width = container.clientWidth || window.innerWidth;
-    const height = container.clientHeight || 760;
+    const height = container.clientHeight || 720;
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(55, width / height, 0.1, 120);
+    const camera = new THREE.PerspectiveCamera(55, width / height, 0.1, 100);
     camera.position.z = 22;
 
     const renderer = new THREE.WebGLRenderer({
@@ -24,7 +29,7 @@ export function HeroThreeCanvas() {
       alpha: true,
       powerPreference: "high-performance",
     });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.25));
+    renderer.setPixelRatio(1);
     renderer.setSize(width, height);
     container.innerHTML = "";
     container.appendChild(renderer.domElement);
@@ -37,79 +42,89 @@ export function HeroThreeCanvas() {
         : 0x10b981;
     const secondaryHex = theme === "light" ? 0x059669 : 0x22d3ee;
 
-    // 1. Lightweight Floating 3D Token Nodes (45 nodes = 6x faster O(N^2))
-    const nodeCount = 45;
+    const group = new THREE.Group();
+    scene.add(group);
+
+    // 1. Static GPU-resident 3D constellation points + precomputed edges
+    const nodeCount = 52;
     const positions = new Float32Array(nodeCount * 3);
     const colors = new Float32Array(nodeCount * 3);
-    const velocities: Array<{ x: number; y: number; z: number }> = [];
-
     const c1 = new THREE.Color(accentHex);
     const c2 = new THREE.Color(secondaryHex);
 
     for (let i = 0; i < nodeCount; i++) {
-      positions[i * 3] = (Math.random() - 0.5) * 38;
-      positions[i * 3 + 1] = (Math.random() - 0.5) * 20;
-      positions[i * 3 + 2] = (Math.random() - 0.5) * 16;
-
+      positions[i * 3] = (Math.random() - 0.5) * 34;
+      positions[i * 3 + 1] = (Math.random() - 0.5) * 16;
+      positions[i * 3 + 2] = (Math.random() - 0.5) * 12;
       const col = c1.clone().lerp(c2, Math.random());
       colors[i * 3] = col.r;
       colors[i * 3 + 1] = col.g;
       colors[i * 3 + 2] = col.b;
-
-      velocities.push({
-        x: (Math.random() - 0.5) * 0.022,
-        y: (Math.random() - 0.5) * 0.018,
-        z: (Math.random() - 0.5) * 0.014,
-      });
     }
 
     const pointGeo = new THREE.BufferGeometry();
     pointGeo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
     pointGeo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-
     const pointMat = new THREE.PointsMaterial({
-      size: theme === "light" ? 0.34 : 0.32,
+      size: 0.3,
       vertexColors: true,
       transparent: true,
-      opacity: theme === "light" ? 0.75 : 0.92,
+      opacity: theme === "light" ? 0.65 : 0.85,
     });
+    group.add(new THREE.Points(pointGeo, pointMat));
 
-    const points = new THREE.Points(pointGeo, pointMat);
-    scene.add(points);
-
-    // 2. Neural Constellation Connections (Lines)
-    const maxSegments = 260;
-    const linePositions = new Float32Array(maxSegments * 2 * 3);
+    // Precompute edges ONCE (zero per-frame O(N^2) loop!)
+    const edgeVerts: number[] = [];
+    const thresholdSq = 34;
+    for (let i = 0; i < nodeCount; i++) {
+      const ix = positions[i * 3];
+      const iy = positions[i * 3 + 1];
+      const iz = positions[i * 3 + 2];
+      for (let j = i + 1; j < nodeCount; j++) {
+        const dx = ix - positions[j * 3];
+        const dy = iy - positions[j * 3 + 1];
+        const dz = iz - positions[j * 3 + 2];
+        if (dx * dx + dy * dy + dz * dz < thresholdSq) {
+          edgeVerts.push(
+            ix,
+            iy,
+            iz,
+            positions[j * 3],
+            positions[j * 3 + 1],
+            positions[j * 3 + 2]
+          );
+        }
+      }
+    }
     const lineGeo = new THREE.BufferGeometry();
     lineGeo.setAttribute(
       "position",
-      new THREE.BufferAttribute(linePositions, 3)
+      new THREE.Float32BufferAttribute(edgeVerts, 3)
     );
     const lineMat = new THREE.LineBasicMaterial({
       color: accentHex,
       transparent: true,
-      opacity: theme === "light" ? 0.25 : 0.32,
+      opacity: theme === "light" ? 0.18 : 0.24,
     });
-    const lines = new THREE.LineSegments(lineGeo, lineMat);
-    scene.add(lines);
+    group.add(new THREE.LineSegments(lineGeo, lineMat));
 
-    // 3. Rotating 3D Torus Knot + Wireframe Icosahedron Core
-    const wireGeo = new THREE.IcosahedronGeometry(6.2, 1);
+    // 2. Wireframe core + orbit ring
+    const wireGeo = new THREE.IcosahedronGeometry(5.8, 1);
     const wireMat = new THREE.MeshBasicMaterial({
       color: accentHex,
       wireframe: true,
       transparent: true,
-      opacity: theme === "light" ? 0.16 : 0.2,
+      opacity: theme === "light" ? 0.13 : 0.16,
     });
     const wireMesh = new THREE.Mesh(wireGeo, wireMat);
     wireMesh.position.set(0, 0.5, -4);
     scene.add(wireMesh);
 
-    const ringGeo = new THREE.TorusGeometry(9.5, 0.06, 12, 96);
+    const ringGeo = new THREE.TorusGeometry(9, 0.05, 8, 64);
     const ringMat = new THREE.MeshBasicMaterial({
       color: secondaryHex,
       transparent: true,
-      opacity: theme === "light" ? 0.25 : 0.32,
+      opacity: theme === "light" ? 0.2 : 0.26,
     });
     const orbitRing = new THREE.Mesh(ringGeo, ringMat);
     orbitRing.rotation.x = Math.PI / 3;
@@ -118,6 +133,7 @@ export function HeroThreeCanvas() {
 
     let mouseX = 0;
     let mouseY = 0;
+    let isInView = true;
 
     function onMouseMove(e: MouseEvent) {
       mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
@@ -127,17 +143,11 @@ export function HeroThreeCanvas() {
     function onResize() {
       if (!container) return;
       const w = container.clientWidth || window.innerWidth;
-      const h = container.clientHeight || 760;
+      const h = container.clientHeight || 720;
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
     }
-
-    window.addEventListener("mousemove", onMouseMove, { passive: true });
-    window.addEventListener("resize", onResize, { passive: true });
-
-    let animId = 0;
-    let isInView = true;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -147,64 +157,30 @@ export function HeroThreeCanvas() {
     );
     observer.observe(container);
 
-    function animate() {
+    window.addEventListener("mousemove", onMouseMove, { passive: true });
+    window.addEventListener("resize", onResize, { passive: true });
+
+    let animId = 0;
+    let lastRender = 0;
+
+    function animate(now: number) {
       animId = requestAnimationFrame(animate);
       if (document.hidden || !isInView) return;
+      // Smooth 30fps cap keeps integrated GPUs cool & scrolling silky
+      if (now - lastRender < 32) return;
+      lastRender = now;
 
-      const posAttr = pointGeo.getAttribute("position") as THREE.BufferAttribute;
-      const arr = posAttr.array as Float32Array;
-
-      for (let i = 0; i < nodeCount; i++) {
-        arr[i * 3] += velocities[i].x;
-        arr[i * 3 + 1] += velocities[i].y;
-        arr[i * 3 + 2] += velocities[i].z;
-
-        if (Math.abs(arr[i * 3]) > 19) velocities[i].x *= -1;
-        if (Math.abs(arr[i * 3 + 1]) > 10) velocities[i].y *= -1;
-        if (Math.abs(arr[i * 3 + 2]) > 8) velocities[i].z *= -1;
-      }
-      posAttr.needsUpdate = true;
-
-      let seg = 0;
-      const lineAttr = lineGeo.getAttribute("position") as THREE.BufferAttribute;
-      const lArr = lineAttr.array as Float32Array;
-      const thresholdSq = 28;
-
-      for (let i = 0; i < nodeCount && seg < maxSegments; i++) {
-        const ix = arr[i * 3];
-        const iy = arr[i * 3 + 1];
-        const iz = arr[i * 3 + 2];
-        for (let j = i + 1; j < nodeCount && seg < maxSegments; j++) {
-          const dx = ix - arr[j * 3];
-          const dy = iy - arr[j * 3 + 1];
-          const dz = iz - arr[j * 3 + 2];
-          if (dx * dx + dy * dy + dz * dz < thresholdSq) {
-            const base = seg * 6;
-            lArr[base] = ix;
-            lArr[base + 1] = iy;
-            lArr[base + 2] = iz;
-            lArr[base + 3] = arr[j * 3];
-            lArr[base + 4] = arr[j * 3 + 1];
-            lArr[base + 5] = arr[j * 3 + 2];
-            seg++;
-          }
-        }
-      }
-      lineGeo.setDrawRange(0, seg * 2);
-      lineAttr.needsUpdate = true;
-
-      // Responsive parallax & smooth orbital motion
-      scene.rotation.y += (mouseX * 0.28 - scene.rotation.y) * 0.05;
-      scene.rotation.x += (mouseY * 0.14 - scene.rotation.x) * 0.05;
-      wireMesh.rotation.y += 0.005;
+      group.rotation.y += 0.0022;
+      group.rotation.x += (mouseY * 0.1 - group.rotation.x) * 0.05;
+      scene.rotation.y += (mouseX * 0.2 - scene.rotation.y) * 0.05;
+      wireMesh.rotation.y += 0.006;
       wireMesh.rotation.x += 0.003;
-      orbitRing.rotation.z -= 0.006;
-      orbitRing.rotation.y += 0.002;
+      orbitRing.rotation.z -= 0.007;
 
       renderer.render(scene, camera);
     }
 
-    animate();
+    animId = requestAnimationFrame(animate);
 
     return () => {
       cancelAnimationFrame(animId);
@@ -230,7 +206,7 @@ export function HeroThreeCanvas() {
     <div
       ref={containerRef}
       aria-hidden
-      className="pointer-events-none absolute inset-x-0 top-0 h-[780px] overflow-hidden [mask-image:radial-gradient(ellipse_90%_80%_at_50%_30%,#000_60%,transparent_100%)]"
+      className="pointer-events-none absolute inset-x-0 top-0 h-[720px] overflow-hidden"
     />
   );
 }

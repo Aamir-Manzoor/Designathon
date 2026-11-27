@@ -152,8 +152,8 @@ export function LandingShowcase({
         }}
       />
 
-      {/* Sticky Glass Navbar */}
-      <header className="sticky top-0 z-40 border-b border-[var(--border-subtle)] bg-[var(--bg-canvas)]/80 backdrop-blur-xl">
+      {/* Sticky Solid-Surface Header (no heavy backdrop-blur over WebGL) */}
+      <header className="sticky top-0 z-40 border-b border-[var(--border-subtle)] bg-[var(--bg-canvas)]/95">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-6 py-3.5">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--accent-border)] bg-[var(--accent-soft)]">
@@ -246,7 +246,7 @@ export function LandingShowcase({
           </div>
 
           {/* Key Metric Strip */}
-          <div className="hero-stagger mx-auto mt-10 grid max-w-4xl grid-cols-1 divide-y divide-[var(--border-subtle)] rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-1)]/85 py-4 backdrop-blur sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+          <div className="hero-stagger mx-auto mt-10 grid max-w-4xl grid-cols-1 divide-y divide-[var(--border-subtle)] rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-1)] py-4 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
             <div className="px-6 py-1">
               <div className="tabular-nums whitespace-nowrap font-mono text-lg font-bold text-[var(--text-primary)] sm:text-xl">
                 40 / 10 / 30 / 20
