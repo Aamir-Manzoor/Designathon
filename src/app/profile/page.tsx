@@ -11,13 +11,22 @@ export default async function ProfilePage() {
 
   if (!user) redirect("/login");
 
-  const [{ data: profile }, { data: sessions }] = await Promise.all([
-    supabase.from("profiles").select("*").eq("id", user.id).single(),
-    supabase
-      .from("candidate_sessions")
-      .select("tokens_used, tokens_saved, scorecard:scorecards(total_score)")
-      .eq("user_id", user.id),
-  ]);
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
+    .single();
+
+  const isAdmin = profile?.role === "admin";
+
+  // Admins see cohort-wide evaluation metrics; candidates see their own assessment metrics
+  const sessionsQuery = supabase
+    .from("candidate_sessions")
+    .select("tokens_used, tokens_saved, scorecard:scorecards(total_score)");
+
+  const { data: sessions } = isAdmin
+    ? await sessionsQuery
+    : await sessionsQuery.eq("user_id", user.id);
 
   const rows = sessions ?? [];
   const scores = rows

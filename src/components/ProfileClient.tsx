@@ -209,26 +209,36 @@ export function ProfileClient({ profile, stats }: ProfileClientProps) {
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
           {
-            label: "Assessment Sessions",
+            label:
+              profile.role === "admin"
+                ? "Cohort Sessions"
+                : "Assessment Sessions",
             value: String(stats.totalSessions),
             icon: User,
             color: "text-[var(--accent)]",
           },
           {
-            label: "Average Score",
+            label:
+              profile.role === "admin" ? "Cohort Avg Score" : "Average Score",
             value:
               stats.avgScore > 0 ? `${stats.avgScore.toFixed(1)} / 100` : "—",
             icon: Award,
             color: "text-emerald-500",
           },
           {
-            label: "Total Tokens Used",
+            label:
+              profile.role === "admin"
+                ? "Cohort Tokens Used"
+                : "Total Tokens Used",
             value: formatNumber(stats.totalTokensUsed),
             icon: Gauge,
             color: "text-amber-500",
           },
           {
-            label: "Tokens Saved",
+            label:
+              profile.role === "admin"
+                ? "Cohort Tokens Saved"
+                : "Tokens Saved",
             value: formatNumber(stats.totalTokensSaved),
             icon: Sparkles,
             color: "text-cyan-500",
