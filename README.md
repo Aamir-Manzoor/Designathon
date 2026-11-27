@@ -20,9 +20,9 @@ Use the dedicated demo accounts below at [https://promptbench-beta.vercel.app/lo
 
 ### Product Walkthrough Video
 
-[![PromptBench Demo Walkthrough](./docs/promptbench-demo-thumbnail.jpg)](./docs/promptbench-demo.mp4)
+![PromptBench Demo Walkthrough](./docs/promptbench-demo.gif)
 
-> Click the thumbnail above or open [docs/promptbench-demo.mp4](./docs/promptbench-demo.mp4) to watch the full product walkthrough (live token budgets, controlled bug injection inside candidate code, and explainable 100-point rubric scoring).
+> Want full 1080p with audio? [Download the HD MP4 walkthrough](https://github.com/Aamir-Manzoor/Designathon/raw/main/docs/promptbench-demo.mp4) (4.5 MB).
 
 ## Minimum Scope Implemented
 1. **Challenge Configuration & Launch**: Full Admin console to configure coding challenges, time limits, token budgets, public/hidden/debug test cases, and deterministic bug-injection rules. Pre-seeded with 3 complete challenges (*Sliding Window API Rate Limiter*, *Log Anomaly & Spike Aggregator*, *Deployment Maintenance Window Merger*).
