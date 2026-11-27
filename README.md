@@ -24,7 +24,7 @@ An enterprise-grade AI-assisted coding assessment platform built with **Next.js 
 
 ```bash
 GEMINI_API_KEY=your-gemini-api-key
-GEMINI_MODEL=gemini-3.8-flash
+GEMINI_MODEL=gemini-3.5-flash-lite
 
 # Optional: Judge0 CE (falls back to local Python/Node runner when empty)
 JUDGE0_API_URL=https://judge0-ce.p.rapidapi.com

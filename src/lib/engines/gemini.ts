@@ -9,7 +9,7 @@ export function getGeminiClient(): GoogleGenAI | null {
 }
 
 export function getGeminiModel(): string {
-  return process.env.GEMINI_MODEL?.trim() || "gemini-3.8-flash";
+  return process.env.GEMINI_MODEL?.trim() || "gemini-3.5-flash-lite";
 }
 
 export function getGeminiModelCandidates(): string[] {
@@ -20,10 +20,11 @@ export function getGeminiModelCandidates(): string[] {
     .filter(Boolean);
 
   const defaults = [
+    "gemini-3.5-flash-lite",
+    "gemini-3-flash-preview",
+    "gemini-3.6-flash",
+    "gemini-3.5-flash",
     "gemini-3.8-flash",
-    "gemini-3.8-flash-lite",
-    "gemini-2.5-flash-lite",
-    "gemini-2.0-flash",
   ];
 
   return Array.from(new Set([primary, ...customFallbacks, ...defaults]));
