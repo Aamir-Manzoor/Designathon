@@ -26,7 +26,7 @@ import {
   PanelRightClose,
   PanelRightOpen,
 } from "lucide-react";
-import { ThemeSwitcher } from "./ThemeProvider";
+import { ThemeSwitcher, useTheme } from "./ThemeProvider";
 import { TokenBudgetMeter } from "./TokenBudgetMeter";
 import { ScorecardView } from "./ScorecardView";
 import {
@@ -74,6 +74,7 @@ export function AssessmentWorkspace({
   initialRuns,
   initialScorecard,
 }: WorkspaceProps) {
+  const { theme } = useTheme();
   const [session, setSession] = useState<CandidateSession>(initialSession);
   const [code, setCode] = useState<string>(initialSession.current_code);
   const [turns, setTurns] = useState<PromptTurn[]>(initialTurns);
@@ -780,14 +781,14 @@ export function AssessmentWorkspace({
 
         {/* CENTER PANE */}
         <section className={`${centerSpan} flex min-h-[520px] min-w-0 flex-col border-b border-[var(--border-subtle)] lg:min-h-0 lg:border-b-0 lg:border-r`}>
-          <div className="flex items-center justify-between border-b border-slate-800 bg-[#0d1117] px-3 py-2">
-            <span className="font-mono text-xs text-slate-400">
+          <div className="flex items-center justify-between border-b border-[var(--border-subtle)] bg-[var(--surface-2)] px-3 py-2">
+            <span className="font-mono text-xs text-[var(--text-secondary)]">
               solution.{session.language === "python" ? "py" : "js"}
             </span>
             <button
               onClick={handleRunTests}
               disabled={runningTests}
-              className="inline-flex items-center gap-1.5 rounded-md bg-indigo-600 px-3 py-1 text-xs font-semibold text-white transition hover:bg-indigo-500 disabled:opacity-60"
+              className="btn-tactile inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 py-1 text-xs font-semibold text-[var(--accent-fg)] hover:opacity-95 disabled:opacity-60"
             >
               {runningTests ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -798,11 +799,11 @@ export function AssessmentWorkspace({
             </button>
           </div>
 
-          <div className="min-h-0 flex-1">
+          <div className="min-h-0 flex-1 bg-[var(--surface-1)]">
             <MonacoEditor
               height="100%"
               language={session.language}
-              theme="vs-dark"
+              theme={theme === "light" ? "light" : "vs-dark"}
               value={code}
               onChange={(val) => setCode(val ?? "")}
               options={{
@@ -973,22 +974,22 @@ export function AssessmentWorkspace({
                       "Generated updated code below:"}
                   </div>
                   {turn.extracted_code && (
-                    <div className="mt-2.5 overflow-hidden rounded-lg border border-white/10 bg-[#0d1117]">
-                      <div className="flex items-center justify-between border-b border-white/10 bg-[#161b22] px-2.5 py-1.5">
-                        <span className="font-mono text-[10px] text-slate-400">
+                    <div className="mt-2.5 overflow-hidden rounded-lg border border-[var(--border-strong)] bg-[var(--surface-1)]">
+                      <div className="flex items-center justify-between border-b border-[var(--border-subtle)] bg-[var(--surface-2)] px-2.5 py-1.5">
+                        <span className="font-mono text-[10px] text-[var(--text-muted)]">
                           {session.language} patch
                         </span>
                         <button
                           onClick={() =>
                             applyAiCode(turn.extracted_code!, turn.turn_number)
                           }
-                          className="btn-tactile inline-flex items-center gap-1 rounded bg-emerald-500/20 px-2 py-0.5 text-[10px] font-semibold text-emerald-300 ring-1 ring-emerald-500/40 hover:bg-emerald-500/30"
+                          className="btn-tactile inline-flex items-center gap-1 rounded bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-500 ring-1 ring-emerald-500/35 hover:bg-emerald-500/25"
                         >
                           <CopyCheck className="h-3 w-3" />
                           Apply to Editor
                         </button>
                       </div>
-                      <pre className="max-h-48 overflow-auto p-2.5 font-mono text-[11px] leading-relaxed text-slate-200">
+                      <pre className="max-h-48 overflow-auto p-2.5 font-mono text-[11px] leading-relaxed text-[var(--text-primary)]">
                         <code>{turn.extracted_code}</code>
                       </pre>
                     </div>
