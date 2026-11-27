@@ -57,7 +57,7 @@ export default function RegisterPage() {
         router.refresh();
       } else {
         setInfo(
-          "Account created! If email confirmation is enabled in Supabase, please confirm your email before signing in."
+          "Account created! Please check your inbox to verify your email address, then sign in."
         );
         setLoading(false);
       }

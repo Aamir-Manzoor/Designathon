@@ -90,7 +90,7 @@ export default function LoginPage() {
             Sign in to your account
           </h1>
           <p className="mt-2 text-sm text-[var(--text-muted)]">
-            Authenticated JWT session via Supabase Auth
+            Sign in to access your assessment workspace
           </p>
         </div>
 
