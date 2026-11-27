@@ -19,6 +19,11 @@ An enterprise-grade AI-assisted coding assessment platform built with **Next.js 
    - Live Candidate Token Budget Meter showing remaining tokens, burn trend sparkline, real-time **Tokens Saved**, high-consumption warnings (75% / 90%), and pre-send prompt-efficiency hints.
    - Pre-seeded with **5 synthetic candidate sessions** (full prompt histories, token logs, and 100-pt scorecards) + multi-sheet formatted **Excel (`.xlsx`) export**.
 
+## Bonus Capabilities Implemented
+- **Configurable Token Budgets & Cost Analytics**: Inline challenge token-budget & time-limit editor in `/admin`, per-candidate USD cost & efficiency index (`Pts / 1K Tok`) in UI and `.xlsx` export, plus a **Correctness vs. Token Efficiency** scatter plot.
+- **Adaptive Context-Window Management, Prompt Compression & Multi-Provider AI**: Automatic `Standard → Compact → Ultra-Lean` context tiers as budget depletes, 1-click **Compress Prompt** suggestions with exact token savings preview, and multi-provider routing (`Auto`, `Google Gemini`, `Groq`, `OpenRouter`).
+- **Calibrated Rubric Checks, Queue-Based Execution, Concurrency Testing & Automatic Recovery**: Bounded-concurrency FIFO execution queue with automatic retry, `localStorage` + Supabase dual-layer crash/reload draft recovery, 3-anchor rubric calibration verifier, and live parallel concurrency stress test in `/admin` → **Calibration & Queue Ops**.
+
 ## Environment Setup
 `.env.local` is pre-configured for the connected Supabase project (`dfamjqvblqikjuxplfbb`). Add your **Gemini API Key** (and optionally **Judge0 CE** key) in `.env.local`:
 

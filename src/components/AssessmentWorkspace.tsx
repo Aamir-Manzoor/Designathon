@@ -18,10 +18,17 @@ import {
   CopyCheck,
   ShieldAlert,
   SendHorizonal,
+  Minimize2,
+  RotateCcw,
+  Cpu,
 } from "lucide-react";
 import { TokenBudgetMeter } from "./TokenBudgetMeter";
 import { ScorecardView } from "./ScorecardView";
-import { analyzePromptEfficiency } from "@/lib/engines/token-optimizer";
+import {
+  analyzePromptEfficiency,
+  type PromptCompressionResult,
+} from "@/lib/engines/token-optimizer";
+import type { AIProviderId } from "@/lib/engines/ai-provider";
 import { formatDuration } from "@/lib/utils";
 import type {
   CandidateSession,
@@ -72,28 +79,77 @@ export function AssessmentWorkspace({
   const [executorEngine, setExecutorEngine] = useState<string>(
     initialRuns[0]?.executor_engine ?? "judge0"
   );
+  const [queueMeta, setQueueMeta] = useState<{
+    jobId: string;
+    waitMs: number;
+    attempts: number;
+  } | null>(null);
   const [scorecard, setScorecard] = useState<Scorecard | null>(
     initialScorecard
   );
 
   const [promptInput, setPromptInput] = useState("");
+  const [provider, setProvider] = useState<AIProviderId>("auto");
+  const [compressing, setCompressing] = useState(false);
+  const [compressionPreview, setCompressionPreview] =
+    useState<PromptCompressionResult | null>(null);
+
+  const [recoveredDraft, setRecoveredDraft] = useState<string | null>(null);
+
   const [sendingAI, setSendingAI] = useState(false);
   const [runningTests, setRunningTests] = useState(false);
   const [injectingBug, setInjectingBug] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [readyForBugInjection, setReadyForBugInjection] = useState(false);
 
-  const [saveStatus, setSaveStatus] = useState<"saved" | "saving">("saved");
+  const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "retrying">(
+    "saved"
+  );
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [leftTab, setLeftTab] = useState<"problem" | "revisions">("problem");
   const [secondsLeft, setSecondsLeft] = useState<number>(() =>
     Math.max(
       0,
-      Math.floor((new Date(initialSession.expires_at).getTime() - Date.now()) / 1000)
+      Math.floor(
+        (new Date(initialSession.expires_at).getTime() - Date.now()) / 1000
+      )
     )
   );
 
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const recoveryKey = `promptbench_recovery_${initialSession.id}`;
+
+  // Automatic Recovery: check for newer unsaved local draft on mount
+  useEffect(() => {
+    if (initialSession.phase === "submitted") return;
+    try {
+      const raw = window.localStorage.getItem(recoveryKey);
+      if (raw) {
+        const parsed = JSON.parse(raw) as { code: string; savedAt: number };
+        if (
+          parsed.code &&
+          parsed.code.trim() !== initialSession.current_code.trim()
+        ) {
+          setRecoveredDraft(parsed.code);
+        }
+      }
+    } catch {
+      // Ignore storage read errors
+    }
+  }, [initialSession.current_code, initialSession.phase, recoveryKey]);
+
+  // Persist instant local recovery buffer on every code change
+  useEffect(() => {
+    if (session.phase === "submitted") return;
+    try {
+      window.localStorage.setItem(
+        recoveryKey,
+        JSON.stringify({ code, savedAt: Date.now() })
+      );
+    } catch {
+      // Ignore storage quota errors
+    }
+  }, [code, recoveryKey, session.phase]);
 
   // Live pre-send efficiency hints calculated client-side as the candidate types
   const liveHints = useMemo(() => {
@@ -124,19 +180,24 @@ export function AssessmentWorkspace({
     return () => clearInterval(interval);
   }, [session.phase]);
 
-  // Debounced autosave
+  // Debounced autosave with automatic retry on transient failure
   useEffect(() => {
     if (session.phase === "submitted") return;
     if (code === session.current_code) return;
     setSaveStatus("saving");
     const timer = setTimeout(async () => {
-      await fetch(`/api/sessions/${session.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ current_code: code }),
-      });
-      setSession((prev) => ({ ...prev, current_code: code }));
-      setSaveStatus("saved");
+      try {
+        const res = await fetch(`/api/sessions/${session.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ current_code: code }),
+        });
+        if (!res.ok) throw new Error("Autosave failed");
+        setSession((prev) => ({ ...prev, current_code: code }));
+        setSaveStatus("saved");
+      } catch {
+        setSaveStatus("retrying");
+      }
     }, 1500);
     return () => clearTimeout(timer);
   }, [code, session.id, session.phase, session.current_code]);
@@ -167,10 +228,33 @@ export function AssessmentWorkspace({
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [turns]);
 
+  async function handleCompressPrompt() {
+    if (!promptInput.trim() || compressing) return;
+    setCompressing(true);
+    try {
+      const res = await fetch("/api/ai/compress", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          draft: promptInput,
+          current_code: code,
+          challenge_description: challenge.description,
+        }),
+      });
+      if (res.ok) {
+        const data = (await res.json()) as PromptCompressionResult;
+        setCompressionPreview(data);
+      }
+    } finally {
+      setCompressing(false);
+    }
+  }
+
   async function handleSendPrompt(e: React.FormEvent) {
     e.preventDefault();
     if (!promptInput.trim() || sendingAI) return;
     setErrorMsg(null);
+    setCompressionPreview(null);
     setSendingAI(true);
 
     const failedTests = latestResults.filter((r) => !r.passed);
@@ -195,6 +279,7 @@ export function AssessmentWorkspace({
           prompt: promptInput.trim(),
           current_code: code,
           latest_test_feedback: latestFeedback,
+          provider,
         }),
       });
       const data = await res.json();
@@ -266,6 +351,13 @@ export function AssessmentWorkspace({
       }
       setLatestResults(data.results || []);
       setExecutorEngine(data.engine || "judge0");
+      if (data.queue_job_id) {
+        setQueueMeta({
+          jobId: data.queue_job_id,
+          waitMs: data.queue_wait_ms ?? 0,
+          attempts: data.attempts ?? 1,
+        });
+      }
       setReadyForBugInjection(Boolean(data.ready_for_bug_injection));
     } catch {
       setErrorMsg("Network error executing tests.");
@@ -307,7 +399,7 @@ export function AssessmentWorkspace({
           revision_number: prev.length + 1,
           source: "bug_injection",
           code: data.mutated_code,
-          note: `Controlled bug injected: ${data.bug_title}`,
+          note: `Controlled bug injected: ${data.bugTitle || data.bug_title}`,
           created_at: new Date().toISOString(),
         },
       ]);
@@ -333,6 +425,11 @@ export function AssessmentWorkspace({
         setSubmitting(false);
         return;
       }
+      try {
+        window.localStorage.removeItem(recoveryKey);
+      } catch {
+        // ignore
+      }
       setScorecard(data.scorecard);
       setSession((prev) => ({ ...prev, phase: "submitted" }));
     } catch {
@@ -342,7 +439,6 @@ export function AssessmentWorkspace({
     }
   }
 
-  // If submitted, display the Explainable Scorecard view
   if (session.phase === "submitted" && scorecard) {
     return (
       <div className="min-h-screen bg-[#090d16] px-6 py-8">
@@ -391,7 +487,6 @@ export function AssessmentWorkspace({
                 {session.language}
               </span>
             </div>
-            {/* Phase Stepper */}
             <div className="mt-0.5 flex items-center gap-2 text-[11px]">
               <span
                 className={
@@ -420,8 +515,18 @@ export function AssessmentWorkspace({
 
         <div className="flex items-center gap-3">
           <span className="hidden items-center gap-1 text-xs text-slate-400 md:flex">
-            <Save className="h-3.5 w-3.5 text-emerald-400" />
-            {saveStatus === "saving" ? "Autosaving..." : "Autosaved"}
+            <Save
+              className={`h-3.5 w-3.5 ${
+                saveStatus === "retrying"
+                  ? "text-amber-400"
+                  : "text-emerald-400"
+              }`}
+            />
+            {saveStatus === "saving"
+              ? "Autosaving..."
+              : saveStatus === "retrying"
+              ? "Buffered locally"
+              : "Autosaved"}
           </span>
 
           <div
@@ -444,7 +549,6 @@ export function AssessmentWorkspace({
                   ? "animate-pulse bg-amber-500 text-slate-950 hover:bg-amber-400"
                   : "border border-amber-500/40 bg-amber-500/15 text-amber-300 hover:bg-amber-500/25"
               }`}
-              title="Proceed to Phase 2: inject a controlled bug into your working code"
             >
               {injectingBug ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -470,6 +574,39 @@ export function AssessmentWorkspace({
         </div>
       </header>
 
+      {/* Automatic Recovery Banner */}
+      {recoveredDraft && (
+        <div className="flex shrink-0 items-center justify-between border-b border-cyan-500/30 bg-cyan-500/10 px-4 py-2 text-xs text-cyan-200">
+          <div className="flex items-center gap-2">
+            <RotateCcw className="h-4 w-4 text-cyan-400" />
+            <span>
+              <strong>Automatic Recovery:</strong> Unsaved local code draft
+              detected from your previous browser session.
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                setCode(recoveredDraft);
+                setRecoveredDraft(null);
+              }}
+              className="rounded bg-cyan-600 px-2.5 py-1 font-semibold text-white hover:bg-cyan-500"
+            >
+              Restore Draft
+            </button>
+            <button
+              onClick={() => {
+                setRecoveredDraft(null);
+                window.localStorage.removeItem(recoveryKey);
+              }}
+              className="rounded border border-cyan-500/40 px-2 py-1 text-cyan-300 hover:bg-cyan-500/20"
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Bug Injection Alert Banner */}
       {session.phase === "debugging" && (
         <div className="flex shrink-0 items-center justify-between border-b border-amber-500/30 bg-amber-500/10 px-4 py-2 text-xs text-amber-200">
@@ -493,7 +630,7 @@ export function AssessmentWorkspace({
 
       {/* Main 3-Pane IDE */}
       <div className="grid min-h-0 flex-1 grid-cols-12">
-        {/* LEFT PANE: Problem Spec & Revision History */}
+        {/* LEFT PANE */}
         <aside className="col-span-3 flex min-h-0 flex-col border-r border-slate-800 bg-[#0d1424]">
           <div className="flex border-b border-slate-800 text-xs font-medium">
             <button
@@ -592,7 +729,7 @@ export function AssessmentWorkspace({
           </div>
         </aside>
 
-        {/* CENTER PANE: Monaco Editor + Test Execution Console */}
+        {/* CENTER PANE */}
         <section className="col-span-5 flex min-h-0 flex-col border-r border-slate-800">
           <div className="flex items-center justify-between border-b border-slate-800 bg-[#0d1117] px-3 py-2">
             <span className="font-mono text-xs text-slate-400">
@@ -648,13 +785,16 @@ export function AssessmentWorkspace({
               </div>
               <span className="font-mono text-[10px] text-slate-500">
                 Engine: {executorEngine}
+                {queueMeta
+                  ? ` · Queue wait: ${queueMeta.waitMs}ms · ${queueMeta.jobId}`
+                  : ""}
               </span>
             </div>
 
             {latestResults.length === 0 ? (
               <p className="text-xs text-slate-500">
-                Click &ldquo;Run Tests&rdquo; to execute your code in an
-                isolated sandbox.
+                Click &ldquo;Run Tests&rdquo; to enqueue isolated sandbox
+                execution.
               </p>
             ) : (
               <div className="space-y-2">
@@ -707,7 +847,7 @@ export function AssessmentWorkspace({
           </div>
         </section>
 
-        {/* RIGHT PANE: Live Token Meter + AI Assistant Chat */}
+        {/* RIGHT PANE: Token Meter + Multi-Provider AI Chat + Compression */}
         <aside className="col-span-4 flex min-h-0 flex-col bg-[#0b1120]">
           <TokenBudgetMeter
             tokensUsed={session.tokens_used}
@@ -716,6 +856,24 @@ export function AssessmentWorkspace({
             turns={turns}
             liveHints={liveHints}
           />
+
+          {/* Multi-Provider Switcher Bar */}
+          <div className="flex items-center justify-between border-b border-slate-800 bg-[#0a0f1d] px-3.5 py-1.5 text-[11px]">
+            <span className="flex items-center gap-1 text-slate-400">
+              <Cpu className="h-3 w-3 text-indigo-400" />
+              AI Provider
+            </span>
+            <select
+              value={provider}
+              onChange={(e) => setProvider(e.target.value as AIProviderId)}
+              className="rounded border border-slate-700 bg-[#090d16] px-2 py-0.5 text-[11px] text-slate-200 focus:border-indigo-500 focus:outline-none"
+            >
+              <option value="auto">Auto (Gemini → Failover)</option>
+              <option value="gemini">Google Gemini (Flash-Lite)</option>
+              <option value="groq">Groq (Llama 3.3 70B)</option>
+              <option value="openrouter">OpenRouter (Qwen Coder)</option>
+            </select>
+          </div>
 
           {/* Chat Transcript */}
           <div className="flex-1 space-y-3 overflow-y-auto p-3.5">
@@ -726,16 +884,15 @@ export function AssessmentWorkspace({
                   AI Coding Assistant Ready
                 </p>
                 <p className="mt-1 leading-relaxed">
-                  Prompt concisely with clear algorithm &amp; edge-case
-                  constraints. Your editor code and problem spec are synced
-                  automatically to save tokens.
+                  Adaptive context-window management is active. Prompt concisely
+                  or use <strong>Compress Prompt</strong> before sending to save
+                  tokens.
                 </p>
               </div>
             )}
 
             {turns.map((turn) => (
               <div key={turn.id} className="space-y-2">
-                {/* User Message */}
                 <div className="ml-6 rounded-xl border border-indigo-500/30 bg-indigo-600/15 p-3 text-xs text-slate-100">
                   <div className="mb-1 flex items-center justify-between text-[10px] text-indigo-300">
                     <span>Turn #{turn.turn_number} · You</span>
@@ -751,11 +908,10 @@ export function AssessmentWorkspace({
                   </p>
                 </div>
 
-                {/* AI Message */}
                 <div className="mr-4 rounded-xl border border-slate-800 bg-[#111827] p-3 text-xs text-slate-200">
                   <div className="mb-1.5 flex items-center justify-between text-[10px] text-slate-400">
                     <span className="font-semibold text-emerald-400">
-                      Gemini Assistant
+                      AI Assistant
                     </span>
                     <span className="font-mono">
                       in:{turn.prompt_tokens} / out:{turn.completion_tokens}
@@ -781,16 +937,74 @@ export function AssessmentWorkspace({
             <div ref={chatEndRef} />
           </div>
 
+          {/* Prompt Compression Suggestion Preview */}
+          {compressionPreview && (
+            <div className="mx-3 mb-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-2.5 text-[11px]">
+              <div className="flex items-center justify-between font-semibold text-emerald-300">
+                <span>
+                  Compressed: {compressionPreview.originalTokens} →{" "}
+                  {compressionPreview.compressedTokens} tok (saved{" "}
+                  {compressionPreview.tokensSaved})
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setCompressionPreview(null)}
+                  className="text-slate-400 hover:text-white"
+                >
+                  ✕
+                </button>
+              </div>
+              <p className="mt-1 line-clamp-2 text-slate-200">
+                {compressionPreview.compressed}
+              </p>
+              <div className="mt-1.5 flex items-center justify-between">
+                <span className="text-[10px] text-emerald-400">
+                  {compressionPreview.techniquesApplied.join(" · ")}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPromptInput(compressionPreview.compressed);
+                    setCompressionPreview(null);
+                  }}
+                  className="rounded bg-emerald-600 px-2 py-0.5 font-semibold text-white hover:bg-emerald-500"
+                >
+                  Apply
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Prompt Composer */}
           <form
             onSubmit={handleSendPrompt}
             className="shrink-0 border-t border-slate-800 bg-[#0d1424] p-3"
           >
+            {promptInput.trim().length > 35 && (
+              <div className="mb-1.5 flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleCompressPrompt}
+                  disabled={compressing}
+                  className="inline-flex items-center gap-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-300 transition hover:bg-emerald-500/20"
+                >
+                  {compressing ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Minimize2 className="h-3 w-3" />
+                  )}
+                  Compress Prompt
+                </button>
+              </div>
+            )}
             <div className="flex gap-2">
               <textarea
                 rows={2}
                 value={promptInput}
-                onChange={(e) => setPromptInput(e.target.value)}
+                onChange={(e) => {
+                  setPromptInput(e.target.value);
+                  if (compressionPreview) setCompressionPreview(null);
+                }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();

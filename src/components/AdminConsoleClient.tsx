@@ -7,6 +7,9 @@ import {
   ResponsiveContainer,
   BarChart,
   Bar,
+  ScatterChart,
+  Scatter,
+  ZAxis,
   XAxis,
   YAxis,
   Tooltip,
@@ -23,7 +26,13 @@ import {
   Clock,
   CheckCircle2,
   Loader2,
+  DollarSign,
+  SlidersHorizontal,
+  ShieldCheck,
+  Activity,
+  Save,
 } from "lucide-react";
+import { estimateSessionCostUsd } from "@/lib/engines/ai-provider";
 import { formatNumber } from "@/lib/utils";
 
 interface AdminSessionRow {
@@ -68,6 +77,47 @@ interface AdminChallengeRow {
   test_cases?: Array<{ id: string; visibility: string }>;
 }
 
+interface CalibrationReport {
+  status: "CALIBRATED" | "DRIFT_WARNING";
+  monotonic_order_valid: boolean;
+  all_anchors_in_range: boolean;
+  checked_at: string;
+  anchors: Array<{
+    label: string;
+    expected_range: [number, number];
+    total_score: number;
+    prompt_quality: number;
+    prompt_improvement: number;
+    test_cases: number;
+    debug_tests: number;
+    in_range: boolean;
+  }>;
+}
+
+interface ConcurrencyReport {
+  dispatched: number;
+  completed: number;
+  passed: number;
+  total_wall_ms: number;
+  max_queue_wait_ms: number;
+  p95_latency_ms: number;
+  queue_stats: {
+    maxConcurrency: number;
+    activeWorkers: number;
+    pendingJobs: number;
+    totalProcessed: number;
+  };
+  jobs: Array<{
+    worker_index: number;
+    job_id: string;
+    engine: string;
+    passed: boolean;
+    queue_wait_ms: number;
+    runtime_ms: number;
+    attempts: number;
+  }>;
+}
+
 export function AdminConsoleClient({
   sessions,
   challenges,
@@ -76,12 +126,34 @@ export function AdminConsoleClient({
   challenges: AdminChallengeRow[];
 }) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"scorecards" | "challenges">(
-    "scorecards"
-  );
+  const [activeTab, setActiveTab] = useState<
+    "scorecards" | "challenges" | "ops"
+  >("scorecards");
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+
+  // Configurable Token Budget editor state per challenge
+  const [budgetEdits, setBudgetEdits] = useState<
+    Record<string, { budget: number; time: number }>
+  >(() =>
+    Object.fromEntries(
+      challenges.map((c) => [
+        c.id,
+        { budget: c.token_budget, time: c.time_limit_minutes },
+      ])
+    )
+  );
+  const [savingBudgetId, setSavingBudgetId] = useState<string | null>(null);
+
+  // Calibration & Concurrency Ops state
+  const [calibrating, setCalibrating] = useState(false);
+  const [calibrationReport, setCalibrationReport] =
+    useState<CalibrationReport | null>(null);
+  const [testingConcurrency, setTestingConcurrency] = useState(false);
+  const [concurrencyCount, setConcurrencyCount] = useState(6);
+  const [concurrencyReport, setConcurrencyReport] =
+    useState<ConcurrencyReport | null>(null);
 
   // New Challenge Form state
   const [title, setTitle] = useState("");
@@ -98,7 +170,13 @@ export function AdminConsoleClient({
 
   const normalizedSessions = sessions.map((s) => {
     const sc = Array.isArray(s.scorecard) ? s.scorecard[0] : s.scorecard;
-    return { ...s, sc };
+    const cost = estimateSessionCostUsd(s.tokens_used, s.tokens_saved);
+    const totalScore = sc ? Number(sc.total_score) : 0;
+    const efficiencyIndex =
+      s.tokens_used > 0
+        ? Number((totalScore / (s.tokens_used / 1000)).toFixed(1))
+        : 0;
+    return { ...s, sc, cost, efficiencyIndex };
   });
 
   const scoredSessions = normalizedSessions.filter((s) => s.sc);
@@ -109,17 +187,20 @@ export function AdminConsoleClient({
           0
         ) / scoredSessions.length
       : 0;
-  const avgTokens =
-    normalizedSessions.length > 0
-      ? normalizedSessions.reduce((sum, s) => sum + s.tokens_used, 0) /
-        normalizedSessions.length
-      : 0;
-  const totalSaved = normalizedSessions.reduce(
+  const totalCostUsd = normalizedSessions.reduce(
+    (sum, s) => sum + s.cost.costUsd,
+    0
+  );
+  const totalSavedUsd = normalizedSessions.reduce(
+    (sum, s) => sum + s.cost.savedUsd,
+    0
+  );
+  const totalSavedTokens = normalizedSessions.reduce(
     (sum, s) => sum + s.tokens_saved,
     0
   );
 
-  const chartData = scoredSessions.slice(0, 8).map((s) => ({
+  const barChartData = scoredSessions.slice(0, 8).map((s) => ({
     name: s.candidate_name.split(" ")[0],
     score: Number(s.sc?.total_score || 0),
     budgetPct:
@@ -127,6 +208,60 @@ export function AdminConsoleClient({
         ? Math.round((s.tokens_used / s.token_budget) * 100)
         : 0,
   }));
+
+  const scatterData = scoredSessions.map((s) => ({
+    name: s.candidate_name,
+    tokens: s.tokens_used,
+    score: Number(s.sc?.total_score || 0),
+    efficiency: s.efficiencyIndex,
+  }));
+
+  async function handleSaveChallengeBudget(challengeId: string) {
+    const edit = budgetEdits[challengeId];
+    if (!edit) return;
+    setSavingBudgetId(challengeId);
+    try {
+      await fetch(`/api/challenges/${challengeId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token_budget: edit.budget,
+          time_limit_minutes: edit.time,
+        }),
+      });
+      router.refresh();
+    } finally {
+      setSavingBudgetId(null);
+    }
+  }
+
+  async function handleRunCalibration() {
+    setCalibrating(true);
+    try {
+      const res = await fetch("/api/admin/calibrate", { method: "POST" });
+      if (res.ok) {
+        setCalibrationReport((await res.json()) as CalibrationReport);
+      }
+    } finally {
+      setCalibrating(false);
+    }
+  }
+
+  async function handleRunConcurrencyTest() {
+    setTestingConcurrency(true);
+    try {
+      const res = await fetch("/api/admin/concurrency-test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ concurrency: concurrencyCount }),
+      });
+      if (res.ok) {
+        setConcurrencyReport((await res.json()) as ConcurrencyReport);
+      }
+    } finally {
+      setTestingConcurrency(false);
+    }
+  }
 
   async function handleCreateChallenge(e: React.FormEvent) {
     e.preventDefault();
@@ -209,20 +344,18 @@ export function AdminConsoleClient({
             Admin &amp; Evaluator Console
           </h1>
           <p className="mt-1 text-sm text-slate-400">
-            Configure AI-assisted coding challenges, inspect explainable 100-pt
-            scorecards, and export token analytics.
+            Configure token budgets, analyze correctness vs. AI cost efficiency,
+            calibrate rubrics, and export scorecards.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <a
-            href="/api/export/xlsx"
-            className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-500"
-          >
-            <FileSpreadsheet className="h-4 w-4" />
-            Export Scorecards (.xlsx)
-          </a>
-        </div>
+        <a
+          href="/api/export/xlsx"
+          className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-500"
+        >
+          <FileSpreadsheet className="h-4 w-4" />
+          Export Scorecards (.xlsx)
+        </a>
       </div>
 
       {/* KPI Cards */}
@@ -243,16 +376,16 @@ export function AdminConsoleClient({
             color: "text-emerald-400",
           },
           {
-            label: "Avg Token Burn",
-            value: formatNumber(avgTokens),
-            sub: "Tokens per session",
-            icon: Gauge,
+            label: "Total AI Cost (Est.)",
+            value: `$${totalCostUsd.toFixed(4)}`,
+            sub: `Saved $${totalSavedUsd.toFixed(4)} via optimizer`,
+            icon: DollarSign,
             color: "text-amber-400",
           },
           {
             label: "Total Tokens Saved",
-            value: formatNumber(totalSaved),
-            sub: "Via context reduction",
+            value: formatNumber(totalSavedTokens),
+            sub: "Adaptive context reduction",
             icon: Sparkles,
             color: "text-cyan-400",
           },
@@ -274,7 +407,7 @@ export function AdminConsoleClient({
       </div>
 
       {/* Tabs */}
-      <div className="mt-8 flex items-center justify-between border-b border-slate-800">
+      <div className="mt-8 flex flex-wrap items-center justify-between gap-2 border-b border-slate-800">
         <div className="flex gap-6 text-sm font-medium">
           <button
             onClick={() => setActiveTab("scorecards")}
@@ -284,8 +417,7 @@ export function AdminConsoleClient({
                 : "text-slate-400 hover:text-slate-200"
             }`}
           >
-            Candidate Scorecards &amp; Token Analytics (
-            {normalizedSessions.length})
+            Scorecards &amp; Cost Analytics ({normalizedSessions.length})
           </button>
           <button
             onClick={() => setActiveTab("challenges")}
@@ -295,7 +427,17 @@ export function AdminConsoleClient({
                 : "text-slate-400 hover:text-slate-200"
             }`}
           >
-            Challenges &amp; Rubrics ({challenges.length})
+            Challenges &amp; Token Budgets ({challenges.length})
+          </button>
+          <button
+            onClick={() => setActiveTab("ops")}
+            className={`pb-3 transition ${
+              activeTab === "ops"
+                ? "border-b-2 border-indigo-500 text-white"
+                : "text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            Calibration &amp; Queue Ops
           </button>
         </div>
 
@@ -310,28 +452,24 @@ export function AdminConsoleClient({
         )}
       </div>
 
-      {activeTab === "scorecards" ? (
+      {/* TAB 1: SCORECARDS & COST ANALYTICS */}
+      {activeTab === "scorecards" && (
         <div className="mt-6 space-y-6">
-          {/* Score vs Token Budget % Chart */}
-          {chartData.length > 0 && (
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Bar Chart: Score vs Budget % */}
             <div className="rounded-xl border border-slate-800 bg-[#111827] p-5">
-              <div className="mb-4 flex items-center justify-between">
-                <div>
-                  <h2 className="text-sm font-semibold text-white">
-                    Score (/100) vs. Token Budget Consumption (%)
-                  </h2>
-                  <p className="text-xs text-slate-400">
-                    High score with low budget % indicates token-conscious AI
-                    engineering.
-                  </p>
-                </div>
-              </div>
-              <div className="h-60 w-full">
+              <h2 className="text-sm font-semibold text-white">
+                Score (/100) vs. Token Budget Used (%)
+              </h2>
+              <p className="text-xs text-slate-400">
+                Compare assessment scores against budget burn rate per candidate.
+              </p>
+              <div className="mt-4 h-56 w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData}>
+                  <BarChart data={barChartData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                    <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} />
-                    <YAxis stroke="#94a3b8" fontSize={12} domain={[0, 100]} />
+                    <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} />
+                    <YAxis stroke="#94a3b8" fontSize={11} domain={[0, 100]} />
                     <Tooltip
                       contentStyle={{
                         backgroundColor: "#0f172a",
@@ -342,13 +480,13 @@ export function AdminConsoleClient({
                     />
                     <Bar
                       dataKey="score"
-                      name="Total Score (/100)"
+                      name="Score (/100)"
                       fill="#6366f1"
                       radius={[4, 4, 0, 0]}
                     />
                     <Bar
                       dataKey="budgetPct"
-                      name="Token Budget Used (%)"
+                      name="Budget Used (%)"
                       fill="#10b981"
                       radius={[4, 4, 0, 0]}
                     />
@@ -356,7 +494,60 @@ export function AdminConsoleClient({
                 </ResponsiveContainer>
               </div>
             </div>
-          )}
+
+            {/* Scatter Chart: Correctness vs Token Efficiency */}
+            <div className="rounded-xl border border-slate-800 bg-[#111827] p-5">
+              <h2 className="text-sm font-semibold text-white">
+                Correctness vs. AI Token Efficiency (Scatter)
+              </h2>
+              <p className="text-xs text-slate-400">
+                Top-left quadrant = highest score with lowest token footprint
+                (most cost-efficient engineers).
+              </p>
+              <div className="mt-4 h-56 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ScatterChart>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                    <XAxis
+                      type="number"
+                      dataKey="tokens"
+                      name="Tokens Used"
+                      stroke="#94a3b8"
+                      fontSize={11}
+                    />
+                    <YAxis
+                      type="number"
+                      dataKey="score"
+                      name="Total Score"
+                      domain={[40, 100]}
+                      stroke="#94a3b8"
+                      fontSize={11}
+                    />
+                    <ZAxis
+                      type="number"
+                      dataKey="efficiency"
+                      range={[70, 260]}
+                      name="Pts / 1K Tok"
+                    />
+                    <Tooltip
+                      cursor={{ strokeDasharray: "3 3" }}
+                      contentStyle={{
+                        backgroundColor: "#0f172a",
+                        border: "1px solid #334155",
+                        borderRadius: "8px",
+                        fontSize: "12px",
+                      }}
+                    />
+                    <Scatter
+                      name="Candidates"
+                      data={scatterData}
+                      fill="#22d3ee"
+                    />
+                  </ScatterChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
 
           {/* Candidate Scorecards Table */}
           <div className="overflow-x-auto rounded-xl border border-slate-800 bg-[#111827]">
@@ -364,13 +555,13 @@ export function AdminConsoleClient({
               <thead className="border-b border-slate-800 bg-[#0b1120] uppercase text-slate-400">
                 <tr>
                   <th className="px-4 py-3">Candidate</th>
-                  <th className="px-4 py-3">Challenge</th>
                   <th className="px-3 py-3 text-center">Prompt (40)</th>
                   <th className="px-3 py-3 text-center">Improv (10)</th>
                   <th className="px-3 py-3 text-center">Tests (30)</th>
                   <th className="px-3 py-3 text-center">Debug (20)</th>
                   <th className="px-3 py-3 text-center">Total (100)</th>
                   <th className="px-4 py-3">Tokens (Used / Saved)</th>
+                  <th className="px-3 py-3">Est. Cost &amp; Efficiency</th>
                   <th className="px-4 py-3 text-right">Review</th>
                 </tr>
               </thead>
@@ -387,18 +578,12 @@ export function AdminConsoleClient({
                           {s.candidate_name}
                         </div>
                         <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
-                          <span>{s.candidate_email}</span>
+                          <span>{s.challenge?.title || "—"}</span>
                           {s.is_synthetic && (
                             <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-300">
                               synthetic
                             </span>
                           )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-slate-300">
-                        <div>{s.challenge?.title || "—"}</div>
-                        <div className="text-[11px] capitalize text-slate-500">
-                          {s.language}
                         </div>
                       </td>
                       <td className="px-3 py-3 text-center font-mono text-slate-200">
@@ -453,6 +638,14 @@ export function AdminConsoleClient({
                           +{formatNumber(s.tokens_saved)} saved
                         </div>
                       </td>
+                      <td className="px-3 py-3 font-mono">
+                        <div className="text-slate-200">
+                          ${s.cost.costUsd.toFixed(5)}
+                        </div>
+                        <div className="text-[11px] text-cyan-400">
+                          {s.efficiencyIndex} pts/1K tok
+                        </div>
+                      </td>
                       <td className="px-4 py-3 text-right">
                         <Link
                           href={`/admin/sessions/${s.id}`}
@@ -469,7 +662,10 @@ export function AdminConsoleClient({
             </table>
           </div>
         </div>
-      ) : (
+      )}
+
+      {/* TAB 2: CHALLENGES & CONFIGURABLE TOKEN BUDGETS */}
+      {activeTab === "challenges" && (
         <div className="mt-6 space-y-6">
           {showCreateForm && (
             <form
@@ -626,36 +822,261 @@ export function AdminConsoleClient({
           )}
 
           <div className="grid gap-4 md:grid-cols-3">
-            {challenges.map((c) => (
-              <div
-                key={c.id}
-                className="rounded-xl border border-slate-800 bg-[#111827] p-5"
+            {challenges.map((c) => {
+              const edit = budgetEdits[c.id] || {
+                budget: c.token_budget,
+                time: c.time_limit_minutes,
+              };
+              return (
+                <div
+                  key={c.id}
+                  className="rounded-xl border border-slate-800 bg-[#111827] p-5"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="rounded-full bg-indigo-500/15 px-2.5 py-0.5 text-xs font-medium text-indigo-300">
+                      {c.difficulty}
+                    </span>
+                    <span className="flex items-center gap-1 text-xs text-emerald-400">
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      Active · {c.test_cases?.length ?? 0} tests
+                    </span>
+                  </div>
+                  <h3 className="mt-3 text-base font-semibold text-white">
+                    {c.title}
+                  </h3>
+
+                  {/* Live Configurable Token Budget & Time Limit */}
+                  <div className="mt-4 space-y-2.5 border-t border-slate-800 pt-3">
+                    <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                      <SlidersHorizontal className="h-3 w-3 text-indigo-400" />
+                      Configure Limits
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[10px] text-slate-400">
+                          Token Budget
+                        </label>
+                        <input
+                          type="number"
+                          min={500}
+                          step={500}
+                          value={edit.budget}
+                          onChange={(e) =>
+                            setBudgetEdits((prev) => ({
+                              ...prev,
+                              [c.id]: {
+                                ...edit,
+                                budget: Number(e.target.value),
+                              },
+                            }))
+                          }
+                          className="mt-0.5 w-full rounded border border-slate-700 bg-[#0b1120] px-2 py-1 font-mono text-xs text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-slate-400">
+                          Time (min)
+                        </label>
+                        <input
+                          type="number"
+                          min={5}
+                          max={180}
+                          value={edit.time}
+                          onChange={(e) =>
+                            setBudgetEdits((prev) => ({
+                              ...prev,
+                              [c.id]: {
+                                ...edit,
+                                time: Number(e.target.value),
+                              },
+                            }))
+                          }
+                          className="mt-0.5 w-full rounded border border-slate-700 bg-[#0b1120] px-2 py-1 font-mono text-xs text-white"
+                        />
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleSaveChallengeBudget(c.id)}
+                      disabled={savingBudgetId === c.id}
+                      className="inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-indigo-500/40 bg-indigo-500/15 py-1.5 text-xs font-semibold text-indigo-300 transition hover:bg-indigo-500/25 disabled:opacity-60"
+                    >
+                      {savingBudgetId === c.id ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Save className="h-3.5 w-3.5" />
+                      )}
+                      Save Budget Config
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* TAB 3: CALIBRATED RUBRIC CHECKS & QUEUE CONCURRENCY OPS */}
+      {activeTab === "ops" && (
+        <div className="mt-6 grid gap-6 lg:grid-cols-2">
+          {/* Calibrated Rubric Check */}
+          <div className="rounded-xl border border-slate-800 bg-[#111827] p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="flex items-center gap-2 text-base font-semibold text-white">
+                  <ShieldCheck className="h-4 w-4 text-emerald-400" />
+                  Calibrated Rubric Verification
+                </h2>
+                <p className="mt-1 text-xs text-slate-400">
+                  Evaluates 3 gold-standard benchmark anchors to verify monotonic
+                  ranking and score-drift tolerance.
+                </p>
+              </div>
+              <button
+                onClick={handleRunCalibration}
+                disabled={calibrating}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-indigo-500 disabled:opacity-60"
               >
-                <div className="flex items-center justify-between">
-                  <span className="rounded-full bg-indigo-500/15 px-2.5 py-0.5 text-xs font-medium text-indigo-300">
-                    {c.difficulty}
-                  </span>
-                  <span className="flex items-center gap-1 text-xs text-emerald-400">
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    Active
+                {calibrating ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                )}
+                Run Calibration
+              </button>
+            </div>
+
+            {calibrationReport && (
+              <div className="mt-5 space-y-3">
+                <div className="flex items-center justify-between rounded-lg border border-slate-800 bg-[#0b1120] px-3.5 py-2.5 text-xs">
+                  <span className="text-slate-400">Calibration Status</span>
+                  <span
+                    className={`rounded-full px-2.5 py-0.5 font-semibold ${
+                      calibrationReport.status === "CALIBRATED"
+                        ? "bg-emerald-500/20 text-emerald-300"
+                        : "bg-amber-500/20 text-amber-300"
+                    }`}
+                  >
+                    {calibrationReport.status}
                   </span>
                 </div>
-                <h3 className="mt-3 text-base font-semibold text-white">
-                  {c.title}
-                </h3>
-                <div className="mt-3 flex flex-wrap gap-3 text-xs text-slate-400">
-                  <span className="flex items-center gap-1">
-                    <Clock className="h-3.5 w-3.5" />
-                    {c.time_limit_minutes} min
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Gauge className="h-3.5 w-3.5 text-indigo-400" />
-                    {formatNumber(c.token_budget)} tokens
-                  </span>
-                  <span>{c.test_cases?.length ?? 0} test cases</span>
+
+                {calibrationReport.anchors.map((a) => (
+                  <div
+                    key={a.label}
+                    className="rounded-lg border border-slate-800 bg-[#0b1120] p-3 text-xs"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-white">
+                        {a.label}
+                      </span>
+                      <span
+                        className={`font-mono font-bold ${
+                          a.in_range ? "text-emerald-300" : "text-amber-300"
+                        }`}
+                      >
+                        {a.total_score.toFixed(1)} / 100 (target{" "}
+                        {a.expected_range[0]}–{a.expected_range[1]})
+                      </span>
+                    </div>
+                    <div className="mt-1 font-mono text-[11px] text-slate-400">
+                      PQ: {a.prompt_quality} · PI: {a.prompt_improvement} ·
+                      Tests: {a.test_cases} · Debug: {a.debug_tests}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Queue-Based Execution & Concurrency Stress Test */}
+          <div className="rounded-xl border border-slate-800 bg-[#111827] p-6">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <h2 className="flex items-center gap-2 text-base font-semibold text-white">
+                  <Activity className="h-4 w-4 text-cyan-400" />
+                  Queue Execution &amp; Concurrency Test
+                </h2>
+                <p className="mt-1 text-xs text-slate-400">
+                  Dispatches parallel sandbox jobs through the bounded FIFO
+                  execution queue (max 3 workers + auto-retry).
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <select
+                  value={concurrencyCount}
+                  onChange={(e) => setConcurrencyCount(Number(e.target.value))}
+                  className="rounded-lg border border-slate-700 bg-[#0b1120] px-2 py-1.5 text-xs text-white"
+                >
+                  <option value={4}>4 jobs</option>
+                  <option value={6}>6 jobs</option>
+                  <option value={10}>10 jobs</option>
+                </select>
+                <button
+                  onClick={handleRunConcurrencyTest}
+                  disabled={testingConcurrency}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-cyan-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-cyan-500 disabled:opacity-60"
+                >
+                  {testingConcurrency ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Activity className="h-3.5 w-3.5" />
+                  )}
+                  Run Test
+                </button>
+              </div>
+            </div>
+
+            {concurrencyReport && (
+              <div className="mt-5 space-y-3">
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="rounded-lg border border-slate-800 bg-[#0b1120] p-2.5">
+                    <div className="text-[10px] text-slate-400">Completed</div>
+                    <div className="font-mono text-sm font-bold text-emerald-300">
+                      {concurrencyReport.passed}/{concurrencyReport.dispatched}
+                    </div>
+                  </div>
+                  <div className="rounded-lg border border-slate-800 bg-[#0b1120] p-2.5">
+                    <div className="text-[10px] text-slate-400">
+                      Max Queue Wait
+                    </div>
+                    <div className="font-mono text-sm font-bold text-cyan-300">
+                      {concurrencyReport.max_queue_wait_ms}ms
+                    </div>
+                  </div>
+                  <div className="rounded-lg border border-slate-800 bg-[#0b1120] p-2.5">
+                    <div className="text-[10px] text-slate-400">
+                      P95 Latency
+                    </div>
+                    <div className="font-mono text-sm font-bold text-indigo-300">
+                      {concurrencyReport.p95_latency_ms}ms
+                    </div>
+                  </div>
+                </div>
+
+                <div className="max-h-48 space-y-1.5 overflow-y-auto">
+                  {concurrencyReport.jobs.map((j) => (
+                    <div
+                      key={j.job_id}
+                      className="flex items-center justify-between rounded-md border border-slate-800 bg-[#0b1120] px-3 py-1.5 font-mono text-[11px]"
+                    >
+                      <span className="text-slate-300">
+                        #{j.worker_index} · {j.job_id}
+                      </span>
+                      <span className="text-slate-400">
+                        wait:{j.queue_wait_ms}ms · run:{j.runtime_ms}ms
+                      </span>
+                      <span
+                        className={
+                          j.passed ? "text-emerald-400" : "text-red-400"
+                        }
+                      >
+                        {j.passed ? "PASS" : "FAIL"}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </div>
-            ))}
+            )}
           </div>
         </div>
       )}

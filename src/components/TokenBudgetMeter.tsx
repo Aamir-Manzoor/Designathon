@@ -1,19 +1,16 @@
 "use client";
 
-import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  Tooltip,
-} from "recharts";
+import { ResponsiveContainer, AreaChart, Area, Tooltip } from "recharts";
 import {
   Gauge,
   Sparkles,
   AlertTriangle,
   Info,
   ShieldAlert,
+  Layers,
 } from "lucide-react";
 import type { EfficiencyHint, PromptTurn } from "@/types/assessment";
+import { resolveAdaptiveContextMode } from "@/lib/engines/token-optimizer";
 import { formatNumber } from "@/lib/utils";
 
 interface TokenBudgetMeterProps {
@@ -33,7 +30,11 @@ export function TokenBudgetMeter({
 }: TokenBudgetMeterProps) {
   const remaining = Math.max(0, tokenBudget - tokensUsed);
   const pct =
-    tokenBudget > 0 ? Math.min(100, Math.round((tokensUsed / tokenBudget) * 100)) : 0;
+    tokenBudget > 0
+      ? Math.min(100, Math.round((tokensUsed / tokenBudget) * 100))
+      : 0;
+
+  const adaptive = resolveAdaptiveContextMode(tokensUsed, tokenBudget);
 
   const statusColor =
     pct >= 85
@@ -49,6 +50,22 @@ export function TokenBudgetMeter({
       ? "text-amber-400"
       : "text-emerald-400";
 
+  const modeBadge =
+    adaptive.mode === "ultra_lean"
+      ? {
+          label: "Ultra-Lean Context",
+          cls: "bg-red-500/15 text-red-300 ring-red-500/30",
+        }
+      : adaptive.mode === "compact"
+      ? {
+          label: "Compact Context",
+          cls: "bg-amber-500/15 text-amber-300 ring-amber-500/30",
+        }
+      : {
+          label: "Standard Context",
+          cls: "bg-indigo-500/15 text-indigo-300 ring-indigo-500/30",
+        };
+
   const chartData = turns.map((t) => ({
     turn: `T${t.turn_number}`,
     used: t.prompt_tokens + t.completion_tokens,
@@ -57,14 +74,23 @@ export function TokenBudgetMeter({
 
   return (
     <div className="border-b border-slate-800 bg-[#0d1424] p-3.5">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-1.5">
         <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-300">
           <Gauge className="h-3.5 w-3.5 text-indigo-400" />
           Live Token Budget
         </div>
-        <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-medium text-emerald-300 ring-1 ring-emerald-500/30">
-          <Sparkles className="h-3 w-3" />
-          {formatNumber(tokensSaved)} saved
+        <div className="flex items-center gap-1.5">
+          <span
+            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ring-1 ${modeBadge.cls}`}
+            title="Adaptive Context-Window Management shifts automatically based on remaining budget"
+          >
+            <Layers className="h-2.5 w-2.5" />
+            {modeBadge.label}
+          </span>
+          <span className="flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-medium text-emerald-300 ring-1 ring-emerald-500/30">
+            <Sparkles className="h-2.5 w-2.5" />
+            {formatNumber(tokensSaved)} saved
+          </span>
         </div>
       </div>
 
@@ -131,7 +157,7 @@ export function TokenBudgetMeter({
           <ShieldAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           <span>
             {pct >= 90
-              ? "Critical token burn (>90%). Ask only for 1–3 line targeted fixes."
+              ? "Critical token burn (>90%). Ultra-Lean context active — ask only for 1–3 line patches."
               : "High token consumption (>75%). Avoid pasting full code; editor state is synced automatically."}
           </span>
         </div>

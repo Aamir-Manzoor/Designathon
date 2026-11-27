@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { executeTestCases } from "@/lib/engines/executor";
+import { executionQueue } from "@/lib/engines/execution-queue";
 import type { CandidateSession, TestCase } from "@/types/assessment";
 
 export async function POST(request: Request) {
@@ -37,7 +37,6 @@ export async function POST(request: Request) {
 
   const session = sessionData as CandidateSession;
 
-  // Fetch all test cases via security-definer RPC so debug tests can run in Phase 2
   const { data: allTests, error: tcErr } = await supabase.rpc(
     "get_session_test_cases",
     { p_session_id: session.id }
@@ -48,7 +47,6 @@ export async function POST(request: Request) {
   }
 
   const tests = (allTests ?? []) as TestCase[];
-  // Phase 1: run public tests; Phase 2: run public + debug tests
   const suiteToRun =
     session.phase === "debugging"
       ? tests.filter(
@@ -57,11 +55,12 @@ export async function POST(request: Request) {
       : tests.filter((tc) => tc.visibility === "public");
 
   try {
-    const execResult = await executeTestCases(
-      body.code,
-      session.language,
-      suiteToRun
-    );
+    // Route execution through the bounded-concurrency FIFO queue with automatic retry recovery
+    const execResult = await executionQueue.enqueue({
+      code: body.code,
+      language: session.language,
+      testCases: suiteToRun,
+    });
 
     const { data: runRecord } = await supabase
       .from("execution_runs")
@@ -96,6 +95,10 @@ export async function POST(request: Request) {
       total_count: execResult.totalCount,
       runtime_ms: execResult.runtimeMs,
       results: execResult.results,
+      queue_job_id: execResult.jobId,
+      queue_wait_ms: execResult.queueWaitMs,
+      attempts: execResult.attempts,
+      queue_stats: executionQueue.getStats(),
       ready_for_bug_injection: session.phase === "coding" && allPassed,
       ready_for_submission: session.phase === "debugging" && allPassed,
     });

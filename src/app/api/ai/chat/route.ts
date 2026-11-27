@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { buildOptimizedContext } from "@/lib/engines/token-optimizer";
-import { generateCodingReply } from "@/lib/engines/gemini";
+import {
+  generateWithProvider,
+  type AIProviderId,
+} from "@/lib/engines/ai-provider";
 import type {
   CandidateSession,
   Challenge,
@@ -23,6 +26,7 @@ export async function POST(request: Request) {
     prompt?: string;
     current_code?: string;
     latest_test_feedback?: string;
+    provider?: AIProviderId;
   };
 
   if (!body.session_id || !body.prompt?.trim()) {
@@ -92,7 +96,7 @@ export async function POST(request: Request) {
       ? body.current_code
       : session.current_code;
 
-  // Build token-optimized context payload
+  // Build adaptive token-optimized context payload
   const optimized = buildOptimizedContext({
     challenge,
     language: session.language,
@@ -106,10 +110,12 @@ export async function POST(request: Request) {
   });
 
   try {
-    const aiResult = await generateCodingReply({
+    const aiResult = await generateWithProvider({
+      requestedProvider: body.provider || "auto",
       systemInstruction: optimized.systemInstruction,
       messages: optimized.messages,
       language: session.language,
+      maxOutputTokens: optimized.recommendedMaxOutputTokens,
     });
 
     const turnTokens = aiResult.promptTokens + aiResult.completionTokens;
@@ -135,7 +141,7 @@ export async function POST(request: Request) {
         cached_tokens: aiResult.cachedTokens,
         naive_tokens_estimate: optimized.naiveTokensEstimate,
         tokens_saved: actualSaved,
-        context_strategy: optimized.contextStrategy,
+        context_strategy: `${optimized.contextStrategy} [${aiResult.provider}:${aiResult.model}]`,
         efficiency_hints: optimized.efficiencyHints,
       })
       .select("*")
@@ -151,7 +157,8 @@ export async function POST(request: Request) {
         current_code: activeCode,
         tokens_used: nextTokensUsed,
         tokens_saved: nextTokensSaved,
-        rolling_summary: optimized.updatedRollingSummary || session.rolling_summary,
+        rolling_summary:
+          optimized.updatedRollingSummary || session.rolling_summary,
         updated_at: new Date().toISOString(),
       })
       .eq("id", session.id);
@@ -170,6 +177,9 @@ export async function POST(request: Request) {
       tokens_used: nextTokensUsed,
       tokens_saved: nextTokensSaved,
       token_budget: session.token_budget,
+      context_mode: optimized.contextMode,
+      provider: aiResult.provider,
+      model: aiResult.model,
       efficiency_hints: optimized.efficiencyHints,
     });
   } catch (err: unknown) {

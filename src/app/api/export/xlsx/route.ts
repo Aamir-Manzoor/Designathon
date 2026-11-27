@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import ExcelJS from "exceljs";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { estimateSessionCostUsd } from "@/lib/engines/ai-provider";
 import type { ScorecardBreakdown } from "@/types/assessment";
 
 export async function GET() {
@@ -69,6 +70,9 @@ export async function GET() {
     { header: "Token Budget", key: "token_budget", width: 14 },
     { header: "Budget %", key: "budget_pct", width: 12 },
     { header: "Tokens Saved", key: "tokens_saved", width: 14 },
+    { header: "Est. Cost (USD)", key: "cost_usd", width: 16 },
+    { header: "Cost Saved (USD)", key: "saved_usd", width: 16 },
+    { header: "Efficiency (Pts/1K Tok)", key: "efficiency_idx", width: 22 },
     { header: "Verdict", key: "verdict", width: 42 },
   ];
 
@@ -87,6 +91,13 @@ export async function GET() {
         ? Math.round((s.tokens_used / s.token_budget) * 100)
         : 0;
 
+    const cost = estimateSessionCostUsd(s.tokens_used, s.tokens_saved);
+    const totalScoreNum = sc ? Number(sc.total_score) : 0;
+    const efficiencyIdx =
+      s.tokens_used > 0
+        ? Number((totalScoreNum / (s.tokens_used / 1000)).toFixed(1))
+        : 0;
+
     summarySheet.addRow({
       name: s.candidate_name,
       email: s.candidate_email,
@@ -97,11 +108,14 @@ export async function GET() {
       pi: sc ? Number(sc.prompt_improvement_score) : 0,
       tc: sc ? Number(sc.test_cases_score) : 0,
       dt: sc ? Number(sc.debug_test_cases_score) : 0,
-      total: sc ? Number(sc.total_score) : 0,
+      total: totalScoreNum,
       tokens_used: s.tokens_used,
       token_budget: s.token_budget,
       budget_pct: `${budgetPct}%`,
       tokens_saved: s.tokens_saved,
+      cost_usd: `$${cost.costUsd.toFixed(5)}`,
+      saved_usd: `$${cost.savedUsd.toFixed(5)}`,
+      efficiency_idx: efficiencyIdx,
       verdict: breakdown?.overall_verdict || s.phase,
     });
   }
