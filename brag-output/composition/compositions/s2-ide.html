@@ -1,0 +1,348 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      font-family: var(--font-display, "Outfit", "Inter", sans-serif);
+      color: #f8fafc;
+    }
+    .s2-stage {
+      position: absolute;
+      inset: 0;
+      padding: 64px 100px;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+    .s2-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #111317;
+      border: 2px solid #232730;
+      border-radius: 20px;
+      padding: 20px 30px;
+    }
+    .s2-brand {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+    .s2-logo-box {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: rgba(16, 185, 129, 0.18);
+      border: 2px solid rgba(52, 211, 153, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 28px;
+      font-weight: 800;
+      color: #34d399;
+    }
+    .s2-brand-name {
+      font-size: 36px;
+      font-weight: 800;
+      color: #f8fafc;
+      letter-spacing: -0.02em;
+    }
+    .s2-tag {
+      padding: 8px 18px;
+      border-radius: 999px;
+      background: rgba(16, 185, 129, 0.16);
+      border: 1.5px solid rgba(52, 211, 153, 0.42);
+      font-family: "JetBrains Mono", monospace;
+      font-size: 28px;
+      font-weight: 700;
+      color: #6ee7b7;
+    }
+    .s2-meta {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 28px;
+      font-weight: 700;
+      color: #fbbf24;
+    }
+    .s2-workspace {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1.18fr 1fr;
+      gap: 28px;
+      min-height: 0;
+    }
+    .s2-editor {
+      background: #0d1117;
+      border: 2px solid #232730;
+      border-radius: 24px;
+      padding: 30px 34px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .s2-pane-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 18px;
+      border-bottom: 2px solid #1e2430;
+    }
+    .s2-file {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 28px;
+      font-weight: 700;
+      color: #cbd5e1;
+    }
+    .s2-pass-badge {
+      padding: 8px 18px;
+      border-radius: 999px;
+      background: #34d399;
+      color: #022c22;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 28px;
+      font-weight: 800;
+    }
+    .s2-code {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 28px;
+      line-height: 1.56;
+      color: #e2e8f0;
+      white-space: pre;
+    }
+    .kw {
+      color: #38bdf8;
+      font-weight: 700;
+    }
+    .fn {
+      color: #34d399;
+      font-weight: 700;
+    }
+    .s2-footer-note {
+      padding-top: 16px;
+      border-top: 2px solid #1e2430;
+      font-family: "Inter", sans-serif;
+      font-size: 28px;
+      font-weight: 500;
+      color: #94a3b8;
+    }
+    .s2-right {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 22px;
+    }
+    .s2-meter-card {
+      background: #111317;
+      border: 2px solid rgba(52, 211, 153, 0.38);
+      border-radius: 24px;
+      padding: 26px 30px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .s2-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .s2-label {
+      font-size: 30px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .s2-saved {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 28px;
+      font-weight: 700;
+      color: #34d399;
+    }
+    .s2-budget-nums {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 28px;
+      color: #cbd5e1;
+    }
+    .s2-rem {
+      font-size: 34px;
+      font-weight: 800;
+      color: #34d399;
+    }
+    .s2-bar-track {
+      width: 100%;
+      height: 18px;
+      border-radius: 999px;
+      background: #1e293b;
+      overflow: hidden;
+    }
+    .s2-bar-fill {
+      width: 100%;
+      height: 100%;
+      border-radius: 999px;
+      background: #10b981;
+      transform-origin: left center;
+    }
+    .s2-prompt-card {
+      background: #111317;
+      border: 2px solid #232730;
+      border-radius: 24px;
+      padding: 26px 30px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .s2-turn-meta {
+      display: flex;
+      justify-content: space-between;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 28px;
+      font-weight: 700;
+      color: #22d3ee;
+    }
+    .s2-prompt-copy {
+      font-family: "Inter", sans-serif;
+      font-size: 28px;
+      line-height: 1.38;
+      color: #f8fafc;
+    }
+    .s2-context-card {
+      background: #171a20;
+      border: 2px solid rgba(34, 211, 238, 0.35);
+      border-radius: 22px;
+      padding: 22px 30px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .s2-ctx-left {
+      font-size: 28px;
+      font-weight: 600;
+      color: #cbd5e1;
+    }
+    .s2-ctx-val {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 32px;
+      font-weight: 800;
+      color: #22d3ee;
+    }
+  </style>
+
+  <div id="root" data-composition-id="s2-ide" data-width="1920" data-height="1080">
+    <div id="s2-wrap" class="clip" data-start="0" data-duration="4.79" data-track-index="1">
+      <div id="s2-stage-inner" class="s2-stage">
+        <div id="s2-top" class="s2-topbar">
+          <div class="s2-brand">
+            <div class="s2-logo-box">PB</div>
+            <span class="s2-brand-name">PromptBench</span>
+            <span class="s2-tag">SOLUTION 01 · SEALED AI IDE</span>
+          </div>
+          <div class="s2-meta">
+            <span>Single-Access Lock · 29:42</span>
+          </div>
+        </div>
+
+        <div class="s2-workspace">
+          <div id="s2-left-box" class="s2-editor">
+            <div class="s2-pane-head">
+              <span class="s2-file">solution.py · Rate Limiter</span>
+              <span id="s2-pass-pill" class="s2-pass-badge">3/3 Public Tests · 14ms</span>
+            </div>
+
+            <div class="s2-code" data-layout-ignore><span class="kw">from</span> collections <span class="kw">import</span> deque
+
+<span class="kw">def</span> <span class="fn">rate_limit</span>(limit, window, reqs):
+    q, out = deque(), []
+    <span class="kw">for</span> t <span class="kw">in</span> reqs:
+        <span class="kw">while</span> q <span class="kw">and</span> t - q[0] &gt;= window:
+            q.popleft()
+        out.append(len(q) &lt; limit)</div>
+
+            <div class="s2-footer-note">
+              Internal-only editor clipboard · Fullscreen 3-pane workspace
+            </div>
+          </div>
+
+          <div id="s2-right-box" class="s2-right">
+            <div class="s2-meter-card">
+              <div class="s2-row">
+                <span class="s2-label">Live Token Budget</span>
+                <span class="s2-saved">+1,180 saved</span>
+              </div>
+              <div class="s2-budget-nums">
+                <span class="s2-rem">4,580 remaining</span>
+                <span>24% of 6,000</span>
+              </div>
+              <div class="s2-bar-track" data-layout-ignore>
+                <div id="s2-bar-fill" class="s2-bar-fill" data-layout-ignore></div>
+              </div>
+            </div>
+
+            <div id="s2-prompt-box" class="s2-prompt-card">
+              <div class="s2-turn-meta">
+                <span>Turn #1 · Candidate</span>
+                <span>600 tok</span>
+              </div>
+              <p class="s2-prompt-copy">
+                "Implement O(n) sliding window with deque; evict t - q[0] &gt;= window; handle limit=0."
+              </p>
+            </div>
+
+            <div id="s2-ctx-box" class="s2-context-card">
+              <span class="s2-ctx-left">Adaptive Context (Standard → Ultra-Lean)</span>
+              <span class="s2-ctx-val">-45% Tokens</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+
+    tl.fromTo(
+      "#s2-top",
+      { opacity: 0, y: -20, filter: "blur(6px)" },
+      { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.28, ease: "expo.out" },
+      0
+    );
+    tl.fromTo(
+      "#s2-left-box",
+      { opacity: 0, x: -30, filter: "blur(8px)" },
+      { opacity: 1, x: 0, filter: "blur(0px)", duration: 0.34, ease: "expo.out" },
+      0.12
+    );
+    tl.fromTo(
+      "#s2-right-box",
+      { opacity: 0, x: 30, filter: "blur(8px)" },
+      { opacity: 1, x: 0, filter: "blur(0px)", duration: 0.34, ease: "expo.out" },
+      0.22
+    );
+    tl.fromTo(
+      "#s2-bar-fill",
+      { scaleX: 0.05 },
+      { scaleX: 0.24, duration: 0.7, ease: "power3.out" },
+      0.55
+    );
+    // Simulated prompt execution -> Public tests badge pops in at local 1.50s (global 6.00s click cue)
+    tl.fromTo(
+      "#s2-pass-pill",
+      { opacity: 0, scale: 0.88 },
+      { opacity: 1, scale: 1, duration: 0.26, ease: "back.out(1.4)" },
+      1.5
+    );
+    tl.fromTo(
+      "#s2-stage-inner",
+      { opacity: 1, filter: "blur(0px)" },
+      { opacity: 0, filter: "blur(10px)", duration: 0.18, ease: "power3.in" },
+      4.58
+    );
+
+    window.__timelines["s2-ide"] = tl;
+  </script>
+</template>

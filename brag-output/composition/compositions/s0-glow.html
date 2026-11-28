@@ -1,0 +1,52 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+    .glow-clip {
+      position: absolute;
+      inset: 0;
+    }
+    .glow-orb {
+      position: absolute;
+      left: 360px;
+      top: -180px;
+      width: 1200px;
+      height: 620px;
+      border-radius: 999px;
+      background: radial-gradient(
+        ellipse at center,
+        rgba(16, 185, 129, 0.28) 0%,
+        rgba(34, 211, 238, 0.14) 42%,
+        rgba(9, 10, 12, 0) 74%
+      );
+    }
+  </style>
+  <div id="root" data-composition-id="s0-glow" data-width="1920" data-height="1080">
+    <div id="s0-glow-wrap" class="clip glow-clip" data-start="0" data-duration="24" data-track-index="1" data-layout-ignore>
+      <div id="s0-glow-orb" class="glow-orb" data-layout-ignore></div>
+    </div>
+  </div>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    const beatSec = 60 / 109.96;
+    for (let i = 0; i < 43; i++) {
+      const t0 = +(i * beatSec).toFixed(3);
+      tl.fromTo(
+        "#s0-glow-orb",
+        { opacity: 0.72, scale: 0.98 },
+        { opacity: 1, scale: 1.03, duration: beatSec * 0.42, ease: "sine.out" },
+        t0
+      );
+      tl.to(
+        "#s0-glow-orb",
+        { opacity: 0.72, scale: 0.98, duration: beatSec * 0.58, ease: "sine.inOut" },
+        +(t0 + beatSec * 0.42).toFixed(3)
+      );
+    }
+    window.__timelines["s0-glow"] = tl;
+  </script>
+</template>

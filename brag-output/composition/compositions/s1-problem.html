@@ -1,0 +1,205 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      font-family: var(--font-display, "Outfit", "Inter", sans-serif);
+      color: #f8fafc;
+    }
+    .s1-stage {
+      position: absolute;
+      inset: 0;
+      padding: 76px 108px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .s1-top {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      max-width: 1580px;
+    }
+    .s1-pill {
+      display: inline-flex;
+      align-items: center;
+      align-self: flex-start;
+      gap: 12px;
+      padding: 10px 22px;
+      border-radius: 999px;
+      background: rgba(244, 63, 94, 0.16);
+      border: 2px solid rgba(251, 113, 133, 0.45);
+      font-family: "JetBrains Mono", monospace;
+      font-size: 28px;
+      font-weight: 700;
+      color: #fda4af;
+      letter-spacing: 0.04em;
+    }
+    .s1-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      background: #fb7185;
+    }
+    .s1-headline {
+      font-size: 68px;
+      font-weight: 800;
+      line-height: 1.08;
+      letter-spacing: -0.025em;
+      color: #f8fafc;
+    }
+    .s1-accent-rose {
+      color: #fda4af;
+    }
+    .s1-sub {
+      font-family: "Inter", sans-serif;
+      font-size: 32px;
+      font-weight: 500;
+      line-height: 1.38;
+      color: #cbd5e1;
+      max-width: 1480px;
+    }
+    .s1-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 28px;
+      width: 100%;
+    }
+    .s1-card-clip {
+      position: relative;
+      width: 100%;
+      height: 360px;
+    }
+    .s1-card {
+      width: 100%;
+      height: 100%;
+      background: #111317;
+      border: 2px solid rgba(251, 113, 133, 0.36);
+      border-radius: 24px;
+      padding: 34px 34px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .s1-num {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 28px;
+      font-weight: 700;
+      color: #fda4af;
+    }
+    .s1-card-title {
+      font-size: 38px;
+      font-weight: 700;
+      line-height: 1.18;
+      color: #f8fafc;
+      margin-top: 12px;
+    }
+    .s1-card-body {
+      font-family: "Inter", sans-serif;
+      font-size: 28px;
+      font-weight: 400;
+      line-height: 1.38;
+      color: #cbd5e1;
+    }
+  </style>
+
+  <div id="root" data-composition-id="s1-problem" data-width="1920" data-height="1080">
+    <div id="s1-wrap" class="clip" data-start="0" data-duration="4.5" data-track-index="1">
+      <div id="s1-stage-inner" class="s1-stage">
+        <div id="s1-header-box" class="s1-top">
+          <div class="s1-pill">
+            <span class="s1-dot" data-layout-ignore></span>
+            <span>PROBLEM OBJECTIVE · THE ASSESSMENT GAP</span>
+          </div>
+          <h1 class="s1-headline">
+            Why conventional coding tests <span class="s1-accent-rose">break in the AI era</span>
+          </h1>
+          <p class="s1-sub">
+            Syntax-only graders ignore how engineers prompt AI, debug subtle regressions, and control token costs.
+          </p>
+        </div>
+
+        <div class="s1-grid">
+          <div class="s1-card-clip">
+            <div id="s1-c1" class="s1-card">
+              <div>
+                <div class="s1-num">01 · AI GUIDANCE</div>
+                <h2 class="s1-card-title">Blind to Prompt Craft</h2>
+              </div>
+              <p class="s1-card-body">
+                Rarely measures how developers guide, constrain, or validate AI output.
+              </p>
+            </div>
+          </div>
+
+          <div class="s1-card-clip">
+            <div id="s1-c2" class="s1-card">
+              <div>
+                <div class="s1-num">02 · API TOKEN SPEND</div>
+                <h2 class="s1-card-title">Unchecked Token Burn</h2>
+              </div>
+              <p class="s1-card-body">
+                Repeated context and vague prompts spike assessment API costs.
+              </p>
+            </div>
+          </div>
+
+          <div class="s1-card-clip">
+            <div id="s1-c3" class="s1-card">
+              <div>
+                <div class="s1-num">03 · REGRESSIONS</div>
+                <h2 class="s1-card-title">Binary Pass / Fail</h2>
+              </div>
+              <p class="s1-card-body">
+                Hides whether candidates can isolate subtle bugs in AI-assisted code.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+
+    // Immediate visible frame 0 -> crisp focus lock
+    tl.fromTo(
+      "#s1-header-box",
+      { opacity: 0.85, y: 14, filter: "blur(4px)" },
+      { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.28, ease: "expo.out" },
+      0
+    );
+
+    // beat-grid: card 1 at 0.90s, card 2 at 1.25s, card 3 at 1.60s
+    tl.fromTo(
+      "#s1-c1",
+      { opacity: 0, y: 28, filter: "blur(8px)" },
+      { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.32, ease: "expo.out" },
+      0.9
+    );
+    tl.fromTo(
+      "#s1-c2",
+      { opacity: 0, y: 28, filter: "blur(8px)" },
+      { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.32, ease: "expo.out" },
+      1.25
+    );
+    tl.fromTo(
+      "#s1-c3",
+      { opacity: 0, y: 28, filter: "blur(8px)" },
+      { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.32, ease: "expo.out" },
+      1.6
+    );
+
+    // Clean exit blur swap right before 4.50s cut
+    tl.fromTo(
+      "#s1-stage-inner",
+      { opacity: 1, filter: "blur(0px)" },
+      { opacity: 0, filter: "blur(10px)", duration: 0.18, ease: "power3.in" },
+      4.3
+    );
+
+    window.__timelines["s1-problem"] = tl;
+  </script>
+</template>

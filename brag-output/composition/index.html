@@ -1,0 +1,253 @@
+<!doctype html>
+<html
+  lang="en"
+  data-resolution="landscape"
+  data-composition-variables='[
+    {"id":"color-ground","type":"color","label":"Background","default":"#090a0c"},
+    {"id":"color-ink","type":"color","label":"Text","default":"#f8fafc"},
+    {"id":"color-accent","type":"color","label":"Accent","default":"#10b981"},
+    {"id":"font-display","type":"string","label":"Display font","default":"Outfit"}
+  ]'
+>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: var(--color-ground, #090a0c);
+        color: var(--color-ink, #f8fafc);
+        font-family: var(--font-display, "Outfit", "Inter", sans-serif);
+      }
+      #root {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+      }
+      #stage-ground {
+        position: absolute;
+        inset: 0;
+        background-color: #090a0c;
+        background-image: radial-gradient(rgba(148, 163, 184, 0.16) 1.25px, transparent 1.25px);
+        background-size: 32px 32px;
+        z-index: 0;
+      }
+      .glow-host {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        pointer-events: none;
+      }
+      .scene-host {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="24"
+      data-width="1920"
+      data-height="1080"
+      data-fps="30"
+      data-motion-blur="on"
+      data-no-timeline
+    >
+      <div id="stage-ground" data-layout-ignore></div>
+
+      <!-- Subtle Audio-Reactive Stage Glow Sub-Composition -->
+      <div
+        id="s0-glow"
+        class="clip glow-host"
+        data-composition-id="s0-glow"
+        data-composition-src="compositions/s0-glow.html"
+        data-start="0"
+        data-duration="24"
+        data-track-index="0"
+        data-track-kind="graphics"
+        data-width="1920"
+        data-height="1080"
+      ></div>
+
+      <!-- Scene 1: Problem Objective (0.00s - 4.50s) -->
+      <div
+        id="s1-problem"
+        class="clip scene-host"
+        data-composition-id="s1-problem"
+        data-composition-src="compositions/s1-problem.html"
+        data-start="0"
+        data-duration="4.5"
+        data-track-index="1"
+        data-track-kind="graphics"
+        data-width="1920"
+        data-height="1080"
+      ></div>
+
+      <!-- Scene 2: Sealed AI IDE & Live Token Budget (4.50s - 9.29s, beat-locked cut at 9.29s) -->
+      <div
+        id="s2-ide"
+        class="clip scene-host"
+        data-composition-id="s2-ide"
+        data-composition-src="compositions/s2-ide.html"
+        data-start="4.5"
+        data-duration="4.79"
+        data-track-index="1"
+        data-track-kind="graphics"
+        data-width="1920"
+        data-height="1080"
+      ></div>
+
+      <!-- Scene 3: Phase 2 Controlled Bug Injection & Guided Debugging (9.29s - 14.20s) -->
+      <div
+        id="s3-bug"
+        class="clip scene-host"
+        data-composition-id="s3-bug"
+        data-composition-src="compositions/s3-bug.html"
+        data-start="9.29"
+        data-duration="4.91"
+        data-track-index="1"
+        data-track-kind="graphics"
+        data-width="1920"
+        data-height="1080"
+      ></div>
+
+      <!-- Scene 4: 100-Pt Rubric, Evaluator Lock & Admin Governance (14.20s - 19.66s, beat-locked cut at 19.66s) -->
+      <div
+        id="s4-governance"
+        class="clip scene-host"
+        data-composition-id="s4-governance"
+        data-composition-src="compositions/s4-governance.html"
+        data-start="14.2"
+        data-duration="5.46"
+        data-track-index="1"
+        data-track-kind="graphics"
+        data-width="1920"
+        data-height="1080"
+      ></div>
+
+      <!-- Scene 5: Brand Payoff & Live URL (19.66s - 24.00s) -->
+      <div
+        id="s5-outro"
+        class="clip scene-host"
+        data-composition-id="s5-outro"
+        data-composition-src="compositions/s5-outro.html"
+        data-start="19.66"
+        data-duration="4.34"
+        data-track-index="1"
+        data-track-kind="graphics"
+        data-width="1920"
+        data-height="1080"
+      ></div>
+
+      <!-- Music Bed (109.96 BPM) -->
+      <audio
+        id="bgm"
+        class="clip"
+        data-start="0"
+        data-duration="24"
+        data-track-index="10"
+        data-volume="0.32"
+        data-fade-in="0.4"
+        data-fade-out="1.2"
+        src="assets/music/happy-beats-business-moves-vol-12-by-ende-dot-app.mp3"
+      ></audio>
+
+      <!-- Non-overlapping Low-HF-Risk SFX on lane 11 -->
+      <audio
+        id="sfx-s1-open"
+        class="clip"
+        data-start="0.08"
+        data-duration="0.19"
+        data-track-index="11"
+        data-volume="0.58"
+        src="assets/sfx/impact/impactSoft_medium_001.ogg"
+      ></audio>
+      <audio
+        id="sfx-s1-cards"
+        class="clip"
+        data-start="1.09"
+        data-duration="0.6"
+        data-track-index="11"
+        data-volume="0.52"
+        src="assets/sfx/casino/card-slide-1.ogg"
+      ></audio>
+      <audio
+        id="sfx-s2-reveal"
+        class="clip"
+        data-start="4.5"
+        data-duration="0.19"
+        data-track-index="11"
+        data-volume="0.58"
+        src="assets/sfx/impact/impactSoft_medium_001.ogg"
+      ></audio>
+      <audio
+        id="sfx-s2-click"
+        class="clip"
+        data-start="6.0"
+        data-duration="0.01"
+        data-track-index="11"
+        data-volume="0.55"
+        src="assets/sfx/interface/click_003.ogg"
+      ></audio>
+      <audio
+        id="sfx-s3-bug"
+        class="clip"
+        data-start="9.29"
+        data-duration="0.13"
+        data-track-index="11"
+        data-volume="0.6"
+        src="assets/sfx/interface/bong_001.ogg"
+      ></audio>
+      <audio
+        id="sfx-s3-fix"
+        class="clip"
+        data-start="12.02"
+        data-duration="0.01"
+        data-track-index="11"
+        data-volume="0.55"
+        src="assets/sfx/interface/click_003.ogg"
+      ></audio>
+      <audio
+        id="sfx-s4-cards"
+        class="clip"
+        data-start="14.2"
+        data-duration="0.6"
+        data-track-index="11"
+        data-volume="0.54"
+        src="assets/sfx/casino/card-slide-1.ogg"
+      ></audio>
+      <audio
+        id="sfx-s4-release"
+        class="clip"
+        data-start="17.47"
+        data-duration="0.01"
+        data-track-index="11"
+        data-volume="0.56"
+        src="assets/sfx/interface/click_003.ogg"
+      ></audio>
+      <audio
+        id="sfx-s5-payoff"
+        class="clip"
+        data-start="19.66"
+        data-duration="1.48"
+        data-track-index="11"
+        data-volume="0.62"
+        src="assets/sfx/impact/impactBell_heavy_000.ogg"
+      ></audio>
+    </div>
+  </body>
+</html>

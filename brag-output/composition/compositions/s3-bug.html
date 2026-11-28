@@ -1,0 +1,264 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      font-family: var(--font-display, "Outfit", "Inter", sans-serif);
+      color: #f8fafc;
+    }
+    .s3-stage {
+      position: absolute;
+      inset: 0;
+      padding: 68px 104px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 28px;
+    }
+    .s3-head {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .s3-pill {
+      display: inline-flex;
+      align-self: flex-start;
+      padding: 10px 22px;
+      border-radius: 999px;
+      background: rgba(245, 158, 11, 0.16);
+      border: 2px solid rgba(251, 191, 36, 0.45);
+      font-family: "JetBrains Mono", monospace;
+      font-size: 28px;
+      font-weight: 700;
+      color: #fbbf24;
+    }
+    .s3-title {
+      font-size: 54px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #f8fafc;
+    }
+    .s3-cols {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1.12fr 1fr;
+      gap: 28px;
+      min-height: 0;
+    }
+    .s3-diff-card {
+      background: #0d1117;
+      border: 2px solid rgba(251, 191, 36, 0.42);
+      border-radius: 24px;
+      padding: 32px 34px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .s3-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 18px;
+      border-bottom: 2px solid #1e2430;
+    }
+    .s3-amber-title {
+      font-size: 30px;
+      font-weight: 700;
+      color: #fbbf24;
+    }
+    .s3-sub-tag {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 28px;
+      color: #94a3b8;
+    }
+    .s3-diff-lines {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 28px;
+    }
+    .s3-line-ctx {
+      padding: 10px 18px;
+      color: #94a3b8;
+    }
+    .s3-line-del {
+      padding: 14px 18px;
+      border-radius: 14px;
+      background: rgba(244, 63, 94, 0.18);
+      border-left: 5px solid #fb7185;
+      color: #fda4af;
+    }
+    .s3-line-add {
+      padding: 14px 18px;
+      border-radius: 14px;
+      background: rgba(245, 158, 11, 0.18);
+      border-left: 5px solid #fbbf24;
+      color: #fde68a;
+    }
+    .s3-foot {
+      padding-top: 16px;
+      border-top: 2px solid #1e2430;
+      font-family: "Inter", sans-serif;
+      font-size: 28px;
+      color: #cbd5e1;
+    }
+    .s3-right-col {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 24px;
+    }
+    .s3-fail-card {
+      background: #151116;
+      border: 2px solid rgba(251, 113, 133, 0.42);
+      border-radius: 24px;
+      padding: 30px 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .s3-fail-head {
+      font-size: 30px;
+      font-weight: 700;
+      color: #fda4af;
+    }
+    .s3-io {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 28px;
+      line-height: 1.5;
+      color: #cbd5e1;
+    }
+    .s3-exp {
+      color: #6ee7b7;
+    }
+    .s3-act {
+      color: #fda4af;
+    }
+    .s3-guided-note {
+      font-family: "Inter", sans-serif;
+      font-size: 28px;
+      line-height: 1.35;
+      color: #cbd5e1;
+    }
+    .s3-fix-card {
+      background: #0f1d18;
+      border: 2px solid rgba(52, 211, 153, 0.55);
+      border-radius: 24px;
+      padding: 28px 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .s3-fix-pill {
+      display: inline-flex;
+      align-self: flex-start;
+      padding: 8px 20px;
+      border-radius: 999px;
+      background: #34d399;
+      color: #022c22;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 28px;
+      font-weight: 800;
+    }
+    .s3-fix-copy {
+      font-family: "Inter", sans-serif;
+      font-size: 28px;
+      line-height: 1.36;
+      color: #f8fafc;
+    }
+  </style>
+
+  <div id="root" data-composition-id="s3-bug" data-width="1920" data-height="1080">
+    <div id="s3-wrap" class="clip" data-start="0" data-duration="4.91" data-track-index="1">
+      <div id="s3-stage-inner" class="s3-stage">
+        <div id="s3-head-box" class="s3-head">
+          <div class="s3-pill">SOLUTION 02 · PHASE 2 CONTROLLED BUG INJECTION</div>
+          <h1 class="s3-title">Mutates Candidate Code Only After 100% Phase 1 Pass</h1>
+        </div>
+
+        <div class="s3-cols">
+          <div id="s3-diff-box" class="s3-diff-card">
+            <div class="s3-card-top">
+              <span class="s3-amber-title">Phase 2 — Controlled Bug Injected (Diff)</span>
+              <span class="s3-sub-tag">solution.py</span>
+            </div>
+
+            <div class="s3-diff-lines">
+              <div class="s3-line-ctx">for t in reqs:</div>
+              <div class="s3-line-del">- while q and t - q[0] &gt;= window:</div>
+              <div class="s3-line-add">+ while q and t - q[0] &gt; window:</div>
+              <div class="s3-line-ctx">    q.popleft()</div>
+            </div>
+
+            <div class="s3-foot">
+              Deterministic boundary mutation injected into candidate's exact code.
+            </div>
+          </div>
+
+          <div class="s3-right-col">
+            <div id="s3-fail-box" class="s3-fail-card">
+              <div class="s3-fail-head">DEBUG TEST FAILED: Exact Window Boundary</div>
+              <div class="s3-io">
+                <div class="s3-exp">Expected: [true, true, true]</div>
+                <div class="s3-act">Actual:   [true, true, false]</div>
+              </div>
+              <p class="s3-guided-note">
+                Guided Debugging blocks lazy "fix bug" prompts — diagnosis required.
+              </p>
+            </div>
+
+            <div id="s3-fix-clip" class="clip" data-start="2.4" data-duration="2.51" data-track-index="2">
+              <div id="s3-fix-box" class="s3-fix-card">
+                <span class="s3-fix-pill">FIXED IN 1 TURN · 5/5 TESTS PASSED</span>
+                <p class="s3-fix-copy">
+                  Candidate isolated t - q[0] &gt;= window boundary regression cleanly.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+
+    // Scene 3 starts on strong_beat 9.29s (local 0.0s)
+    tl.fromTo(
+      "#s3-head-box",
+      { opacity: 0, y: -18, filter: "blur(6px)" },
+      { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.28, ease: "expo.out" },
+      0
+    );
+    tl.fromTo(
+      "#s3-diff-box",
+      { opacity: 0, x: -28, filter: "blur(8px)" },
+      { opacity: 1, x: 0, filter: "blur(0px)", duration: 0.34, ease: "expo.out" },
+      0.12
+    );
+    tl.fromTo(
+      "#s3-fail-box",
+      { opacity: 0, x: 28, filter: "blur(8px)" },
+      { opacity: 1, x: 0, filter: "blur(0px)", duration: 0.34, ease: "expo.out" },
+      0.26
+    );
+    // beat-locked resolution card landing near 12.02s global (local 2.40s -> settled at 2.72s = 12.01s)
+    tl.fromTo(
+      "#s3-fix-box",
+      { opacity: 0, y: 24, scale: 0.96, filter: "blur(6px)" },
+      { opacity: 1, y: 0, scale: 1, filter: "blur(0px)", duration: 0.32, ease: "expo.out" },
+      2.4
+    );
+    tl.fromTo(
+      "#s3-stage-inner",
+      { opacity: 1, filter: "blur(0px)" },
+      { opacity: 0, filter: "blur(10px)", duration: 0.18, ease: "power3.in" },
+      4.7
+    );
+
+    window.__timelines["s3-bug"] = tl;
+  </script>
+</template>

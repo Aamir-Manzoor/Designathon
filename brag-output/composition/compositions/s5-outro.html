@@ -1,0 +1,183 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      font-family: var(--font-display, "Outfit", "Inter", sans-serif);
+      color: #f8fafc;
+    }
+    .s5-stage {
+      position: absolute;
+      inset: 0;
+      padding: 84px 120px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      text-align: center;
+    }
+    .s5-brand-lock {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+    .s5-brand-row {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+    .s5-emblem {
+      width: 60px;
+      height: 60px;
+      border-radius: 18px;
+      background: rgba(16, 185, 129, 0.2);
+      border: 2px solid #34d399;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 30px;
+      font-weight: 800;
+      color: #34d399;
+    }
+    .s5-wordmark {
+      font-size: 52px;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      color: #f8fafc;
+    }
+    .s5-badge {
+      padding: 10px 26px;
+      border-radius: 999px;
+      background: rgba(16, 185, 129, 0.15);
+      border: 2px solid rgba(52, 211, 153, 0.45);
+      font-size: 28px;
+      font-weight: 700;
+      color: #6ee7b7;
+    }
+    .s5-claim {
+      font-size: 70px;
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.025em;
+      max-width: 1560px;
+      color: #f8fafc;
+    }
+    .s5-grad {
+      color: #34d399;
+    }
+    .s5-metrics {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 28px;
+      width: 100%;
+      max-width: 1520px;
+    }
+    .s5-stat {
+      background: #111317;
+      border: 2px solid #232730;
+      border-radius: 22px;
+      padding: 24px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .s5-stat-val {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 38px;
+      font-weight: 800;
+      color: #f8fafc;
+    }
+    .s5-val-em {
+      color: #34d399;
+    }
+    .s5-val-cy {
+      color: #22d3ee;
+    }
+    .s5-stat-lbl {
+      font-family: "Inter", sans-serif;
+      font-size: 28px;
+      font-weight: 500;
+      color: #cbd5e1;
+    }
+    .s5-cta {
+      padding: 16px 40px;
+      border-radius: 999px;
+      background: #34d399;
+      color: #022c22;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 32px;
+      font-weight: 800;
+    }
+  </style>
+
+  <div id="root" data-composition-id="s5-outro" data-width="1920" data-height="1080">
+    <div id="s5-wrap" class="clip" data-start="0" data-duration="4.34" data-track-index="1" data-hold>
+      <div class="s5-stage">
+        <div id="s5-brand-box" class="s5-brand-lock">
+          <div class="s5-brand-row">
+            <div class="s5-emblem">PB</div>
+            <span class="s5-wordmark">PromptBench</span>
+          </div>
+          <div class="s5-badge">Token-Conscious AI Coding Assessment Platform</div>
+        </div>
+
+        <h1 id="s5-claim-box" class="s5-claim">
+          Measure how engineers <span class="s5-grad">guide AI, debug bugs, and optimize tokens</span>
+        </h1>
+
+        <div id="s5-metrics-box" class="s5-metrics">
+          <div class="s5-stat">
+            <span class="s5-stat-val">40 / 10 / 30 / 20</span>
+            <span class="s5-stat-lbl">Explainable 100-Pt Rubric</span>
+          </div>
+          <div class="s5-stat">
+            <span class="s5-stat-val s5-val-em">-45% Tokens</span>
+            <span class="s5-stat-lbl">Adaptive Context Savings</span>
+          </div>
+          <div class="s5-stat">
+            <span class="s5-stat-val s5-val-cy">3-Sheet .XLSX</span>
+            <span class="s5-stat-lbl">Audit-Ready Scorecards</span>
+          </div>
+        </div>
+
+        <div id="s5-url-box" class="s5-cta">promptbench-beta.vercel.app</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+
+    // Scene 5 starts at 19.66s strong_beat (local 0.0s)
+    tl.fromTo(
+      "#s5-brand-box",
+      { opacity: 0, y: -20, filter: "blur(8px)" },
+      { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.3, ease: "expo.out" },
+      0
+    );
+    tl.fromTo(
+      "#s5-claim-box",
+      { opacity: 0, scale: 0.96, filter: "blur(8px)" },
+      { opacity: 1, scale: 1, filter: "blur(0px)", duration: 0.36, ease: "expo.out" },
+      0.16
+    );
+    tl.fromTo(
+      "#s5-metrics-box",
+      { opacity: 0, y: 24, filter: "blur(6px)" },
+      { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.34, ease: "expo.out" },
+      0.34
+    );
+    // Final URL settles by local 0.85s (global 20.51s) -> >3.4s dead-still hold through 24.00s!
+    tl.fromTo(
+      "#s5-url-box",
+      { opacity: 0, y: 18, scale: 0.94 },
+      { opacity: 1, y: 0, scale: 1, duration: 0.32, ease: "back.out(1.4)" },
+      0.52
+    );
+
+    window.__timelines["s5-outro"] = tl;
+  </script>
+</template>

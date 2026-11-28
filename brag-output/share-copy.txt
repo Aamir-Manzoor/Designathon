@@ -1,0 +1,1 @@
+Conventional coding tests measure syntax memorization — not how engineers guide AI, debug subtle regressions, or control token spend. Introducing PromptBench: a timed AI coding assessment platform with live token budgets, controlled bug injection inside candidate code, and an explainable 100-point rubric. Live at https://promptbench-beta.vercel.app

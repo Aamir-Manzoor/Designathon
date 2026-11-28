@@ -1,0 +1,328 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      font-family: var(--font-display, "Outfit", "Inter", sans-serif);
+      color: #f8fafc;
+    }
+    .s4-stage {
+      position: absolute;
+      inset: 0;
+      padding: 64px 100px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 24px;
+    }
+    .s4-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .s4-title-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .s4-pill {
+      display: inline-flex;
+      align-self: flex-start;
+      padding: 8px 20px;
+      border-radius: 999px;
+      background: rgba(34, 211, 238, 0.15);
+      border: 2px solid rgba(34, 211, 238, 0.42);
+      font-family: "JetBrains Mono", monospace;
+      font-size: 28px;
+      font-weight: 700;
+      color: #22d3ee;
+    }
+    .s4-title {
+      font-size: 50px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #f8fafc;
+    }
+    .s4-cols {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1.08fr 1fr;
+      gap: 28px;
+      min-height: 0;
+    }
+    .s4-eval-card {
+      background: #111317;
+      border: 2px solid rgba(52, 211, 153, 0.38);
+      border-radius: 24px;
+      padding: 30px 34px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .s4-score-top {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      padding-bottom: 16px;
+      border-bottom: 2px solid #232730;
+    }
+    .s4-cand {
+      font-size: 32px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .s4-score-num {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 46px;
+      font-weight: 800;
+      color: #34d399;
+    }
+    .s4-bars {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .s4-bar-item {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .s4-bar-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 28px;
+      font-weight: 600;
+      color: #e2e8f0;
+    }
+    .s4-pts {
+      font-family: "JetBrains Mono", monospace;
+      font-weight: 700;
+      color: #6ee7b7;
+    }
+    .s4-track {
+      width: 100%;
+      height: 14px;
+      border-radius: 999px;
+      background: #1e293b;
+      overflow: hidden;
+    }
+    .s4-fill {
+      height: 100%;
+      border-radius: 999px;
+      transform-origin: left center;
+    }
+    .fill-em {
+      width: 92.5%;
+      background: #10b981;
+    }
+    .fill-cy {
+      width: 100%;
+      background: #22d3ee;
+    }
+    .fill-am {
+      width: 80%;
+      background: #fbbf24;
+    }
+    .fill-in {
+      width: 90%;
+      background: #818cf8;
+    }
+    .s4-eval-lock {
+      padding-top: 16px;
+      border-top: 2px solid #232730;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 28px;
+      font-weight: 700;
+      color: #34d399;
+    }
+    .s4-admin-col {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 20px;
+    }
+    .s4-gov-card {
+      background: #111317;
+      border: 2px solid #232730;
+      border-radius: 22px;
+      padding: 24px 30px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .s4-gov-title {
+      font-size: 32px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .s4-gov-cyan {
+      font-size: 32px;
+      font-weight: 700;
+      color: #22d3ee;
+    }
+    .s4-gov-desc {
+      font-family: "Inter", sans-serif;
+      font-size: 28px;
+      line-height: 1.34;
+      color: #cbd5e1;
+    }
+    .s4-release-card {
+      background: #0f1d18;
+      border: 2px solid rgba(52, 211, 153, 0.55);
+      border-radius: 22px;
+      padding: 24px 30px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .s4-rel-badge {
+      display: inline-flex;
+      align-self: flex-start;
+      padding: 8px 18px;
+      border-radius: 999px;
+      background: #34d399;
+      color: #022c22;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 30px;
+      font-weight: 800;
+    }
+  </style>
+
+  <div id="root" data-composition-id="s4-governance" data-width="1920" data-height="1080">
+    <div id="s4-wrap" class="clip" data-start="0" data-duration="5.46" data-track-index="1">
+      <div id="s4-stage-inner" class="s4-stage">
+        <div id="s4-head-box" class="s4-head">
+          <div class="s4-title-group">
+            <span class="s4-pill">SOLUTION 03 · EXPLAINABLE 100-PT RUBRIC &amp; GOVERNANCE</span>
+            <h1 class="s4-title">Evaluator Pass/Reject Lock &amp; Admin Report Release</h1>
+          </div>
+        </div>
+
+        <div class="s4-cols">
+          <div id="s4-left-box" class="s4-eval-card">
+            <div class="s4-score-top">
+              <span class="s4-cand">Alex Rivera · Turn-Cited Rubric</span>
+              <span class="s4-score-num">92.0 / 100</span>
+            </div>
+
+            <div class="s4-bars">
+              <div class="s4-bar-item">
+                <div class="s4-bar-row">
+                  <span>Prompt Quality</span>
+                  <span class="s4-pts">37 / 40</span>
+                </div>
+                <div class="s4-track" data-layout-ignore>
+                  <div id="s4-b1" class="s4-fill fill-em" data-layout-ignore></div>
+                </div>
+              </div>
+
+              <div class="s4-bar-item">
+                <div class="s4-bar-row">
+                  <span>Public + Hidden Tests</span>
+                  <span class="s4-pts">30 / 30</span>
+                </div>
+                <div class="s4-track" data-layout-ignore>
+                  <div id="s4-b2" class="s4-fill fill-cy" data-layout-ignore></div>
+                </div>
+              </div>
+
+              <div class="s4-bar-item">
+                <div class="s4-bar-row">
+                  <span>Debug Regression Tests</span>
+                  <span class="s4-pts">16 / 20</span>
+                </div>
+                <div class="s4-track" data-layout-ignore>
+                  <div id="s4-b3" class="s4-fill fill-am" data-layout-ignore></div>
+                </div>
+              </div>
+
+              <div class="s4-bar-item">
+                <div class="s4-bar-row">
+                  <span>Prompt Improvement</span>
+                  <span class="s4-pts">9 / 10</span>
+                </div>
+                <div class="s4-track" data-layout-ignore>
+                  <div id="s4-b4" class="s4-fill fill-in" data-layout-ignore></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="s4-eval-lock">
+              DECISION: PASS · ONE-TIME SUBMIT (VIEW ONLY)
+            </div>
+          </div>
+
+          <div id="s4-right-box" class="s4-admin-col">
+            <div class="s4-gov-card">
+              <div class="s4-gov-title">Invite-Only Candidate &amp; Evaluator Access</div>
+              <p class="s4-gov-desc">
+                Random challenge assignment, filters, and practice sandbox isolation.
+              </p>
+            </div>
+
+            <div class="s4-gov-card">
+              <div class="s4-gov-cyan">3-Sheet .XLSX Cohort Analytics</div>
+              <p class="s4-gov-desc">
+                Summary, Prompt Timeline, and Cost-vs-Correctness efficiency export.
+              </p>
+            </div>
+
+            <div id="s4-rel-box" class="s4-release-card">
+              <span class="s4-rel-badge">ADMIN RELEASED REPORT</span>
+              <p class="s4-gov-desc">
+                Candidate receives Passed + Evaluator Feedback (zero numeric scores).
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+
+    tl.fromTo(
+      "#s4-head-box",
+      { opacity: 0, y: -18, filter: "blur(6px)" },
+      { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.28, ease: "expo.out" },
+      0
+    );
+    tl.fromTo(
+      "#s4-left-box",
+      { opacity: 0, x: -28, filter: "blur(8px)" },
+      { opacity: 1, x: 0, filter: "blur(0px)", duration: 0.34, ease: "expo.out" },
+      0.12
+    );
+    tl.fromTo(
+      "#s4-right-box",
+      { opacity: 0, x: 28, filter: "blur(8px)" },
+      { opacity: 1, x: 0, filter: "blur(0px)", duration: 0.34, ease: "expo.out" },
+      0.24
+    );
+
+    // beat-grid sequential rubric bar fills
+    tl.fromTo("#s4-b1", { scaleX: 0 }, { scaleX: 1, duration: 0.45, ease: "expo.out" }, 0.55);
+    tl.fromTo("#s4-b2", { scaleX: 0 }, { scaleX: 1, duration: 0.45, ease: "expo.out" }, 0.72);
+    tl.fromTo("#s4-b3", { scaleX: 0 }, { scaleX: 1, duration: 0.45, ease: "expo.out" }, 0.89);
+    tl.fromTo("#s4-b4", { scaleX: 0 }, { scaleX: 1, duration: 0.45, ease: "expo.out" }, 1.06);
+
+    // beat-locked emphasis on Admin Released Report at 17.47s global (local 3.27s)
+    tl.fromTo(
+      "#s4-rel-box",
+      { y: 12, opacity: 0.65 },
+      { y: 0, opacity: 1, duration: 0.28, ease: "expo.out" },
+      3.15
+    );
+
+    tl.fromTo(
+      "#s4-stage-inner",
+      { opacity: 1, filter: "blur(0px)" },
+      { opacity: 0, filter: "blur(10px)", duration: 0.18, ease: "power3.in" },
+      5.24
+    );
+
+    window.__timelines["s4-governance"] = tl;
+  </script>
+</template>
