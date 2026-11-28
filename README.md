@@ -18,11 +18,34 @@ Use the dedicated demo accounts below at [https://promptbench-beta.vercel.app/lo
 | **Evaluator** *(3 candidates pre-assigned)* | `evaluator@promptbench.ai` | `Evaluator@12345` |
 | **Candidate** | `candidate@promptbench.ai` | `Candidate@12345` |
 
-### Product Walkthrough Video
+### Product Walkthrough Videos
+
+#### 1. Full End-to-End Walkthrough (1080p with Neural AI Voiceover — 3m 29s)
+
+[![PromptBench Full Walkthrough](./demo-output/promptbench-full-walkthrough-poster.jpg)](https://github.com/Aamir-Manzoor/Designathon/raw/main/demo-output/promptbench-full-walkthrough.mp4)
+
+> 🎥 **[Click here to watch or download the Full 1080p Walkthrough MP4 (19.5 MB)](https://github.com/Aamir-Manzoor/Designathon/raw/main/demo-output/promptbench-full-walkthrough.mp4)**
+> 
+> *Full feature tour with Microsoft Neural TTS voiceover (`en-US-GuyNeural`), covering every single capability requested in the problem statement.*
+
+| Timestamp | Chapter | Key Capabilities Demonstrated |
+| :--- | :--- | :--- |
+| `00:01` | **Landing Page & Navigation** | Five-stage workflow cards, responsive layout, theme switcher in dropdown |
+| `00:18` | **Invite-Only Guard & Auth** | Registration request flow, password reset for Candidate & Evaluator |
+| `00:30` | **Admin Console & Governance** | Score vs Token efficiency scatter plot, search & date filters, reject/delete applicants, evaluator assignment |
+| `00:58` | **Candidate Portal & Sandboxes** | Ungraded Practice Sandbox (hidden from Admin), sealed Official Assessment rules confirmation |
+| `01:11` | **3-Pane Timed AI IDE** | Monaco editor, fullscreen Zen mode, expandable panels, anti-cheat external paste block, 1-click **Compress Prompt** |
+| `01:32` | **Phase 1 Pass & Bug Injection** | Sandbox code execution, Phase 2 modal transition, deterministic boundary bug injection into candidate code |
+| `02:25` | **Session Protection & Profile** | Single-access exam lock, auto-submit confirmation popup on exit, theme switcher hidden in profile |
+| `02:36` | **Evaluator Review & One-Time Lock**| 100-pt explainable scorecard (40/10/30/20), one-time Pass/Reject feedback lock preventing re-edits |
+| `02:58` | **Admin Report Release & Excel Export** | Gated candidate report release, multi-sheet formatted `.xlsx` download with token analytics |
+| `03:16` | **Candidate Final Outcome**| Released candidate feedback view with zero numeric score leakage |
+
+#### 2. Fast-Paced 24-Second Teaser Video (/brag)
 
 ![PromptBench Demo Walkthrough](./docs/promptbench-demo.gif)
 
-> Want full 1080p with audio? [Download the HD MP4 walkthrough](https://github.com/Aamir-Manzoor/Designathon/raw/main/docs/promptbench-demo.mp4) (4.5 MB).
+> ⚡ **[Watch or download the 24s High-Energy Teaser MP4 (4.7 MB)](https://github.com/Aamir-Manzoor/Designathon/raw/main/brag-output/brag.mp4)** with custom motion typography, beat-synced transitions, and sound effects.
 
 ## Minimum Scope Implemented
 1. **Challenge Configuration & Launch**: Full Admin console to configure coding challenges, time limits, token budgets, public/hidden/debug test cases, and deterministic bug-injection rules. Pre-seeded with 3 complete challenges (*Sliding Window API Rate Limiter*, *Log Anomaly & Spike Aggregator*, *Deployment Maintenance Window Merger*).
